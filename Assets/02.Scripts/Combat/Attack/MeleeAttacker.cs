@@ -27,7 +27,7 @@ namespace Combat.Attack
         private float _currentMultiplier;
         
         public ICombatant Combatant => _combatant;
-        public bool CanAttack => !_isAttacking && _combatant.CanTakeDamage;
+        public bool CanAttack => !_isAttacking && _combatant.IsAlive && !_combatant.IsStunned;
         
         public int CurrentComboStep => _currentComboStep;
         public bool IsAttacking => _isAttacking;

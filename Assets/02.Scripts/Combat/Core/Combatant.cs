@@ -10,21 +10,33 @@ namespace Combat.Core
     {
         [SerializeField] private CombatTeam _team;
         [SerializeField] private CombatStatsData _statsData;
+        [SerializeField] private HitReactionSettings _hitReactionSettings;
 
         private Health _health;
         private CombatStats _stats;
-        
+        private float _invincibilityEndTime;
+        private float _hitStunEndTime;
+        private bool _wasInvincible;
+        private bool _wasStunned;
+
         public Transform Transform => transform;
         public CombatStats Stats => _stats;
         public CombatTeam Team => _team;
-        
+
         public float CurrentHealth => _health.CurrentHealth;
         public float MaxHealth => _health.MaxHealth;
-        
-        public bool CanTakeDamage => _health.IsAlive;
-        
+
+        public bool IsAlive => _health.IsAlive;
+        public bool IsInvincible => Time.time < _invincibilityEndTime;
+        public bool IsStunned => Time.time < _hitStunEndTime;
+        public bool CanTakeDamage => IsAlive && !IsInvincible;
+
         public event Action<DamageInfo> OnDamaged;
         public event Action OnDeath;
+        public event Action OnInvincibilityStart;
+        public event Action OnInvincibilityEnd;
+        public event Action OnHitStunStart;
+        public event Action OnHitStunEnd;
 
         private void Awake()
         {
@@ -39,6 +51,23 @@ namespace Combat.Core
             _health.OnDeath += HandleDeath;
         }
 
+        private void Update()
+        {
+            if (!IsAlive) return;
+
+            if (_wasInvincible && !IsInvincible)
+            {
+                _wasInvincible = false;
+                OnInvincibilityEnd?.Invoke();
+            }
+
+            if (_wasStunned && !IsStunned)
+            {
+                _wasStunned = false;
+                OnHitStunEnd?.Invoke();
+            }
+        }
+
         private void OnDestroy()
         {
             if (_health != null)
@@ -51,17 +80,80 @@ namespace Combat.Core
 
             _health.TakeDamage(damageInfo.Amount);
             OnDamaged?.Invoke(damageInfo);
-        }
 
-        private void HandleDeath()
-        {
-            _stats.ClearAllModifiers();
-            OnDeath?.Invoke();
+            if (_hitReactionSettings != null)
+            {
+                if (_hitReactionSettings.AutoInvincibilityOnHit)
+                    SetInvincible(_hitReactionSettings.InvincibilityDuration);
+
+                if (_hitReactionSettings.AutoHitStunOnHit)
+                    SetStunned(_hitReactionSettings.HitStunDuration);
+            }
         }
 
         public void Heal(float amount)
         {
             _health.Heal(amount);
+        }
+
+        public void SetInvincible(float duration)
+        {
+            if (!IsAlive || duration <= 0) return;
+
+            float newEndTime = Time.time + duration;
+            bool wasAlreadyInvincible = IsInvincible;
+
+            _invincibilityEndTime = Mathf.Max(_invincibilityEndTime, newEndTime);
+            _wasInvincible = true;
+
+            if (!wasAlreadyInvincible)
+            {
+                OnInvincibilityStart?.Invoke();
+            }
+        }
+
+        public void SetStunned(float duration)
+        {
+            if (!IsAlive || duration <= 0) return;
+
+            float newEndTime = Time.time + duration;
+            bool wasAlreadyStunned = IsStunned;
+
+            _hitStunEndTime = Mathf.Max(_hitStunEndTime, newEndTime);
+            _wasStunned = true;
+
+            if (!wasAlreadyStunned)
+            {
+                OnHitStunStart?.Invoke();
+            }
+        }
+
+        public void ClearInvincibility()
+        {
+            if (_wasInvincible)
+            {
+                _invincibilityEndTime = 0;
+                _wasInvincible = false;
+                OnInvincibilityEnd?.Invoke();
+            }
+        }
+
+        public void ClearHitStun()
+        {
+            if (_wasStunned)
+            {
+                _hitStunEndTime = 0;
+                _wasStunned = false;
+                OnHitStunEnd?.Invoke();
+            }
+        }
+
+        private void HandleDeath()
+        {
+            _stats.ClearAllModifiers();
+            ClearInvincibility();
+            ClearHitStun();
+            OnDeath?.Invoke();
         }
     }
 }
