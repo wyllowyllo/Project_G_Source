@@ -8,7 +8,7 @@ namespace Combat.Attack
     {
         private const int DefaultMaxComboSteps = 3;
         private const float DefaultComboWindow = 0.8f;
-        private static readonly float[] _defaultComboMultipliers = { 1.0f, 1.1f, 1.3f };
+        private static readonly float[] s_defaultComboMultipliers = { 1.0f, 1.1f, 1.3f };
 
         [SerializeField] private ComboSettings _comboSettings;
 
@@ -93,10 +93,10 @@ namespace Combat.Attack
             if (_comboSettings != null)
                 return _comboSettings.GetComboMultiplier(step);
 
-            if (step < 1 || step > _defaultComboMultipliers.Length)
+            if (step < 1 || step > s_defaultComboMultipliers.Length)
                 return 1f;
 
-            return _defaultComboMultipliers[step - 1];
+            return s_defaultComboMultipliers[step - 1];
         }
     }
 }

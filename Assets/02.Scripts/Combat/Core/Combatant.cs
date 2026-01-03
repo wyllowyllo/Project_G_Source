@@ -97,6 +97,17 @@ namespace Combat.Core
             }
         }
 
+        public void TakeDamage(AttackContext attackContext, HitContext hitContext)
+        {
+            if (!CanTakeDamage) return;
+
+            var defenderInfo = new DefenderInfo(this, this);
+            var result = DamageCalculator.Calculate(attackContext, defenderInfo);
+            var damageInfo = new DamageInfo(result.FinalDamage, result.IsCritical, hitContext);
+
+            TakeDamage(damageInfo);
+        }
+
         public void Heal(float amount)
         {
             _health.Heal(amount);

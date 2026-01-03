@@ -39,29 +39,36 @@ namespace Combat.Attack
 
         private void OnTriggerEnter(Collider other)
         {
-            if (_currentAttackContext.Attacker == null) return;
+            if (!TryGetValidTarget(other, out var damageable, out var targetCombatant)) return;
 
-            var damageable = other.GetComponent<IDamageable>(); 
-            if (damageable == null) return;
+            ProcessHit(other, damageable, targetCombatant);
+        }
 
-            if (_hitTargets.Contains(damageable)) return;
+        private bool TryGetValidTarget(Collider other, out IDamageable damageable, out ICombatant targetCombatant)
+        {
+            damageable = null;
+            targetCombatant = null;
 
-            var targetCombatant = other.GetComponent<ICombatant>();
-            if (targetCombatant != null && targetCombatant.Team == _currentAttackContext.Attacker.Team) return;
+            if (_currentAttackContext.Source == DamageSource.None) return false;
 
-            if (!damageable.CanTakeDamage) return;
+            damageable = other.GetComponent<IDamageable>();
+            if (damageable == null) return false;
 
+            if (_hitTargets.Contains(damageable)) return false;
+
+            targetCombatant = other.GetComponent<ICombatant>();
+            if (targetCombatant != null && targetCombatant.Team == _currentAttackContext.AttackerTeam) return false;
+
+            if (!damageable.CanTakeDamage) return false;
+
+            return true;
+        }
+
+        private void ProcessHit(Collider other, IDamageable damageable, ICombatant targetCombatant)
+        {
             _hitTargets.Add(damageable);
 
-            var targetHealth = other.GetComponent<IHealthProvider>();
-            var defenderInfo = new DefenderInfo(targetCombatant, targetHealth);
-            var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
-
-            Vector3 hitPoint = other.ClosestPoint(transform.position);
-            Vector3 hitDirection = (other.transform.position - _currentAttackContext.Attacker.Transform.position).normalized;
-
-            var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
-            var damageInfo = new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, _currentAttackContext.Attacker, hitContext);
+            var damageInfo = CalculateDamage(other, targetCombatant);
 
             damageable.TakeDamage(damageInfo);
             OnHit?.Invoke(damageable, damageInfo);
@@ -70,6 +77,19 @@ namespace Combat.Attack
             {
                 DisableHitbox();
             }
+        }
+
+        private DamageInfo CalculateDamage(Collider other, ICombatant targetCombatant)
+        {
+            var targetHealth = other.GetComponent<IHealthProvider>();
+            var defenderInfo = new DefenderInfo(targetCombatant, targetHealth);
+            var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
+
+            Vector3 hitPoint = other.ClosestPoint(transform.position);
+            Vector3 hitDirection = (other.transform.position - _currentAttackContext.AttackerPosition).normalized;
+
+            var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
+            return new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);
         }
     }
 }

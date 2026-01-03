@@ -46,18 +46,14 @@ namespace Combat.Core
         {
             if (target == null || !target.CanTakeDamage) return;
 
-            var context = AttackContext.Fixed(attacker, damage, type: type);
-            var defender = new DefenderInfo(target, target);
-            var result = DamageCalculator.Calculate(context, defender);
-
+            var attackContext = AttackContext.Fixed(attacker, damage, type: type);
             var hitContext = new HitContext(
                 target.Transform.position,
                 (target.Transform.position - attacker.Transform.position).normalized,
                 type
             );
-            var damageInfo = new DamageInfo(result.FinalDamage, result.IsCritical, attacker, hitContext);
 
-            target.TakeDamage(damageInfo);
+            target.TakeDamage(attackContext, hitContext);
         }
         
         // 히트박스 없이 직접 데미지 적용 (공격자 없는 경우: 함정, 환경 등)
@@ -66,7 +62,7 @@ namespace Combat.Core
             if (target == null || !target.CanTakeDamage) return;
 
             var hitContext = new HitContext(target.Transform.position, Vector3.zero, type);
-            var damageInfo = new DamageInfo(damage, false, null, hitContext);
+            var damageInfo = new DamageInfo(damage, false, hitContext);
 
             target.TakeDamage(damageInfo);
         }
