@@ -5,8 +5,6 @@ namespace Combat.Damage
 {
     public static class DamageCalculator
 {
-    private const float DEFENSE_CONSTANT = 100f;
-    private const float MINIMUM_DAMAGE = 1f;
 
     public static DamageResult Calculate(AttackContext attack, DefenderInfo defender)
     {
@@ -23,7 +21,7 @@ namespace Combat.Damage
             : ApplyDefense(damageAfterCritical, defenderDefense);
 
         return new DamageResult(
-            Mathf.Max(MINIMUM_DAMAGE, finalDamage),
+            Mathf.Max(CombatConstants.MINIMUM_DAMAGE, finalDamage),
             isCritical
         );
     }
@@ -62,7 +60,7 @@ namespace Combat.Damage
 
     private static float ApplyDefense(float damage, float defense)
     {
-        float reduction = defense / (defense + DEFENSE_CONSTANT);
+        float reduction = defense / (defense + CombatConstants.DEFENSE_CONSTANT);
         return damage * (1f - reduction);
     }
 }

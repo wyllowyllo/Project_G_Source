@@ -46,9 +46,10 @@ namespace Combat.Core
                 : new CombatStats(10f, 0.1f, 1.5f, 0f);
         }
 
-        private void Start()
+        private void OnEnable()
         {
-            _health.OnDeath += HandleDeath;
+            if (_health != null)
+                _health.OnDeath += HandleDeath;
         }
 
         private void Update()
@@ -68,7 +69,7 @@ namespace Combat.Core
             }
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             if (_health != null)
                 _health.OnDeath -= HandleDeath;

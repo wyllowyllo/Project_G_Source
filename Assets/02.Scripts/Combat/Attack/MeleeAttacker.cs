@@ -52,7 +52,7 @@ namespace Combat.Attack
 #endif
         }
 
-        private void Start()
+        private void OnEnable()
         {
             if (_hitbox != null)
             {
@@ -60,7 +60,7 @@ namespace Combat.Attack
             }
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             if (_hitbox != null)
             {
