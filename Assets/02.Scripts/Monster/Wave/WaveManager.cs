@@ -24,7 +24,7 @@ namespace ProjectG.Monster
         [Header("디버그")]
         [SerializeField] private bool _showDebugGizmos = true;
 
-        private List<MonsterController> _spawnedMonsters;
+        private List<MonsterController> _spawnedMonsters = new List<MonsterController>();
         private float _spawnTimer;
 
         private void Start()

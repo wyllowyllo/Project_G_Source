@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbf4f1ddd2b77e840a767c5faed332a2, type: 3}
+  m_Name: MonsterData
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectG.Monster.MonsterData
+  _monsterName: Test
+  _monsterLevel: 1
+  _maxHealth: 100
+  _attackDamage: 10
+  _attackRange: 2
+  _attackCooldown: 1.5
+  _moveSpeed: 3.5
+  _rotationSpeed: 120
+  _detectionRange: 12
+  _engageRange: 10
+  _experienceReward: 10
+  _goldReward: 5
