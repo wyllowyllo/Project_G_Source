@@ -5,7 +5,7 @@ namespace ProjectG.Monster
 {
     /// <summary>
     /// 몬스터의 핵심 동작을 제어하는 컨트롤러.
-    /// 프로토타입: 기본 플레이어 추적 및 HP 시스템.
+    /// FSM을 사용하여 상태별 동작을 관리합니다.
     /// </summary>
     [RequireComponent(typeof(NavMeshAgent))]
     public class MonsterController : MonoBehaviour, IDamageable
@@ -18,21 +18,26 @@ namespace ProjectG.Monster
 
         // 컴포넌트
         private NavMeshAgent _navAgent;
+        private MonsterStateMachine _stateMachine;
 
         // 상태
         private float _currentHealth;
         private bool _isAlive = true;
-        private Vector3 _targetPosition;
 
         // 프로퍼티
         public bool IsAlive => _isAlive;
         public float CurrentHealth => _currentHealth;
         public MonsterData Data => _monsterData;
+        
+        public NavMeshAgent NavAgent => _navAgent;
+        public Transform PlayerTransform => _playerTransform;
+        public MonsterStateMachine StateMachine => _stateMachine;
 
         private void Awake()
         {
             _navAgent = GetComponent<NavMeshAgent>();
             InitializeMonster();
+            InitializeStateMachine();
         }
 
         private void Start()
@@ -47,7 +52,7 @@ namespace ProjectG.Monster
                 return;
             }
 
-            UpdateMovement();
+            _stateMachine?.Update();
         }
 
         private void InitializeMonster()
@@ -66,6 +71,20 @@ namespace ProjectG.Monster
             _navAgent.stoppingDistance = _monsterData.AttackRange;
         }
 
+        private void InitializeStateMachine()
+        {
+            _stateMachine = new MonsterStateMachine(this);
+
+            // 상태 등록
+            _stateMachine.RegisterState(MonsterState.Idle, new IdleState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Engage, new EngageState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Attack, new AttackState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Dead, new DeadState(this));
+
+            // 초기 상태 설정
+            _stateMachine.Initialize(MonsterState.Idle);
+        }
+
         private void FindPlayer()
         {
             // TODO: 플레이어 태그나 싱글톤으로 찾기
@@ -80,22 +99,6 @@ namespace ProjectG.Monster
             }
         }
 
-        private void UpdateMovement()
-        {
-            if (_playerTransform == null)
-            {
-                return;
-            }
-
-            float distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
-
-            // 감지 범위 내에 있으면 플레이어 추적
-            if (distanceToPlayer <= _monsterData.DetectionRange)
-            {
-                _navAgent.SetDestination(_playerTransform.position);
-            }
-        }
-
         public void TakeDamage(float damage, Vector3 attackerPosition)
         {
             if (!_isAlive)
@@ -104,6 +107,8 @@ namespace ProjectG.Monster
             }
 
             _currentHealth -= damage;
+
+            // TODO: Hit 상태 추가 시 피격 처리
 
             if (_currentHealth <= 0)
             {
@@ -114,18 +119,7 @@ namespace ProjectG.Monster
         private void Die()
         {
             _isAlive = false;
-            _navAgent.isStopped = true;
-
-            // TODO: 사망 애니메이션, 보상 드롭
-            Debug.Log($"{gameObject.name} 사망");
-
-            // 임시: 3초 후 파괴
-            Destroy(gameObject, 3f);
-        }
-
-        public void SetTargetPosition(Vector3 targetPosition)
-        {
-            _targetPosition = targetPosition;
+            _stateMachine?.ChangeState(MonsterState.Dead);
         }
 
         // 디버그용
