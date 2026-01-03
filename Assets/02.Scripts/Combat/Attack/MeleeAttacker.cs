@@ -33,8 +33,8 @@ namespace Combat.Attack
         public bool IsAttacking => _isAttacking;
         public float CurrentMultiplier => _currentMultiplier;
 
-        private int MaxComboSteps => _comboSettings != null ? _comboSettings.MaxComboSteps : DEFAULT_MAX_COMBO_STEPS;
-        private float ComboWindowDuration => _comboSettings != null ? _comboSettings.ComboWindowDuration : DEFAULT_COMBO_WINDOW;
+        public int MaxComboSteps => _comboSettings != null ? _comboSettings.MaxComboSteps : DEFAULT_MAX_COMBO_STEPS;
+        public float ComboWindowDuration => _comboSettings != null ? _comboSettings.ComboWindowDuration : DEFAULT_COMBO_WINDOW;
         
         public event Action<int, float> OnComboAttack;
         public event Action OnComboReset;
