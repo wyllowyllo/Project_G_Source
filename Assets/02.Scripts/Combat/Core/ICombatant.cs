@@ -7,5 +7,6 @@ namespace Combat.Core
         Transform Transform { get; }
         CombatStats Stats { get; }
         CombatTeam Team { get; }
+        CombatantAttackStats GetAttackStats();
     }
 }

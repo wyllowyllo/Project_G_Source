@@ -21,6 +21,12 @@ namespace Combat.Core
 
         public Transform Transform => transform;
         public CombatStats Stats => _stats;
+
+        public CombatantAttackStats GetAttackStats()
+            => new CombatantAttackStats(
+                Stats.AttackDamage.Value,
+                Stats.CriticalChance.Value,
+                Stats.CriticalMultiplier.Value);
         public CombatTeam Team => _team;
 
         public float CurrentHealth => _health.CurrentHealth;

@@ -12,14 +12,16 @@ namespace Combat.Attack
         [SerializeField] private bool _hitMultipleTargets = true;
 
         private Collider _collider;
-        private AttackContext _currentAttackContext;
+        private CombatTeam _attackerTeam;
+        private bool _isActive;
         private readonly HashSet<IDamageable> _hitTargets = new HashSet<IDamageable>();
 
-        public event Action<IDamageable, DamageInfo> OnHit;
+        public event Action<HitInfo> OnHit;
 
-        public void EnableHitbox(AttackContext attackContext)
+        public void EnableHitbox(CombatTeam attackerTeam)
         {
-            _currentAttackContext = attackContext;
+            _attackerTeam = attackerTeam;
+            _isActive = true;
             _hitTargets.Clear();
             _collider.enabled = true;
         }
@@ -27,6 +29,7 @@ namespace Combat.Attack
         public void DisableHitbox()
         {
             _collider.enabled = false;
+            _isActive = false;
             _hitTargets.Clear();
         }
 
@@ -49,7 +52,7 @@ namespace Combat.Attack
             damageable = null;
             targetCombatant = null;
 
-            if (_currentAttackContext.Source == DamageSource.None) return false;
+            if (!_isActive) return false;
 
             damageable = other.GetComponent<IDamageable>();
             if (damageable == null) return false;
@@ -57,7 +60,7 @@ namespace Combat.Attack
             if (_hitTargets.Contains(damageable)) return false;
 
             targetCombatant = other.GetComponent<ICombatant>();
-            if (targetCombatant != null && targetCombatant.Team == _currentAttackContext.AttackerTeam) return false;
+            if (targetCombatant != null && targetCombatant.Team == _attackerTeam) return false;
 
             if (!damageable.CanTakeDamage) return false;
 
@@ -68,28 +71,15 @@ namespace Combat.Attack
         {
             _hitTargets.Add(damageable);
 
-            var damageInfo = CalculateDamage(other, targetCombatant);
+            var targetHealth = other.GetComponent<IHealthProvider>();
+            var hitInfo = new HitInfo(damageable, targetCombatant, targetHealth, other);
 
-            damageable.TakeDamage(damageInfo);
-            OnHit?.Invoke(damageable, damageInfo);
+            OnHit?.Invoke(hitInfo);
 
             if (!_hitMultipleTargets)
             {
                 DisableHitbox();
             }
-        }
-
-        private DamageInfo CalculateDamage(Collider other, ICombatant targetCombatant)
-        {
-            var targetHealth = other.GetComponent<IHealthProvider>();
-            var defenderInfo = new DefenderInfo(targetCombatant, targetHealth);
-            var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
-
-            Vector3 hitPoint = other.ClosestPoint(transform.position);
-            Vector3 hitDirection = (other.transform.position - _currentAttackContext.AttackerPosition).normalized;
-
-            var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
-            return new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);
         }
     }
 }

@@ -18,6 +18,7 @@ namespace Combat.Attack
 
         private Combatant _combatant;
         private ComboAttackHandler _comboHandler;
+        private AttackContext _currentAttackContext;
         
         public ICombatant Combatant => _combatant;
         public bool CanAttack => !_comboHandler.IsAttacking && _combatant.IsAlive && !_combatant.IsStunned;
@@ -79,8 +80,8 @@ namespace Combat.Attack
         {
             if (_hitbox == null) return;
 
-            var context = AttackContext.Scaled(_combatant, _comboHandler.CurrentMultiplier, type: _damageType);
-            _hitbox.EnableHitbox(context);
+            _currentAttackContext = AttackContext.Scaled(_combatant, _comboHandler.CurrentMultiplier, type: _damageType);
+            _hitbox.EnableHitbox(_combatant.Team);
         }
         
         public void OnAttackHitEnd()
@@ -110,9 +111,19 @@ namespace Combat.Attack
             OnComboReset?.Invoke();
         }
 
-        private void HandleHit(IDamageable target, DamageInfo damageInfo)
+        private void HandleHit(HitInfo hitInfo)
         {
-            OnHit?.Invoke(target, damageInfo);
+            var defenderInfo = new DefenderInfo(hitInfo.TargetCombatant, hitInfo.TargetHealth);
+            var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
+
+            Vector3 hitPoint = hitInfo.TargetCollider.ClosestPoint(transform.position);
+            Vector3 hitDirection = (hitInfo.TargetCollider.transform.position - _currentAttackContext.AttackerPosition).normalized;
+
+            var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
+            var damageInfo = new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);
+
+            hitInfo.Target.TakeDamage(damageInfo);
+            OnHit?.Invoke(hitInfo.Target, damageInfo);
         }
     }
 }

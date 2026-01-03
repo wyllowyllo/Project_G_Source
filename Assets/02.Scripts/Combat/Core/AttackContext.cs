@@ -20,9 +20,7 @@ namespace Combat.Core
         float baseValue,
         float multiplier,
         DamageType damageType,
-        float attackDamage,
-        float criticalChance,
-        float criticalMultiplier,
+        CombatantAttackStats attackStats,
         CombatTeam attackerTeam,
         Vector3 attackerPosition)
     {
@@ -30,9 +28,9 @@ namespace Combat.Core
         BaseValue = baseValue;
         Multiplier = multiplier;
         DamageType = damageType;
-        AttackDamage = attackDamage;
-        CriticalChance = criticalChance;
-        CriticalMultiplier = criticalMultiplier;
+        AttackDamage = attackStats.AttackDamage;
+        CriticalChance = attackStats.CriticalChance;
+        CriticalMultiplier = attackStats.CriticalMultiplier;
         AttackerTeam = attackerTeam;
         AttackerPosition = attackerPosition;
     }
@@ -43,9 +41,7 @@ namespace Combat.Core
             baseMultiplier,
             buffMultiplier,
             type,
-            attacker.Stats.AttackDamage.Value,
-            attacker.Stats.CriticalChance.Value,
-            attacker.Stats.CriticalMultiplier.Value,
+            attacker.GetAttackStats(),
             attacker.Team,
             attacker.Transform.position);
 
@@ -55,9 +51,7 @@ namespace Combat.Core
             damage,
             multiplier,
             type,
-            attacker.Stats.AttackDamage.Value,
-            attacker.Stats.CriticalChance.Value,
-            attacker.Stats.CriticalMultiplier.Value,
+            attacker.GetAttackStats(),
             attacker.Team,
             attacker.Transform.position);
 
@@ -67,9 +61,7 @@ namespace Combat.Core
             percent,
             multiplier,
             type,
-            attacker.Stats.AttackDamage.Value,
-            attacker.Stats.CriticalChance.Value,
-            attacker.Stats.CriticalMultiplier.Value,
+            attacker.GetAttackStats(),
             attacker.Team,
             attacker.Transform.position);
 
@@ -79,9 +71,7 @@ namespace Combat.Core
             percent,
             multiplier,
             type,
-            attacker.Stats.AttackDamage.Value,
-            attacker.Stats.CriticalChance.Value,
-            attacker.Stats.CriticalMultiplier.Value,
+            attacker.GetAttackStats(),
             attacker.Team,
             attacker.Transform.position);
 }
