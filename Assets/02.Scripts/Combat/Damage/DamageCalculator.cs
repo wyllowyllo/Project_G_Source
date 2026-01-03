@@ -21,7 +21,7 @@ namespace Combat.Damage
             : ApplyDefense(damageAfterCritical, defenderDefense);
 
         return new DamageResult(
-            Mathf.Max(CombatConstants.MINIMUM_DAMAGE, finalDamage),
+            Mathf.Max(CombatConstants.MinimumDamage, finalDamage),
             isCritical
         );
     }
@@ -60,7 +60,7 @@ namespace Combat.Damage
 
     private static float ApplyDefense(float damage, float defense)
     {
-        float reduction = defense / (defense + CombatConstants.DEFENSE_CONSTANT);
+        float reduction = defense / (defense + CombatConstants.DefenseConstant);
         return damage * (1f - reduction);
     }
 }

@@ -7,34 +7,26 @@ using UnityEngine;
 namespace Combat.Attack
 {
     [RequireComponent(typeof(Combatant))]
+    [RequireComponent(typeof(ComboAttackHandler))]
     public class MeleeAttacker : MonoBehaviour, IAttacker
     {
-        private const int DEFAULT_MAX_COMBO_STEPS = 3;
-        private const float DEFAULT_COMBO_WINDOW = 0.8f;
-        private static readonly float[] _defaultComboMultipliers = { 1.0f, 1.1f, 1.3f };
-
         [Header("References")]
         [SerializeField] private HitboxTrigger _hitbox;
 
         [Header("Settings")]
-        [SerializeField] private ComboSettings _comboSettings;
         [SerializeField] private DamageType _damageType = DamageType.Normal;
 
         private Combatant _combatant;
-        private int _currentComboStep;
-        private float _lastAttackTime;
-        private bool _isAttacking;
-        private float _currentMultiplier;
+        private ComboAttackHandler _comboHandler;
         
         public ICombatant Combatant => _combatant;
-        public bool CanAttack => !_isAttacking && _combatant.IsAlive && !_combatant.IsStunned;
+        public bool CanAttack => !_comboHandler.IsAttacking && _combatant.IsAlive && !_combatant.IsStunned;
         
-        public int CurrentComboStep => _currentComboStep;
-        public bool IsAttacking => _isAttacking;
-        public float CurrentMultiplier => _currentMultiplier;
-
-        public int MaxComboSteps => _comboSettings != null ? _comboSettings.MaxComboSteps : DEFAULT_MAX_COMBO_STEPS;
-        public float ComboWindowDuration => _comboSettings != null ? _comboSettings.ComboWindowDuration : DEFAULT_COMBO_WINDOW;
+        public int CurrentComboStep => _comboHandler.CurrentComboStep;
+        public bool IsAttacking => _comboHandler.IsAttacking;
+        public float CurrentMultiplier => _comboHandler.CurrentMultiplier;
+        public int MaxComboSteps => _comboHandler.MaxComboSteps;
+        public float ComboWindowDuration => _comboHandler.ComboWindowDuration;
         
         public event Action<int, float> OnComboAttack;
         public event Action OnComboReset;
@@ -43,6 +35,7 @@ namespace Combat.Attack
         private void Awake()
         {
             _combatant = GetComponent<Combatant>();
+            _comboHandler = GetComponent<ComboAttackHandler>();
 
 #if UNITY_EDITOR
             if (_hitbox == null)
@@ -54,6 +47,9 @@ namespace Combat.Attack
 
         private void OnEnable()
         {
+            _comboHandler.OnComboAttack += HandleComboAttack;
+            _comboHandler.OnComboReset += HandleComboReset;
+            
             if (_hitbox != null)
             {
                 _hitbox.OnHit += HandleHit;
@@ -62,42 +58,19 @@ namespace Combat.Attack
 
         private void OnDisable()
         {
+            _comboHandler.OnComboAttack -= HandleComboAttack;
+            _comboHandler.OnComboReset -= HandleComboReset;
+            
             if (_hitbox != null)
             {
                 _hitbox.OnHit -= HandleHit;
-            }
-        }
-
-        private void Update()
-        {
-            if (_currentComboStep > 0 && !_isAttacking && IsComboWindowExpired())
-            {
-                ResetCombo();
             }
         }
         
         public bool TryAttack()
         {
             if (!CanAttack) return false;
-
-            if (IsComboWindowExpired())
-            {
-                ResetCombo();
-            }
-
-            _currentComboStep++;
-            if (_currentComboStep > MaxComboSteps)
-            {
-                _currentComboStep = 1;
-            }
-
-            _lastAttackTime = Time.time;
-            _isAttacking = true;
-            _currentMultiplier = GetComboMultiplier(_currentComboStep);
-
-            OnComboAttack?.Invoke(_currentComboStep, _currentMultiplier);
-
-            return true;
+            return _comboHandler.TryAttack();
         }
         
         public void Attack() => TryAttack();
@@ -106,7 +79,7 @@ namespace Combat.Attack
         {
             if (_hitbox == null) return;
 
-            var context = AttackContext.Scaled(_combatant, _currentMultiplier, type: _damageType);
+            var context = AttackContext.Scaled(_combatant, _comboHandler.CurrentMultiplier, type: _damageType);
             _hitbox.EnableHitbox(context);
         }
         
@@ -119,31 +92,22 @@ namespace Combat.Attack
         
         public void OnAttackAnimationEnd()
         {
-            _isAttacking = false;
+            _comboHandler.OnAttackAnimationEnd();
         }
         
         public void ResetCombo()
         {
-            _currentComboStep = 0;
-            _isAttacking = false;
-            _currentMultiplier = 1f;
+            _comboHandler.ResetCombo();
+        }
+
+        private void HandleComboAttack(int step, float multiplier)
+        {
+            OnComboAttack?.Invoke(step, multiplier);
+        }
+
+        private void HandleComboReset()
+        {
             OnComboReset?.Invoke();
-        }
-
-        private bool IsComboWindowExpired()
-        {
-            return _currentComboStep > 0 && (Time.time - _lastAttackTime) > ComboWindowDuration;
-        }
-
-        private float GetComboMultiplier(int step)
-        {
-            if (_comboSettings != null)
-                return _comboSettings.GetComboMultiplier(step);
-
-            if (step < 1 || step > _defaultComboMultipliers.Length)
-                return 1f;
-
-            return _defaultComboMultipliers[step - 1];
         }
 
         private void HandleHit(IDamageable target, DamageInfo damageInfo)

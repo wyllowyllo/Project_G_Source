@@ -25,10 +25,10 @@ namespace Combat.Core
             {
                 Debug.LogError("[CombatStats] Cannot create from null CombatStatsData");
                 return new CombatStats(
-                    CombatConstants.DEFAULT_ATTACK_DAMAGE,
-                    CombatConstants.DEFAULT_CRITICAL_CHANCE,
-                    CombatConstants.DEFAULT_CRITICAL_MULTIPLIER,
-                    CombatConstants.DEFAULT_DEFENSE
+                    CombatConstants.DefaultAttackDamage,
+                    CombatConstants.DefaultCriticalChance,
+                    CombatConstants.DefaultCriticalMultiplier,
+                    CombatConstants.DefaultDefense
                 );
             }
 

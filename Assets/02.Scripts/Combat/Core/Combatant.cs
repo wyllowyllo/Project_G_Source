@@ -43,7 +43,12 @@ namespace Combat.Core
             _health = GetComponent<Health>();
             _stats = _statsData != null
                 ? CombatStats.FromData(_statsData)
-                : new CombatStats(10f, 0.1f, 1.5f, 0f);
+                : new CombatStats(
+                    CombatConstants.DefaultAttackDamage, 
+                    CombatConstants.DefaultCriticalChance, 
+                    CombatConstants.DefaultCriticalMultiplier, 
+                    CombatConstants.DefaultDefense
+                );
         }
 
         private void OnEnable()
