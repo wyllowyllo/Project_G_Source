@@ -4,33 +4,33 @@ using KinematicCharacterController;
 public class PlayerMovement : MonoBehaviour, ICharacterController
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 15f;
-    [SerializeField] private float acceleration = 20f;
-    [SerializeField] private float deceleration = 25f;
+    [SerializeField] private float _moveSpeed = 5f;
+    [SerializeField] private float _rotationSpeed = 15f;
+    [SerializeField] private float _acceleration = 20f;
+    [SerializeField] private float _deceleration = 25f;
 
     [Header("Camera Settings")]
-    [SerializeField] private Transform cameraTransform;
-    [SerializeField] private bool useCameraForward = true;
+    [SerializeField] private Transform _cameraTransform;
+    [SerializeField] private bool _useCameraForward = true;
 
     [Header("Ground Settings")]
-    [SerializeField] private float maxStableSlopeAngle = 60f;
+    [SerializeField] private float _maxStableSlopeAngle = 60f;
 
     // Components
-    private KinematicCharacterMotor motor;
-    private Animator animator;
+    private KinematicCharacterMotor _motor;
+    private Animator _animator;
 
     // Movement State
-    private Vector3 moveInputVector;
-    private Vector3 currentVelocity;
-    private Vector3 lookDirection;
+    private Vector3 _moveInputVector;
+    private Vector3 _currentVelocity;
+    private Vector3 _lookDirection;
 
     // Animation Parameters
-    private readonly int moveSpeedHash = Animator.StringToHash("MoveSpeed");
-    private readonly int isMovingHash = Animator.StringToHash("IsMoving");
+    private readonly int _moveSpeedHash = Animator.StringToHash("MoveSpeed");
+    private readonly int _isMovingHash = Animator.StringToHash("IsMoving");
 
     // Control Flags
-    private bool movementEnabled = true;
+    private bool _movementEnabled = true;
 
     private void Awake()
     {
@@ -41,18 +41,18 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
     private void Start()
     {
         // 카메라 자동 할당
-        if (cameraTransform == null && Camera.main != null)
+        if (_cameraTransform == null && Camera.main != null)
         {
-            cameraTransform = Camera.main.transform;
+            _cameraTransform = Camera.main.transform;
         }
 
         // 초기 방향 설정
-        lookDirection = transform.forward;
+        _lookDirection = transform.forward;
     }
 
     private void Update()
     {
-        if (!movementEnabled) return;
+        if (!_movementEnabled) return;
 
         HandleInput();
         UpdateAnimations();
@@ -60,15 +60,15 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
 
     private void InitializeComponents()
     {
-        motor = GetComponent<KinematicCharacterMotor>();
-        animator = GetComponent<Animator>();
+        _motor = GetComponent<KinematicCharacterMotor>();
+        _animator = GetComponent<Animator>();
 
-        if (motor == null)
+        if (_motor == null)
         {
             Debug.LogError($"KinematicCharacterMotor가 {gameObject.name}에 없습니다!");
         }
 
-        if (animator == null)
+        if (_animator == null)
         {
             Debug.LogWarning($"Animator가 {gameObject.name}에 없습니다.");
         }
@@ -76,13 +76,13 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
 
     private void SetupMotor()
     {
-        if (motor == null) return;
+        if (_motor == null) return;
 
         // KCC Motor에 이 스크립트를 컨트롤러로 등록
-        motor.CharacterController = this;
+        _motor.CharacterController = this;
 
         // 기본 설정
-        motor.MaxStableSlopeAngle = maxStableSlopeAngle;
+        _motor.MaxStableSlopeAngle = _maxStableSlopeAngle;
     }
 
     private void HandleInput()
@@ -95,13 +95,13 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         Vector3 inputVector = new Vector3(horizontal, 0f, vertical);
 
         // 카메라 기준으로 이동 방향 계산
-        if (useCameraForward && cameraTransform != null)
+        if (_useCameraForward && _cameraTransform != null)
         {
-            moveInputVector = GetCameraRelativeMovement(inputVector);
+            _moveInputVector = GetCameraRelativeMovement(inputVector);
         }
         else
         {
-            moveInputVector = inputVector.normalized;
+            _moveInputVector = inputVector.normalized;
         }
     }
 
@@ -113,8 +113,8 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         }
 
         // 카메라의 forward와 right 벡터 가져오기
-        Vector3 cameraForward = cameraTransform.forward;
-        Vector3 cameraRight = cameraTransform.right;
+        Vector3 cameraForward = _cameraTransform.forward;
+        Vector3 cameraRight = _cameraTransform.right;
 
         // y축 제거 (수평 이동만)
         cameraForward.y = 0f;
@@ -134,19 +134,19 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
 
     public void UpdateRotation(ref Quaternion currentRotation, float deltaTime)
     {
-        if (moveInputVector.magnitude > 0.1f)
+        if (_moveInputVector.magnitude > 0.1f)
         {
             // 이동 방향으로 회전
-            lookDirection = moveInputVector;
+            _lookDirection = _moveInputVector;
 
             // 목표 회전 계산
-            Quaternion targetRotation = Quaternion.LookRotation(lookDirection, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(_lookDirection, Vector3.up);
 
             // 부드러운 회전
             currentRotation = Quaternion.Slerp(
                 currentRotation,
                 targetRotation,
-                rotationSpeed * deltaTime
+                _rotationSpeed * deltaTime
             );
         }
     }
@@ -154,16 +154,16 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
     public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
     {
         // 목표 속도 계산
-        Vector3 targetVelocity = moveInputVector * moveSpeed;
+        Vector3 targetVelocity = _moveInputVector * _moveSpeed;
 
         // 부드러운 가속/감속
-        if (moveInputVector.magnitude > 0.1f)
+        if (_moveInputVector.magnitude > 0.1f)
         {
             // 가속
             currentVelocity = Vector3.Lerp(
                 currentVelocity,
                 targetVelocity,
-                acceleration * deltaTime
+                _acceleration * deltaTime
             );
         }
         else
@@ -172,12 +172,12 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
             currentVelocity = Vector3.Lerp(
                 currentVelocity,
                 Vector3.zero,
-                deceleration * deltaTime
+                _deceleration * deltaTime
             );
         }
 
         // 현재 속도 저장 (다른 스크립트에서 참조 가능)
-        this.currentVelocity = currentVelocity;
+        this._currentVelocity = currentVelocity;
     }
 
     public void PostGroundingUpdate(float deltaTime)
@@ -212,9 +212,6 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         // 안정성 리포트 처리
     }
 
-    /// <summary>
-    /// KCC가 호출 - 이산 충돌 감지 (모터의 캡슐 캐스트가 아닌 일반 충돌)
-    /// </summary>
     public void OnDiscreteCollisionDetected(Collider hitCollider)
     {
         // 이산 충돌 처리 (예: 트리거, 아이템 획득 등)
@@ -222,51 +219,51 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
 
     private void UpdateAnimations()
     {
-        if (animator == null) return;
+        if (_animator == null) return;
 
         // 이동 속도를 애니메이터에 전달
-        float moveAmount = moveInputVector.magnitude;
-        animator.SetFloat(moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
-        animator.SetBool(isMovingHash, moveAmount > 0.1f);
+        float moveAmount = _moveInputVector.magnitude;
+        _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
+        _animator.SetBool(_isMovingHash, moveAmount > 0.1f);
     }
 
     public void SetMovementEnabled(bool enabled)
     {
-        movementEnabled = enabled;
+        _movementEnabled = enabled;
 
         if (!enabled)
         {
-            moveInputVector = Vector3.zero;
-            currentVelocity = Vector3.zero;
+            _moveInputVector = Vector3.zero;
+            _currentVelocity = Vector3.zero;
         }
     }
 
     public bool IsMoving()
     {
-        return moveInputVector.magnitude > 0.1f;
+        return _moveInputVector.magnitude > 0.1f;
     }
 
     public Vector3 GetCurrentVelocity()
     {
-        return currentVelocity;
+        return _currentVelocity;
     }
 
     public bool IsGrounded()
     {
-        return motor != null && motor.GroundingStatus.IsStableOnGround;
+        return _motor != null && _motor.GroundingStatus.IsStableOnGround;
     }
 
     public void SetLookDirection(Vector3 direction)
     {
         if (direction.magnitude > 0.1f)
         {
-            lookDirection = direction.normalized;
+            _lookDirection = direction.normalized;
         }
     }
 
     public KinematicCharacterMotor GetMotor()
     {
-        return motor;
+        return _motor;
     }
 
     private void OnDrawGizmos()
@@ -274,22 +271,22 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         if (!Application.isPlaying) return;
 
         // 이동 방향 표시
-        if (moveInputVector.magnitude > 0.1f)
+        if (_moveInputVector.magnitude > 0.1f)
         {
             Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, transform.position + moveInputVector * 2f);
+            Gizmos.DrawLine(transform.position, transform.position + _moveInputVector * 2f);
         }
 
         // 바라보는 방향 표시
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + lookDirection * 1.5f);
+        Gizmos.DrawLine(transform.position, transform.position + _lookDirection * 1.5f);
 
         // 현재 속도 표시
-        if (currentVelocity.magnitude > 0.1f)
+        if (_currentVelocity.magnitude > 0.1f)
         {
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position + Vector3.up * 0.1f,
-                           transform.position + Vector3.up * 0.1f + currentVelocity.normalized * 1f);
+                           transform.position + Vector3.up * 0.1f + _currentVelocity.normalized * 1f);
         }
     }
 
