@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace ProjectG.Monster
+namespace Monster
 {
     /// <summary>
     /// 몬스터의 핵심 동작을 제어하는 컨트롤러.
@@ -15,6 +15,7 @@ namespace ProjectG.Monster
 
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
+        [SerializeField] private EnemyGroup _enemyGroup;
 
         // 컴포넌트
         private NavMeshAgent _navAgent;
@@ -28,10 +29,11 @@ namespace ProjectG.Monster
         public bool IsAlive => _isAlive;
         public float CurrentHealth => _currentHealth;
         public MonsterData Data => _monsterData;
-        
+
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
         public MonsterStateMachine StateMachine => _stateMachine;
+        public EnemyGroup EnemyGroup => _enemyGroup;
 
         private void Awake()
         {
@@ -97,6 +99,14 @@ namespace ProjectG.Monster
             {
                 Debug.LogWarning($"{gameObject.name}: Player를 찾을 수 없습니다.");
             }
+        }
+
+        /// <summary>
+        /// EnemyGroup 설정
+        /// </summary>
+        public void SetEnemyGroup(EnemyGroup group)
+        {
+            _enemyGroup = group;
         }
 
         public void TakeDamage(float damage, Vector3 attackerPosition)

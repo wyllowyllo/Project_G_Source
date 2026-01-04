@@ -1,5 +1,5 @@
 using UnityEngine;
-using ProjectG.Monster;
+using Monster;
 
 namespace ProjectG.TestPlayer
 {

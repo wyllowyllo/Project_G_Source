@@ -1,11 +1,11 @@
 using UnityEngine;
 
-namespace ProjectG.Monster
+namespace Monster
 {
     /// <summary>
     /// 몬스터의 공격 상태.
-    /// 플레이어를 공격하고, 공격 범위를 벗어나면 Engage 상태로 복귀합니다.
-    /// 프로토타입: 기본 공격 로직 (애니메이션 및 데미지 처리는 추후 구현)
+    /// 플레이어를 공격하고, 공격 범위를 벗어나거나 슬롯을 잃으면 Engage 상태로 복귀합니다.
+    /// 알파: 공격 슬롯 시스템과 연동
     /// </summary>
     public class AttackState : IMonsterState
     {
@@ -40,6 +40,13 @@ namespace ProjectG.Monster
             if (_controller.PlayerTransform == null)
             {
                 _stateMachine.ChangeState(MonsterState.Idle);
+                return;
+            }
+
+            // 알파: 공격 슬롯을 잃으면 Engage로 복귀
+            if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
+            {
+                _stateMachine.ChangeState(MonsterState.Engage);
                 return;
             }
 
@@ -84,6 +91,12 @@ namespace ProjectG.Monster
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.isStopped = false;
+            }
+
+            // 알파: 공격 슬롯 반환
+            if (_controller.EnemyGroup != null)
+            {
+                _controller.EnemyGroup.ReleaseAttackSlot(_controller);
             }
         }
 

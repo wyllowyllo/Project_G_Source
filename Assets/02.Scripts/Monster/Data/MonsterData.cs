@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ProjectG.Monster
+namespace Monster
 {
     /// <summary>
     /// 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject.

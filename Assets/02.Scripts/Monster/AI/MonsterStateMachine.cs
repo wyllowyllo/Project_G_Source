@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace ProjectG.Monster
+namespace Monster
 {
     /// <summary>
     /// 몬스터의 상태를 관리하는 상태 머신.

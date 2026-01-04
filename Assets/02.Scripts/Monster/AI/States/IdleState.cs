@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ProjectG.Monster
+namespace Monster
 {
     /// <summary>
     /// 몬스터의 대기 상태.
