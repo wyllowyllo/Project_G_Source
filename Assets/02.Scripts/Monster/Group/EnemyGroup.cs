@@ -7,7 +7,8 @@ namespace Monster
     /// 몬스터 그룹의 전투를 운영하는 핵심 클래스.
     /// 링 포지셔닝, Aggro 관리, 공격 슬롯 분배를 담당합니다.
     /// </summary>
-    public class EnemyGroup : MonoBehaviour
+    public class 
+        EnemyGroup : MonoBehaviour
     {
         [Header("그룹 설정")]
         [SerializeField] private Vector3 _groupCenter;

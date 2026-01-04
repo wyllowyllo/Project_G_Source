@@ -32,22 +32,11 @@ namespace Monster
 
         public void Update()
         {
-            // 플레이어 감지 체크
-            if (_controller.PlayerTransform == null)
-            {
-                return;
-            }
+            // EnemyGroup.CheckAggro()가 플레이어 진입을 감지하고
+            // EnemyGroup.TransitionToCombat()이 그룹 전체를 Engage로 전환합니다.
+            // IdleState는 단순히 대기만 수행합니다.
 
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
-
-            // 감지 범위 내에 플레이어가 있으면 Engage 상태로 전환
-            if (distanceToPlayer <= _controller.Data.DetectionRange)
-            {
-                _stateMachine.ChangeState(MonsterState.Engage);
-            }
+            // TODO: 추후 Roam(순찰) 기능 추가 가능
         }
 
         public void Exit()
