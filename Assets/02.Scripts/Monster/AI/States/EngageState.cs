@@ -4,7 +4,7 @@ namespace Monster
 {
     /// <summary>
     /// 몬스터의 교전 상태.
-    /// 알파: EnemyGroup의 링 포지셔닝을 따르며, 공격 슬롯을 획득하면 Attack 상태로 전환합니다.
+    /// 플레이어를 직접 추적하며, 공격 범위 내에서 슬롯을 획득하면 Attack 상태로 전환합니다. (핵앤슬래시 스타일)
     /// </summary>
     public class EngageState : IMonsterState
     {
@@ -36,46 +36,9 @@ namespace Monster
 
         public void Update()
         {
-            // EnemyGroup이 필수입니다
-            if (_controller.EnemyGroup == null)
-            {
-                Debug.LogError($"{_controller.gameObject.name}: EnemyGroup이 없어 Engage 상태를 유지할 수 없습니다.");
-                _stateMachine.ChangeState(MonsterState.Idle);
-                return;
-            }
-
-            // 링 포지셔닝 모드 - NavAgent 목표는 EnemyGroup.UpdateEngagePositions()에서 설정됨
-
-            // 슬롯 요청 타이머 갱신
-            _slotRequestTimer += Time.deltaTime;
-
-            // 주기적으로 공격 슬롯 요청
-            if (_slotRequestTimer >= _slotRequestCooldown)
-            {
-                _slotRequestTimer = 0f;
-
-                // 공격 슬롯 획득 시도
-                if (_controller.EnemyGroup.RequestAttackSlot(_controller))
-                {
-                    TryTransitionToAttack();
-                }
-            }
-
-            // 이미 슬롯을 보유한 경우
-            if (_controller.EnemyGroup.CanAttack(_controller))
-            {
-                TryTransitionToAttack();
-            }
-        }
-
-
-        /// <summary>
-        /// 공격 범위 확인 후 Attack 상태로 전환 시도
-        /// </summary>
-        private void TryTransitionToAttack()
-        {
             if (_controller.PlayerTransform == null)
             {
+                _stateMachine.ChangeState(MonsterState.Idle);
                 return;
             }
 
@@ -84,9 +47,60 @@ namespace Monster
                 _controller.PlayerTransform.position
             );
 
-            // 공격 범위 내에 있으면 Attack 상태로 전환
+            // 감지 범위를 벗어나면 Idle로 복귀 (그룹 시스템이 있으면 이 체크는 무시)
+            if (_controller.EnemyGroup == null && distanceToPlayer > _controller.Data.DetectionRange)
+            {
+                _stateMachine.ChangeState(MonsterState.Idle);
+                return;
+            }
+
+            // 플레이어를 직접 추적
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
+            }
+
+            // 공격 범위 내에 들어오면 공격 시도
             if (distanceToPlayer <= _controller.Data.AttackRange)
             {
+                TryRequestAttackSlot();
+            }
+        }
+
+
+        /// <summary>
+        /// 공격 슬롯 요청 및 Attack 상태로 전환 시도
+        /// </summary>
+        private void TryRequestAttackSlot()
+        {
+            // EnemyGroup이 있으면 슬롯 시스템 사용
+            if (_controller.EnemyGroup != null)
+            {
+                // 이미 슬롯을 보유한 경우
+                if (_controller.EnemyGroup.CanAttack(_controller))
+                {
+                    _stateMachine.ChangeState(MonsterState.Attack);
+                    return;
+                }
+
+                // 슬롯 요청 타이머 갱신
+                _slotRequestTimer += Time.deltaTime;
+
+                // 주기적으로 공격 슬롯 요청
+                if (_slotRequestTimer >= _slotRequestCooldown)
+                {
+                    _slotRequestTimer = 0f;
+
+                    // 공격 슬롯 획득 시도
+                    if (_controller.EnemyGroup.RequestAttackSlot(_controller))
+                    {
+                        _stateMachine.ChangeState(MonsterState.Attack);
+                    }
+                }
+            }
+            else
+            {
+                // EnemyGroup이 없으면 바로 공격 (프로토타입 모드)
                 _stateMachine.ChangeState(MonsterState.Attack);
             }
         }

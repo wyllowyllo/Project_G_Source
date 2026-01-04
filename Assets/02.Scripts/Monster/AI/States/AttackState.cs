@@ -5,7 +5,7 @@ namespace Monster
     /// <summary>
     /// 몬스터의 공격 상태.
     /// 플레이어를 공격하고, 공격 범위를 벗어나거나 슬롯을 잃으면 Engage 상태로 복귀합니다.
-    /// 알파: 공격 슬롯 시스템과 연동
+    /// 공격 슬롯 시스템(최대 8명)과 연동하여 동시 공격을 제한합니다. (핵앤슬래시 스타일)
     /// </summary>
     public class AttackState : IMonsterState
     {
@@ -43,7 +43,7 @@ namespace Monster
                 return;
             }
 
-            // 알파: 공격 슬롯을 잃으면 Engage로 복귀
+            // 공격 슬롯을 잃으면 Engage로 복귀 (다른 몬스터에게 공격 기회 양보)
             if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
             {
                 _stateMachine.ChangeState(MonsterState.Engage);
@@ -93,7 +93,7 @@ namespace Monster
                 _controller.NavAgent.isStopped = false;
             }
 
-            // 알파: 공격 슬롯 반환
+            // 공격 슬롯 반환 (다른 몬스터가 사용 가능하도록)
             if (_controller.EnemyGroup != null)
             {
                 _controller.EnemyGroup.ReleaseAttackSlot(_controller);
