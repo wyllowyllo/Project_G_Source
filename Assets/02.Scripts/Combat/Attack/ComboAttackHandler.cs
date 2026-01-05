@@ -77,7 +77,7 @@ namespace Combat.Attack
 
         private void Update()
         {
-            if (_currentComboStep > 0 && !_isAttacking && IsComboWindowExpired())
+            if (!_isAttacking && IsComboWindowExpired())
             {
                 ResetCombo();
             }

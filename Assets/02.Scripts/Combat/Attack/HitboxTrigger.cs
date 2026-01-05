@@ -60,7 +60,7 @@ namespace Combat.Attack
             if (_hitTargets.Contains(damageable)) return false;
 
             targetCombatant = other.GetComponent<ICombatant>();
-            if (targetCombatant != null && targetCombatant.Team == _attackerTeam) return false;
+            if (targetCombatant != null && targetCombatant.IsAlly(_attackerTeam)) return false;
 
             if (!damageable.CanTakeDamage) return false;
 

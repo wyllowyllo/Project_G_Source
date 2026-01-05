@@ -21,5 +21,11 @@ namespace Combat.Core
             TargetHealth = targetHealth;
             TargetCollider = targetCollider;
         }
+
+        public Vector3 GetClosestHitPoint(Vector3 attackerPosition)
+            => TargetCollider.ClosestPoint(attackerPosition);
+
+        public Vector3 GetHitDirectionFrom(Vector3 attackerPosition)
+            => (TargetCollider.transform.position - attackerPosition).normalized;
     }
 }

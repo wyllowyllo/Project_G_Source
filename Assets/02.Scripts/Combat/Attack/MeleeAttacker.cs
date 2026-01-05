@@ -116,8 +116,8 @@ namespace Combat.Attack
             var defenderInfo = new DefenderInfo(hitInfo.TargetCombatant, hitInfo.TargetHealth);
             var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
 
-            Vector3 hitPoint = hitInfo.TargetCollider.ClosestPoint(transform.position);
-            Vector3 hitDirection = (hitInfo.TargetCollider.transform.position - _currentAttackContext.AttackerPosition).normalized;
+            Vector3 hitPoint = hitInfo.GetClosestHitPoint(transform.position);
+            Vector3 hitDirection = hitInfo.GetHitDirectionFrom(_currentAttackContext.AttackerPosition);
 
             var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
             var damageInfo = new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);

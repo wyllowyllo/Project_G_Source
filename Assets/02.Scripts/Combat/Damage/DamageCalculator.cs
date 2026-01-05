@@ -1,10 +1,20 @@
+using System.Collections.Generic;
 using Combat.Core;
+using Combat.Damage.Strategies;
 using UnityEngine;
 
 namespace Combat.Damage
 {
     public static class DamageCalculator
     {
+        private static readonly Dictionary<DamageSource, IDamageCalculationStrategy> _strategies =
+            new Dictionary<DamageSource, IDamageCalculationStrategy>
+            {
+                { DamageSource.AttackScaled, new AttackScaledDamageStrategy() },
+                { DamageSource.Fixed, new FixedDamageStrategy() },
+                { DamageSource.MaxHpPercent, new MaxHpPercentDamageStrategy() },
+                { DamageSource.CurrentHpPercent, new CurrentHpPercentDamageStrategy() }
+            };
 
         public static DamageResult Calculate(AttackContext attack, DefenderInfo defender)
         {
@@ -15,7 +25,7 @@ namespace Combat.Damage
                 ? baseDamage * attack.CriticalMultiplier
                 : baseDamage;
 
-            float defenderDefense = defender.Combatant?.Stats.Defense.Value ?? 0f;
+            float defenderDefense = defender.Combatant?.GetDefense() ?? 0f;
             float finalDamage = attack.DamageType == DamageType.True
                 ? damageAfterCritical
                 : ApplyDefense(damageAfterCritical, defenderDefense);
@@ -28,36 +38,13 @@ namespace Combat.Damage
 
         private static float CalculateBaseDamage(AttackContext attack, DefenderInfo defender)
         {
-            switch (attack.Source)
+            if (_strategies.TryGetValue(attack.Source, out var strategy))
             {
-                case DamageSource.AttackScaled:
-                    return attack.AttackDamage * attack.BaseValue * attack.Multiplier;
-
-                case DamageSource.Fixed:
-                    return attack.BaseValue * attack.Multiplier;
-
-                case DamageSource.MaxHpPercent:
-                    if (defender.Health == null)
-                    {
-                        Debug.LogWarning("[DamageCalculator] MaxHpPercent damage requires defender health");
-                        return 0f;
-                    }
-
-                    return defender.Health.MaxHealth * attack.BaseValue * attack.Multiplier;
-
-                case DamageSource.CurrentHpPercent:
-                    if (defender.Health == null)
-                    {
-                        Debug.LogWarning("[DamageCalculator] CurrentHpPercent damage requires defender health");
-                        return 0f;
-                    }
-
-                    return defender.Health.CurrentHealth * attack.BaseValue * attack.Multiplier;
-
-                default:
-                    Debug.LogError($"[DamageCalculator] Unknown DamageSource: {attack.Source}");
-                    return 0f;
+                return strategy.CalculateBaseDamage(attack, defender);
             }
+
+            Debug.LogError($"[DamageCalculator] Unknown DamageSource: {attack.Source}");
+            return 0f;
         }
 
         private static float ApplyDefense(float damage, float defense)

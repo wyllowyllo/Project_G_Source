@@ -11,13 +11,7 @@ namespace Combat.Core
         public Stat CriticalMultiplier { get; }
         public Stat Defense { get; }
 
-        private IEnumerable<Stat> AllStats => new[] 
-        { 
-            AttackDamage, 
-            CriticalChance, 
-            CriticalMultiplier, 
-            Defense 
-        };
+        private readonly IEnumerable<Stat> _allStats;
 
         public static CombatStats FromData(CombatStatsData data)
         {
@@ -46,6 +40,13 @@ namespace Combat.Core
             CriticalChance = new Stat(criticalChance, minValue: 0f, maxValue: 1f);
             CriticalMultiplier = new Stat(criticalMultiplier, minValue: 1f);
             Defense = new Stat(defense, minValue: 0f);
+            _allStats = new[]
+            {
+                AttackDamage,
+                CriticalChance,
+                CriticalMultiplier,
+                Defense
+            };
         }
 
         public bool RemoveAllModifiersFromSource(IModifierSource source)
@@ -54,14 +55,14 @@ namespace Combat.Core
                 return false;
 
             bool removed = false;
-            foreach (var stat in AllStats)
+            foreach (var stat in _allStats)
                 removed |= stat.RemoveAllModifiersFromSource(source);
             return removed;
         }
 
         public void ClearAllModifiers()
         {
-            foreach (var stat in AllStats)
+            foreach (var stat in _allStats)
                 stat.ClearModifiers();
         }
     }

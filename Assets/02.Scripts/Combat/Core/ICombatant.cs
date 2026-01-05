@@ -8,5 +8,7 @@ namespace Combat.Core
         CombatStats Stats { get; }
         CombatTeam Team { get; }
         CombatantAttackStats GetAttackStats();
+        float GetDefense();
+        bool IsAlly(CombatTeam team);
     }
 }
