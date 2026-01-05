@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using SJ;
 
 public class SjEnemy : MonoBehaviour, IDamageable, IKnockbackable
 {
