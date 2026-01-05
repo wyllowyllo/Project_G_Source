@@ -3,9 +3,9 @@ using UnityEngine;
 namespace Monster
 {
     /// <summary>
-    /// 몬스터의 공격 상태.
-    /// 플레이어를 공격하고, 공격 범위를 벗어나거나 슬롯을 잃으면 Engage 상태로 복귀합니다.
-    /// 공격 슬롯 시스템(최대 8명)과 연동하여 동시 공격을 제한합니다. (핵앤슬래시 스타일)
+    /// BDO 스타일 - 공격 상태.
+    /// Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성됩니다.
+    /// 공격 슬롯 시스템과 연동하여 동시 공격을 제한합니다.
     /// </summary>
     public class AttackState : IMonsterState
     {
@@ -13,7 +13,16 @@ namespace Monster
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
 
-        private float _attackTimer;
+        // BDO 스타일 3단계
+        private enum AttackPhase
+        {
+            Windup,     // 텔레그래프 (준비 동작)
+            Execute     // 실행 (데미지 발생)
+        }
+
+        private AttackPhase _currentPhase;
+        private float _phaseTimer;
+        private bool _damageDealt; // Execute에서 한 번만 데미지 처리
 
         public MonsterState StateType => MonsterState.Attack;
 
@@ -32,7 +41,12 @@ namespace Monster
                 _controller.NavAgent.isStopped = true;
             }
 
-            _attackTimer = 0f;
+            // Windup 단계 시작
+            _currentPhase = AttackPhase.Windup;
+            _phaseTimer = 0f;
+            _damageDealt = false;
+
+            Debug.Log($"{_controller.gameObject.name}: 공격 시작 (Windup)");
         }
 
         public void Update()
@@ -43,10 +57,10 @@ namespace Monster
                 return;
             }
 
-            // 공격 슬롯을 잃으면 Engage로 복귀 (다른 몬스터에게 공격 기회 양보)
+            // 공격 슬롯을 잃으면 Strafe로 복귀 (다른 몬스터에게 공격 기회 양보)
             if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
             {
-                _stateMachine.ChangeState(MonsterState.Engage);
+                ReturnToCombat();
                 return;
             }
 
@@ -55,34 +69,48 @@ namespace Monster
                 _controller.PlayerTransform.position
             );
 
-            // 공격 범위를 벗어나면 Engage로 복귀
+            // 공격 범위를 벗어나면 전투 상태로 복귀
             if (distanceToPlayer > _controller.Data.AttackRange)
             {
-                _stateMachine.ChangeState(MonsterState.Engage);
+                ReturnToCombat();
                 return;
             }
 
-            // 플레이어를 바라보기
-            Vector3 directionToPlayer = (_controller.PlayerTransform.position - _transform.position).normalized;
-            directionToPlayer.y = 0f;
-
-            if (directionToPlayer != Vector3.zero)
+            // 플레이어를 바라보기 (Windup 단계에서만)
+            if (_currentPhase == AttackPhase.Windup)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
-                _transform.rotation = Quaternion.RotateTowards(
-                    _transform.rotation,
-                    targetRotation,
-                    _controller.Data.RotationSpeed * Time.deltaTime
-                );
+                LookAtPlayer();
             }
 
-            // 공격 쿨타임 체크
-            _attackTimer += Time.deltaTime;
+            // 단계별 처리
+            _phaseTimer += Time.deltaTime;
 
-            if (_attackTimer >= _controller.Data.AttackCooldown)
+            switch (_currentPhase)
             {
-                PerformAttack();
-                _attackTimer = 0f;
+                case AttackPhase.Windup:
+                    if (_phaseTimer >= _controller.Data.WindupTime)
+                    {
+                        // Execute 단계로 전환
+                        _currentPhase = AttackPhase.Execute;
+                        _phaseTimer = 0f;
+                        Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Execute)");
+                    }
+                    break;
+
+                case AttackPhase.Execute:
+                    // 데미지는 Execute 시작 시 한 번만
+                    if (!_damageDealt)
+                    {
+                        DealDamage();
+                        _damageDealt = true;
+                    }
+
+                    if (_phaseTimer >= _controller.Data.ExecuteTime)
+                    {
+                        // Recover 상태로 전환
+                        _stateMachine.ChangeState(MonsterState.Recover);
+                    }
+                    break;
             }
         }
 
@@ -100,17 +128,60 @@ namespace Monster
             }
         }
 
-        private void PerformAttack()
+        /// <summary>
+        /// 플레이어를 바라보기 (Windup 단계)
+        /// </summary>
+        private void LookAtPlayer()
+        {
+            Vector3 directionToPlayer = (_controller.PlayerTransform.position - _transform.position).normalized;
+            directionToPlayer.y = 0f;
+
+            if (directionToPlayer != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+                _transform.rotation = Quaternion.RotateTowards(
+                    _transform.rotation,
+                    targetRotation,
+                    _controller.Data.RotationSpeed * Time.deltaTime
+                );
+            }
+        }
+
+        /// <summary>
+        /// 데미지 처리 (Execute 단계)
+        /// </summary>
+        private void DealDamage()
         {
             // TODO: 애니메이션 트리거
-            // TODO: 플레이어에게 데미지 처리
 
             Debug.Log($"{_controller.gameObject.name} 공격! 데미지: {_controller.Data.AttackDamage}");
 
-            // 임시: 플레이어가 IDamageable을 구현했다면 데미지 적용
+            // 플레이어가 IDamageable을 구현했다면 데미지 적용
             if (_controller.PlayerTransform.TryGetComponent<IDamageable>(out var damageable))
             {
                 damageable.TakeDamage(_controller.Data.AttackDamage, _transform.position);
+            }
+        }
+
+        /// <summary>
+        /// 전투 상태로 복귀 (거리에 따라 Approach 또는 Strafe)
+        /// </summary>
+        private void ReturnToCombat()
+        {
+            float distanceToPlayer = Vector3.Distance(
+                _transform.position,
+                _controller.PlayerTransform.position
+            );
+
+            if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
+            {
+                // 거리 밴드 밖이면 Approach
+                _stateMachine.ChangeState(MonsterState.Approach);
+            }
+            else
+            {
+                // 거리 밴드 안이면 Strafe
+                _stateMachine.ChangeState(MonsterState.Strafe);
             }
         }
     }

@@ -134,7 +134,7 @@ namespace Monster
         }
 
         /// <summary>
-        /// 그룹 전체를 전투 상태로 전환
+        /// BDO 스타일 - 그룹 전체를 전투 상태로 전환
         /// </summary>
         private void TransitionToCombat()
         {
@@ -146,12 +146,12 @@ namespace Monster
             _isInCombat = true;
             Debug.Log($"EnemyGroup: 전투 시작! 그룹 크기: {_monsters.Count}");
 
-            // 모든 몬스터를 Engage 상태로 전환
+            // 모든 몬스터를 Approach 상태로 전환 (BDO 스타일)
             foreach (MonsterController monster in _monsters)
             {
                 if (monster != null && monster.IsAlive)
                 {
-                    monster.StateMachine.ChangeState(MonsterState.Engage);
+                    monster.StateMachine.ChangeState(MonsterState.Approach);
                 }
             }
         }

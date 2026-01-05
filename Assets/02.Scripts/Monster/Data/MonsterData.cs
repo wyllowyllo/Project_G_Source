@@ -26,6 +26,26 @@ namespace Monster
         [SerializeField] private float _detectionRange = 12f;
         [SerializeField] private float _engageRange = 10f;
 
+        [Header("BDO 스타일 - 거리 밴드 시스템")]
+        [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
+        [SerializeField] private float _preferredMinDistance = 2.0f;
+        [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
+        [SerializeField] private float _preferredMaxDistance = 4.0f;
+        [Tooltip("스트레이프(좌우 이동) 속도")]
+        [SerializeField] private float _strafeSpeed = 2.5f;
+
+        [Header("BDO 스타일 - 테더 시스템")]
+        [Tooltip("홈 포지션으로부터 최대 이탈 거리")]
+        [SerializeField] private float _tetherRadius = 20f;
+
+        [Header("BDO 스타일 - 스킬 패턴")]
+        [Tooltip("공격 준비 시간 (텔레그래프)")]
+        [SerializeField] private float _windupTime = 0.3f;
+        [Tooltip("공격 실행 시간")]
+        [SerializeField] private float _executeTime = 0.2f;
+        [Tooltip("공격 후딜 시간")]
+        [SerializeField] private float _recoverTime = 0.5f;
+
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
         [SerializeField] private int _goldReward = 5;
@@ -43,5 +63,14 @@ namespace Monster
         public float EngageRange => _engageRange;
         public int ExperienceReward => _experienceReward;
         public int GoldReward => _goldReward;
+
+        // BDO 스타일 Properties
+        public float PreferredMinDistance => _preferredMinDistance;
+        public float PreferredMaxDistance => _preferredMaxDistance;
+        public float StrafeSpeed => _strafeSpeed;
+        public float TetherRadius => _tetherRadius;
+        public float WindupTime => _windupTime;
+        public float ExecuteTime => _executeTime;
+        public float RecoverTime => _recoverTime;
     }
 }

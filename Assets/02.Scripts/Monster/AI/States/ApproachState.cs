@@ -3,10 +3,10 @@ using UnityEngine;
 namespace Monster
 {
     /// <summary>
-    /// 몬스터의 교전 상태.
-    /// 플레이어를 직접 추적하며, 공격 범위 내에서 슬롯을 획득하면 Attack 상태로 전환합니다. (핵앤슬래시 스타일)
+    /// BDO 스타일 - 접근 상태.
+    /// 플레이어가 거리 밴드 밖에 있을 때 접근합니다.
     /// </summary>
-    public class EngageState : IMonsterState
+    public class ApproachState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
@@ -15,9 +15,9 @@ namespace Monster
         private float _slotRequestCooldown = 0.5f;
         private float _slotRequestTimer = 0f;
 
-        public MonsterState StateType => MonsterState.Engage;
+        public MonsterState StateType => MonsterState.Approach;
 
-        public EngageState(MonsterController controller, MonsterStateMachine stateMachine)
+        public ApproachState(MonsterController controller, MonsterStateMachine stateMachine)
         {
             _controller = controller;
             _stateMachine = stateMachine;
@@ -54,19 +54,25 @@ namespace Monster
                 return;
             }
 
-            // 플레이어를 직접 추적
+            // 플레이어에게 접근
             if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
             {
                 _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
             }
 
-            // 공격 범위 내에 들어오면 공격 시도
+            // 거리 밴드 안에 들어오면 Strafe로 전환
+            if (distanceToPlayer <= _controller.Data.PreferredMaxDistance)
+            {
+                _stateMachine.ChangeState(MonsterState.Strafe);
+                return;
+            }
+
+            // 공격 범위 내에 들어오면 공격 시도 (Strafe를 건너뛰고 바로 공격 가능)
             if (distanceToPlayer <= _controller.Data.AttackRange)
             {
                 TryRequestAttackSlot();
             }
         }
-
 
         /// <summary>
         /// 공격 슬롯 요청 및 Attack 상태로 전환 시도
@@ -104,7 +110,6 @@ namespace Monster
                 _stateMachine.ChangeState(MonsterState.Attack);
             }
         }
-
 
         public void Exit()
         {

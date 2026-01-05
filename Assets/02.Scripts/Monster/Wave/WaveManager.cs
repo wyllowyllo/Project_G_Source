@@ -17,9 +17,9 @@ namespace Monster
             public List<Transform> spawnPoints;
             public GameObject monsterPrefab;
 
-            [Header("그룹 파라미터")]
+            [Header("그룹 파라미터 (BDO 스타일)")]
             public float aggroRange = 12f;
-            public float ringRadius = 3.5f;
+            [Tooltip("동시 공격 가능한 몬스터 수 (BDO 권장: 2~3명)")]
             public int maxAttackSlots = 2;
         }
 
@@ -149,12 +149,6 @@ namespace Monster
             if (aggroRangeField != null)
             {
                 aggroRangeField.SetValue(enemyGroup, spawnGroup.aggroRange);
-            }
-
-            var ringRadiusField = type.GetField("_ringRadius", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (ringRadiusField != null)
-            {
-                ringRadiusField.SetValue(enemyGroup, spawnGroup.ringRadius);
             }
 
             var maxAttackSlotsField = type.GetField("_maxAttackSlots", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);

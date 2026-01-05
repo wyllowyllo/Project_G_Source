@@ -25,6 +25,10 @@ namespace Monster
         private float _currentHealth;
         private bool _isAlive = true;
 
+        // BDO 스타일 - 테더 시스템
+        private Vector3 _homePosition;
+        private bool _isTethered = false;
+
         // 프로퍼티
         public bool IsAlive => _isAlive;
         public float CurrentHealth => _currentHealth;
@@ -34,6 +38,10 @@ namespace Monster
         public Transform PlayerTransform => _playerTransform;
         public MonsterStateMachine StateMachine => _stateMachine;
         public EnemyGroup EnemyGroup => _enemyGroup;
+
+        // BDO 스타일 프로퍼티
+        public Vector3 HomePosition => _homePosition;
+        public bool IsTethered => _isTethered;
 
         private void Awake()
         {
@@ -54,6 +62,9 @@ namespace Monster
                 return;
             }
 
+            // BDO 스타일 - 테더 체크
+            CheckTether();
+
             _stateMachine?.Update();
         }
 
@@ -71,16 +82,22 @@ namespace Monster
             _navAgent.speed = _monsterData.MoveSpeed;
             _navAgent.angularSpeed = _monsterData.RotationSpeed;
             _navAgent.stoppingDistance = _monsterData.AttackRange;
+
+            // BDO 스타일 - 홈 포지션 설정 (스폰 위치)
+            _homePosition = transform.position;
         }
 
         private void InitializeStateMachine()
         {
             _stateMachine = new MonsterStateMachine(this);
 
-            // 상태 등록
+            // BDO 스타일 - 상태 등록
             _stateMachine.RegisterState(MonsterState.Idle, new IdleState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Engage, new EngageState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Approach, new ApproachState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Strafe, new StrafeState(this, _stateMachine));
             _stateMachine.RegisterState(MonsterState.Attack, new AttackState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.Recover, new RecoverState(this, _stateMachine));
+            _stateMachine.RegisterState(MonsterState.ReturnHome, new ReturnHomeState(this, _stateMachine));
             _stateMachine.RegisterState(MonsterState.Dead, new DeadState(this));
 
             // 초기 상태 설정
@@ -107,6 +124,34 @@ namespace Monster
         public void SetEnemyGroup(EnemyGroup group)
         {
             _enemyGroup = group;
+        }
+
+        /// <summary>
+        /// BDO 스타일 - 테더 체크 (홈 포지션으로부터 너무 멀어지면 복귀)
+        /// </summary>
+        private void CheckTether()
+        {
+            if (_monsterData == null || _isTethered)
+            {
+                return;
+            }
+
+            float distanceFromHome = Vector3.Distance(transform.position, _homePosition);
+
+            // 테더 범위를 벗어나면 복귀 상태로 전환
+            if (distanceFromHome > _monsterData.TetherRadius)
+            {
+                _isTethered = true;
+                _stateMachine?.ChangeState(MonsterState.ReturnHome);
+            }
+        }
+
+        /// <summary>
+        /// 테더 리셋 (홈 복귀 완료 시 호출)
+        /// </summary>
+        public void ResetTether()
+        {
+            _isTethered = false;
         }
 
         public void TakeDamage(float damage, Vector3 attackerPosition)
@@ -147,6 +192,19 @@ namespace Monster
             // 공격 범위
             Gizmos.color = Color.red;
             Gizmos.DrawWireSphere(transform.position, _monsterData.AttackRange);
+
+            // BDO 스타일 - 테더 범위 (홈 포지션 기준)
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(_homePosition, _monsterData.TetherRadius);
+
+            // 홈 포지션
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(_homePosition, 0.5f);
+
+            // 거리 밴드 (선호 거리)
+            Gizmos.color = Color.magenta;
+            Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMinDistance);
+            Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMaxDistance);
         }
     }
 }
