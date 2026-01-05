@@ -98,6 +98,7 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         if (_useCameraForward && _cameraTransform != null)
         {
             _moveInputVector = GetCameraRelativeMovement(inputVector);
+           
         }
         else
         {
