@@ -98,7 +98,8 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
-# Claude Code personal settings
-.claude/settings.local.json
-.claude/monster-guidelines.md
-.claude/boss-design.md
+.idea/**
+.docs/**
+.claude/**
+.serena/**
+CLAUDE.md
