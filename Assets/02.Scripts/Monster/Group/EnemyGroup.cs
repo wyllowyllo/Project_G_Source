@@ -43,6 +43,12 @@ namespace Monster
                 return;
             }
 
+            // 전투 상태 체크 및 리셋
+            if (_isInCombat)
+            {
+                CheckCombatReset();
+            }
+
             // Aggro 체크
             if (!_isInCombat)
             {
@@ -153,6 +159,44 @@ namespace Monster
                 {
                     monster.StateMachine.ChangeState(MonsterState.Approach);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 전투 상태 리셋 체크 - 모든 몬스터가 비전투 상태면 전투 종료
+        /// </summary>
+        private void CheckCombatReset()
+        {
+            if (!_isInCombat)
+            {
+                return;
+            }
+
+            // 모든 몬스터가 Idle 또는 Dead 상태인지 확인
+            bool allMonstersNonCombat = true;
+
+            foreach (MonsterController monster in _monsters)
+            {
+                if (monster == null || !monster.IsAlive)
+                {
+                    continue;
+                }
+
+                MonsterState currentState = monster.StateMachine.CurrentStateType;
+
+                // 전투 관련 상태가 하나라도 있으면 계속 전투 중
+                if (currentState != MonsterState.Idle && currentState != MonsterState.Dead)
+                {
+                    allMonstersNonCombat = false;
+                    break;
+                }
+            }
+
+            // 모든 몬스터가 비전투 상태면 전투 종료
+            if (allMonstersNonCombat)
+            {
+                _isInCombat = false;
+                Debug.Log($"EnemyGroup: 전투 종료 - 모든 몬스터가 비전투 상태");
             }
         }
 
