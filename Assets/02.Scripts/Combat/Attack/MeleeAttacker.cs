@@ -113,15 +113,7 @@ namespace Combat.Attack
 
         private void HandleHit(HitInfo hitInfo)
         {
-            var defenderInfo = new DefenderInfo(hitInfo.TargetCombatant, hitInfo.TargetHealth);
-            var damageResult = DamageCalculator.Calculate(_currentAttackContext, defenderInfo);
-
-            Vector3 hitPoint = hitInfo.GetClosestHitPoint(transform.position);
-            Vector3 hitDirection = hitInfo.GetHitDirectionFrom(_currentAttackContext.AttackerPosition);
-
-            var hitContext = new HitContext(hitPoint, hitDirection, _currentAttackContext.DamageType);
-            var damageInfo = new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);
-
+            var damageInfo = DamageProcessor.Process(_currentAttackContext, hitInfo, transform.position);
             hitInfo.Target.TakeDamage(damageInfo);
             OnHit?.Invoke(hitInfo.Target, damageInfo);
         }

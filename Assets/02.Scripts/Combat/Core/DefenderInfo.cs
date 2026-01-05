@@ -13,5 +13,10 @@ namespace Combat.Core
 
         public static DefenderInfo From(ICombatant combatant, IHealthProvider health)
             => new DefenderInfo(combatant, health);
+
+        public float GetDefense()
+        {
+            return Combatant?.GetDefense() ?? 0f;
+        }
     }
 }

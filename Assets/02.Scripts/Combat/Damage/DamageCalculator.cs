@@ -25,7 +25,7 @@ namespace Combat.Damage
                 ? baseDamage * attack.CriticalMultiplier
                 : baseDamage;
 
-            float defenderDefense = defender.Combatant?.GetDefense() ?? 0f;
+            float defenderDefense = defender.GetDefense();
             float finalDamage = attack.DamageType == DamageType.True
                 ? damageAfterCritical
                 : ApplyDefense(damageAfterCritical, defenderDefense);
