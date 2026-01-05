@@ -48,6 +48,7 @@ public class PlayerCombat : MonoBehaviour
     private bool _isAttacking = false;
     private bool _canAttack = true;
     private bool _hasDealtDamage = false;
+    private bool _canNextCombo = false;
 
     // Coroutines
     private Coroutine _comboResetCoroutine;
@@ -307,7 +308,7 @@ public class PlayerCombat : MonoBehaviour
             rb.AddForce(knockbackDirection * force, ForceMode.Impulse);
         }
 
-        // IKnockbackable 인터페이스 구현체에게 넉백 전달
+        // IKnockbackable 넉백 전달
         IKnockbackable knockbackable = enemy.GetComponent<IKnockbackable>();
         if (knockbackable != null)
         {
