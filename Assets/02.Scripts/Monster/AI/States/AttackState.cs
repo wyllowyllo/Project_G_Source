@@ -25,6 +25,9 @@ namespace Monster
         private bool _damageDealt; // Execute에서 한 번만 데미지 처리
         private float _originalSpeed; // 원래 이동 속도 저장
         private float _originalStoppingDistance; // 원래 정지 거리 저장
+        private Vector3 _chargeDirection; // 돌진 방향 (시작 시점에 고정)
+        private Vector3 _chargeStartPosition; // 돌진 시작 위치
+        private float _maxChargeDistance = 2f; // 최대 돌진 거리
 
         public MonsterState StateType => MonsterState.Attack;
 
@@ -74,18 +77,20 @@ namespace Monster
                 _controller.PlayerTransform.position
             );
 
-            // 공격 범위를 벗어나면 전투 상태로 복귀
-            if (distanceToPlayer > _controller.Data.AttackRange)
-            {
-                ReturnToCombat();
-                return;
-            }
-
-            // 플레이어를 바라보기 (Windup 단계에서만)
+            // Windup 단계에서만 거리 체크 및 플레이어 바라보기
             if (_currentPhase == AttackPhase.Windup)
             {
+                // 너무 멀어지면 공격 취소 (여유 있게 AttackRange * 2)
+                if (distanceToPlayer > _controller.Data.AttackRange * 2f)
+                {
+                    ReturnToCombat();
+                    return;
+                }
+
+                // 플레이어를 바라보기
                 LookAtPlayer();
             }
+            // Execute 단계에서는 거리 체크 안 함 (돌진 중이므로)
 
             // 단계별 처리
             _phaseTimer += Time.deltaTime;
@@ -127,6 +132,8 @@ namespace Monster
         {
             if (_controller.NavAgent != null)
             {
+                // NavAgent 재활성화
+                _controller.NavAgent.enabled = true;
                 _controller.NavAgent.isStopped = false;
                 // 원래 속도 및 정지 거리로 복원
                 _controller.NavAgent.speed = _originalSpeed;
@@ -145,35 +152,49 @@ namespace Monster
         /// </summary>
         private void StartCharge()
         {
-            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
+            if (_controller.PlayerTransform == null)
             {
                 return;
             }
 
-            // 돌진 설정: 속도 증가 + 정지 거리 0 (플레이어까지 정확히 돌진)
-            _controller.NavAgent.speed = _controller.Data.ChargeSpeed;
-            _controller.NavAgent.stoppingDistance = 0f;
-            _controller.NavAgent.isStopped = false;
+            // NavAgent 비활성화 (직접 이동 제어)
+            if (_controller.NavAgent != null)
+            {
+                _controller.NavAgent.enabled = false;
+            }
 
-            // 플레이어를 향해 이동 시작
-            _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
+            // 돌진 시작 위치 저장
+            _chargeStartPosition = _transform.position;
+
+            // 돌진 방향 설정 (이 시점의 플레이어 위치를 향해 고정!)
+            _chargeDirection = (_controller.PlayerTransform.position - _transform.position).normalized;
+            _chargeDirection.y = 0f; // 수평 방향으로만
+
+            // 플레이어 방향으로 회전 (돌진 전 준비)
+            if (_chargeDirection != Vector3.zero)
+            {
+                _transform.rotation = Quaternion.LookRotation(_chargeDirection);
+            }
+
+            Debug.Log($"{_controller.gameObject.name}: 돌진 시작 - 고정 방향 {_chargeDirection}");
         }
 
         /// <summary>
-        /// 돌진 중 업데이트 (플레이어 위치 추적)
+        /// 돌진 중 업데이트 (직선 돌진, 추적 안 함)
         /// </summary>
         private void UpdateCharge()
         {
-            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
+            // 돌진한 거리 계산
+            float chargedDistance = Vector3.Distance(_chargeStartPosition, _transform.position);
+
+            // 최대 거리 도달하면 돌진 중단
+            if (chargedDistance >= _maxChargeDistance)
             {
                 return;
             }
 
-            // 플레이어가 움직이면 목적지 갱신 (추적)
-            if (!_controller.NavAgent.isStopped)
-            {
-                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
-            }
+            // 고정된 방향으로 직선 돌진 (추적 안 함)
+            _transform.position += _chargeDirection * _controller.Data.ChargeSpeed * Time.deltaTime;
         }
 
         /// <summary>
