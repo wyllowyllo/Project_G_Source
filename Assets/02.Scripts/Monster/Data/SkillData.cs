@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Monster
+namespace Monster.Data
 {
     /// <summary>
     /// BDO 스타일 몬스터 스킬 패턴 데이터.

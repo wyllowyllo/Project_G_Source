@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.Group
 {
     /// <summary>
     /// 공격 슬롯을 관리하여 동시에 공격하는 몬스터 수를 제한하는 클래스.

@@ -1,3 +1,6 @@
+using Monster.AI;
+using Monster.Data;
+using Monster.Group;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -198,6 +201,12 @@ namespace Monster
         {
             _isAlive = false;
             _stateMachine?.ChangeState(EMonsterState.Dead);
+
+            // EnemyGroup에서 제거
+            _enemyGroup?.UnregisterMonster(this);
+
+            // MonsterTracker에서 제거
+            MonsterTracker.MonsterTracker.Instance?.UnregisterMonster(this);
         }
 
         // 디버그용

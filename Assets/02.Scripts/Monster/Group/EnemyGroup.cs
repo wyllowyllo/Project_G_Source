@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using Monster.AI;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.Group
 {
     /// <summary>
     /// 몬스터 그룹의 전투를 운영하는 핵심 클래스.

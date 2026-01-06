@@ -1,4 +1,4 @@
-namespace Monster
+namespace Monster.AI
 {
     /// <summary>
     /// 몬스터 상태 (BDO 스타일)
