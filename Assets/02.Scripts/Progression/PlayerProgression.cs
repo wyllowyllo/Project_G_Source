@@ -6,13 +6,14 @@ using UnityEngine;
 namespace Progression
 {
     [RequireComponent(typeof(Combatant))]
-    public class PlayerProgression : MonoBehaviour, IModifierSource
+    public class PlayerProgression : MonoBehaviour
     {
         [Header("Configuration")]
         [SerializeField] private ProgressionConfig _config;
 
         private Combatant _combatant;
-        private StatModifier _attackModifier;
+        private float _initialAttackDamage;
+        private bool _initialized;
 
         private const int MaxXpPerAdd = 100000;
 
@@ -23,11 +24,10 @@ namespace Progression
         public float LevelProgress => IsMaxLevel ? 1f : (float)CurrentXp / _config.GetRequiredXp(Level + 1);
 
         public HunterRank Rank => ProgressionConfig.GetRank(Level);
+        public Combatant Combatant => _combatant;
 
         public event Action<int, int> OnLevelUp;
         public event Action<SkillSlot> OnSkillEnhanced;
-
-        public string Id => "ProgressionSystem";
 
         private void Awake()
         {
@@ -36,19 +36,22 @@ namespace Progression
 
         private void Start()
         {
-            ApplyLevelStats();
+            EnsureInitialized();
         }
 
-        private void OnDisable()
+        private void EnsureInitialized()
         {
-            if (_attackModifier != null && _combatant != null && _combatant.Stats != null)
-                _combatant.Stats.AttackDamage.RemoveModifier(_attackModifier);
+            if (_initialized) return;
+            _initialized = true;
+            _initialAttackDamage = _combatant.Stats.AttackDamage.BaseValue;
+            ApplyLevelStats();
         }
 
         public void AddExperience(int amount)
         {
             if (amount <= 0 || IsMaxLevel) return;
 
+            EnsureInitialized();
             CurrentXp += Mathf.Min(amount, MaxXpPerAdd);
             CheckLevelUp();
         }
@@ -79,17 +82,14 @@ namespace Progression
 
         private void ApplyLevelStats()
         {
-            if (_attackModifier != null)
-                _combatant.Stats.AttackDamage.RemoveModifier(_attackModifier);
-
             float bonus = _config.GetAttackBonus(Level);
-            _attackModifier = new StatModifier(bonus, StatModifierType.Additive, this);
-            _combatant.Stats.AttackDamage.AddModifier(_attackModifier);
+            _combatant.Stats.AttackDamage.BaseValue = _initialAttackDamage + bonus;
         }
 
         [Conditional("UNITY_EDITOR")]
         public void SetLevel(int level)
         {
+            EnsureInitialized();
             Level = Mathf.Clamp(level, 1, _config.MaxLevel);
             CurrentXp = 0;
             ApplyLevelStats();
