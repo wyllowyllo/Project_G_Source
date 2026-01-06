@@ -1,70 +1,135 @@
+using Combat.Core;
+using Combat.Damage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static Codice.CM.Common.CmCallContext;
 
 public class PlayerHpBarUI : MonoBehaviour
 {
-    private static PlayerHpBarUI _instance;
-    public Slider HpSlider;
 
+    [SerializeField] private Combatant _playerCombatant; 
+
+    public Slider HpSlider;
+    public Slider BackSlider;
     [SerializeField] private Image _hpFillImage;
     [SerializeField] private TextMeshProUGUI _levelText;
     [SerializeField] private TextMeshProUGUI _hpText;
 
-    [SerializeField] private int _maxHp = 100;
-    [SerializeField] private int _currentHp = 100;
     [SerializeField] private int _level = 30;
+    [SerializeField] private float _smoothSpeed = 5f;
+    [SerializeField] private float _smoothBackSpeed = 2f; 
+    [SerializeField] private float _backHpDelay = 0.3f;
 
-    private float _smoothSpeed = 5f;
+    private bool _backHpHit = false;
+    private float _targetHp;
+    private float _backHpDelayTimer;
 
-    private float _hp;
-
-    private void Awake()
+    private void OnEnable()
     {
-        if(_instance == null)
+        if (_playerCombatant != null)
         {
-            _instance = this;
+            _playerCombatant.OnDamaged += HandleDamaged;
+            _playerCombatant.OnDeath += HandleDeath;
         }
-        else
+    }
+
+    private void OnDisable()
+    {
+        if (_playerCombatant != null)
         {
-            Destroy(gameObject);
+            _playerCombatant.OnDamaged -= HandleDamaged;
+            _playerCombatant.OnDeath -= HandleDeath;
         }
     }
 
     private void Start()
     {
-        UpdateHpBar();
+        if (_playerCombatant != null)
+        {
+            InitializeHpBar();
+        }
     }
 
     private void Update()
     {
-        if(_currentHp < 0)
-        {
-            GameOver();
-        }
+        if (_playerCombatant == null) return;
 
-        HandleHp();
+        UpdateHpBarSmooth();
+        UpdateBackSlider();
     }
 
-    private void UpdateHpBar()
+    private void InitializeHpBar()
     {
-        HpSlider.value = (float)_currentHp / (float)_maxHp;
+        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+        HpSlider.value = _targetHp;
+        BackSlider.value = _targetHp;
+        UpdateHpText();
+        UpdateHpColor();
+    }
 
-        _levelText.text = $"Lv.{_level}";
-        _hpText.text = $"{_currentHp} / {_maxHp}";
+    private void HandleDamaged(DamageInfo damageInfo)
+    {
+        Debug.Log($"Player took {damageInfo.Amount} damage! (Critical: {damageInfo.IsCritical})");
 
+     
+        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+
+        _backHpDelayTimer = _backHpDelay;
+        _backHpHit = true;
+
+        UpdateHpText();
         UpdateHpColor();
 
+        if (damageInfo.IsCritical)
+        {
+            FlashCritical();
+        }
+    }
+
+    private void HandleDeath()
+    {
+        Debug.Log("Player Died!");
+        GameOver();
+    }
+
+    private void UpdateHpBarSmooth()
+    {
+        HpSlider.value = Mathf.Lerp(HpSlider.value, _targetHp, Time.deltaTime * _smoothSpeed);
+    }
+
+    private void UpdateBackSlider()
+    {
+        if (_backHpHit)
+        {
+            _backHpDelayTimer -= Time.deltaTime;
+
+            if (_backHpDelayTimer <= 0)
+            {
+                BackSlider.value = Mathf.Lerp(BackSlider.value, _targetHp, Time.deltaTime * _smoothBackSpeed);
+
+
+                if (Mathf.Abs(BackSlider.value - HpSlider.value) < 0.01f)
+                {
+                    _backHpHit = false;
+                    BackSlider.value = HpSlider.value;
+                }
+            }
+        }
+    }
+
+    private void UpdateHpText()
+    {
+        _levelText.text = $"Lv.{_level}";
+        _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
     }
 
     private void UpdateHpColor()
     {
-        if(HpSlider.value > 0.5f)
+        if (HpSlider.value > 0.5f)
         {
-            _hpFillImage.color = new Color(0.6f, 1f, 0.4f);
+            _hpFillImage.color = new Color32(0, 191, 5, 255);
         }
-        else if(HpSlider.value > 0.2f)
+        else if (HpSlider.value > 0.2f)
         {
             _hpFillImage.color = new Color(1f, 0.8f, 0f);
         }
@@ -74,26 +139,21 @@ public class PlayerHpBarUI : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int damage)
+    private void FlashCritical()
     {
-        _currentHp = Mathf.Max(0, _currentHp - damage);
-        UpdateHpBar();
+        StartCoroutine(FlashCoroutine());
     }
 
-    public void Heal(int healAmount)
+    private System.Collections.IEnumerator FlashCoroutine()
     {
-        _currentHp = Mathf.Min(0, _currentHp + healAmount);
-        UpdateHpBar();
-    }
-
-    private void HandleHp()
-    {
-        _hp = (float)_currentHp / (float)_maxHp;
-        HpSlider.value = Mathf.Lerp(HpSlider.value, _hp, Time.deltaTime * _smoothSpeed);
+        Color originalColor = _hpFillImage.color;
+        _hpFillImage.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        _hpFillImage.color = originalColor;
     }
 
     private void GameOver()
     {
-        Debug.Log("Game Over");
+        GameManager.Instance.TriggerGameOver();
     }
 }

@@ -1,200 +1,556 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace SJ
 {
+    /// <summary>
+    /// 원신 스타일 3단 콤보 시스템
+    /// - 각 공격 애니메이션이 완전히 재생됨 (애니메이션 캔슬 방지)
+    /// - 콤보 윈도우 시스템으로 부드러운 연결
+    /// - 입력 버퍼링으로 타이밍 보정
+    /// - 확장 가능한 구조 (4콤보, 5콤보로 확장 가능)
+    /// </summary>
+    [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(PlayerMovement))]
     public class PlayerCombat : MonoBehaviour
     {
-        [Header("Combo Settings")]
-        [SerializeField] private int _maxComboCount = 3;
-        [SerializeField] private float _comboResetTime = 1.0f;
-        [SerializeField] private float _attackCooldown = 0.1f;
-        [SerializeField] private bool _canMoveWhileAttacking = false;
+        [Header("=== Combo Configuration ===")]
+        [SerializeField] private ComboAttackData[] comboAttacks = new ComboAttackData[3];
+        [SerializeField] private float comboTimeout = 2f;
+        [SerializeField] private bool canMoveWhileAttacking = false;
 
-        [Header("Attack Damage")]
-        [SerializeField]
-        private AttackData[] _comboAttacks = new AttackData[3]
-        {
-            new AttackData { damage = 10f, animationDuration = 0.5f, knockbackForce = 2f },
-            new AttackData { damage = 15f, animationDuration = 0.6f, knockbackForce = 3f },
-            new AttackData { damage = 25f, animationDuration = 0.8f, knockbackForce = 5f }
-        };
+        [Header("=== Input Buffer ===")]
+        [SerializeField] private float inputBufferDuration = 0.3f;
+        [SerializeField] private bool showDebugLogs = true;
 
-        [Header("Attack Range")]
-        [SerializeField] private float _attackRange = 2f;
-        [SerializeField] private float _attackRadius = 1f;
-        [SerializeField] private LayerMask _enemyLayer;
-        [SerializeField] private Transform _attackPoint;
+        [Header("=== Attack Detection ===")]
+        [SerializeField] private Transform attackPoint;
+        [SerializeField] private LayerMask enemyLayer;
+        [SerializeField] private float detectionRadius = 2f;
 
-        [Header("Root Motion")]
-        [SerializeField] private bool _useRootMotion = false;
-        [SerializeField] private float[] _rootMotionMultiplier = new float[] { 1f, 1.2f, 1.5f };
+        [Header("=== Visual Effects ===")]
+        [SerializeField] private GameObject[] attackVFX; 
+        [SerializeField] private GameObject[] hitVFX;    
 
-        [Header("VFX Settings")]
-        [SerializeField] private GameObject[] _hitEffectPrefabs;
-        [SerializeField] private GameObject[] _attackEffectPrefabs;
-
-        [Header("Events")]
-        public UnityEvent<int> OnComboChanged;
-        public UnityEvent<int> OnAttackExecuted;
-        public UnityEvent<int, GameObject> OnEnemyHit;
+        [Header("=== Events ===")]
+        public UnityEvent<int> OnComboStarted;          
+        public UnityEvent<int> OnComboExecuted;          
+        public UnityEvent<int, GameObject> OnEnemyHit;   
+        public UnityEvent OnComboReset;                
 
         // Components
-        private Animator _animator;
-        private PlayerMovement _playerMovement;
+        private Animator animator;
+        private PlayerMovement playerMovement;
 
-        // Combat State
-        private int _currentComboIndex = 0;
-        private bool _isAttacking = false;
-        private bool _canAttack = true;
-        private bool _hasDealtDamage = false;
-        private bool _canNextCombo = false;
+        // Combat State Machine
+        private ComboState currentState = ComboState.Idle;
+        private int currentComboIndex = 0;
+        private int queuedComboIndex = -1; // 다음에 실행될 콤보 인덱스
 
-        // Coroutines
-        private Coroutine _comboResetCoroutine;
-        private Coroutine _attackCoroutine;
+        // Input Buffer
+        private bool hasBufferedInput = false;
+        private float bufferedInputTime = 0f;
 
-        // Animation Parameters
-        private readonly int _attackTriggerHash = Animator.StringToHash("Attack");
-        private readonly int _comboIndexHash = Animator.StringToHash("ComboIndex");
-        private readonly int _isAttackingHash = Animator.StringToHash("IsAttacking");
-        private readonly int _attackSpeedHash = Animator.StringToHash("AttackSpeed");
+        // Attack State
+        private bool isInComboWindow = false;
+        private bool damageDealtThisAttack = false;
+        private HashSet<Collider> hitEnemiesThisAttack = new HashSet<Collider>();
 
-        // Hit Detection
-        private System.Collections.Generic.HashSet<Collider> hitEnemiesInCurrentAttack = new System.Collections.Generic.HashSet<Collider>();
+        // Timers
+        private Coroutine attackCoroutine;
+        private Coroutine comboTimeoutCoroutine;
+
+        // Animator Parameters (cached for performance)
+        private static readonly int AttackTrigger = Animator.StringToHash("Attack");
+        private static readonly int ComboIndexHash = Animator.StringToHash("ComboIndex");
+        private static readonly int IsAttackingHash = Animator.StringToHash("IsAttacking");
+        private static readonly int AttackSpeedHash = Animator.StringToHash("AttackSpeed");
 
         private void Awake()
         {
             InitializeComponents();
-            ValidateSettings();
+            ValidateConfiguration();
+            InitializeComboData();
         }
 
         private void Update()
         {
-            HandleCombatInput();
+            ProcessInput();
+            UpdateInputBuffer();
+        }
+
+        private void OnDestroy()
+        {
+            StopAllCoroutines();
         }
 
         private void InitializeComponents()
         {
-            _animator = GetComponent<Animator>();
-            _playerMovement = GetComponent<PlayerMovement>();
+            animator = GetComponent<Animator>();
+            playerMovement = GetComponent<PlayerMovement>();
 
-            if (_animator == null)
+            if (animator == null)
             {
-                Debug.LogError($"Animator가 {gameObject.name}에 없습니다!");
+                Debug.LogError($"[PlayerCombat] Animator 컴포넌트를 찾을 수 없습니다! ({gameObject.name})");
             }
 
-            if (_playerMovement == null)
+            if (playerMovement == null)
             {
-                Debug.LogError($"PlayerMovementKCC가 {gameObject.name}에 없습니다!");
+                Debug.LogError($"[PlayerCombat] PlayerMovement 컴포넌트를 찾을 수 없습니다! ({gameObject.name})");
             }
 
-            // AttackPoint 자동 설정
-            if (_attackPoint == null)
+            // Attack Point 자동 생성
+            if (attackPoint == null)
             {
-                GameObject attackPointObj = new GameObject("AttackPoint");
-                attackPointObj.transform.SetParent(transform);
-                attackPointObj.transform.localPosition = new Vector3(0, 1f, 1f);
-                _attackPoint = attackPointObj.transform;
-            }
+                GameObject point = new GameObject("AttackPoint");
+                point.transform.SetParent(transform);
+                point.transform.localPosition = new Vector3(0, 1f, 1f);
+                attackPoint = point.transform;
 
-            // Root Motion 설정
-            if (_animator != null && _useRootMotion)
-            {
-                _animator.applyRootMotion = true;
+                if (showDebugLogs)
+                    Debug.Log("[PlayerCombat] AttackPoint가 자동 생성되었습니다.");
             }
         }
-
-        private void ValidateSettings()
+        private void ValidateConfiguration()
         {
-            // 배열 크기 검증
-            if (_comboAttacks.Length != _maxComboCount)
+            if (comboAttacks == null || comboAttacks.Length == 0)
             {
-                Debug.LogWarning($"comboAttacks 배열 크기({_comboAttacks.Length})가 maxComboCount({_maxComboCount})와 다릅니다!");
+                Debug.LogError("[PlayerCombat] Combo Attacks가 설정되지 않았습니다!");
+                return;
             }
 
-            if (_rootMotionMultiplier.Length != _maxComboCount)
+            for (int i = 0; i < comboAttacks.Length; i++)
             {
-                Debug.LogWarning($"rootMotionMultiplier 배열 크기를 조정합니다.");
-                System.Array.Resize(ref _rootMotionMultiplier, _maxComboCount);
-                for (int i = 0; i < _maxComboCount; i++)
+                if (comboAttacks[i].animationDuration <= 0)
                 {
-                    if (_rootMotionMultiplier[i] == 0) _rootMotionMultiplier[i] = 1f;
+                    Debug.LogWarning($"[PlayerCombat] Combo {i + 1}: animationDuration이 0 이하입니다!");
+                }
+
+                if (comboAttacks[i].damage <= 0)
+                {
+                    Debug.LogWarning($"[PlayerCombat] Combo {i + 1}: damage가 0 이하입니다!");
                 }
             }
         }
 
-        private void HandleCombatInput()
+        private void InitializeComboData()
         {
-            // 왼쪽 마우스 클릭 감지
-            if (Input.GetMouseButtonDown(0) && _canAttack && !_isAttacking)
+            if (comboAttacks.Length == 0)
             {
-                ExecuteAttack();
+                comboAttacks = new ComboAttackData[3]
+                {
+                    new ComboAttackData
+                    {
+                        comboName = "Light Attack 1",
+                        damage = 100f,
+                        animationDuration = 0.6f,
+                        comboWindowStart = 0.4f,
+                        comboWindowEnd = 0.9f,
+                        damageFrame = 0.3f,
+                        attackRange = 2f,
+                        knockbackForce = 3f
+                    },
+                    new ComboAttackData
+                    {
+                        comboName = "Light Attack 2",
+                        damage = 120f,
+                        animationDuration = 0.7f,
+                        comboWindowStart = 0.45f,
+                        comboWindowEnd = 0.9f,
+                        damageFrame = 0.35f,
+                        attackRange = 2.2f,
+                        knockbackForce = 4f
+                    },
+                    new ComboAttackData
+                    {
+                        comboName = "Light Attack 3 (Finisher)",
+                        damage = 180f,
+                        animationDuration = 1.0f,
+                        comboWindowStart = 0.5f,
+                        comboWindowEnd = 0.95f,
+                        damageFrame = 0.4f,
+                        attackRange = 2.5f,
+                        knockbackForce = 8f
+                    }
+                };
             }
         }
 
-        private void ExecuteAttack()
+        private void ProcessInput()
         {
-            // 공격 시작
-            _isAttacking = true;
-            _canAttack = false;
-            _hasDealtDamage = false;
-            hitEnemiesInCurrentAttack.Clear();
-
-            // 이동 제어
-            if (!_canMoveWhileAttacking && _playerMovement != null)
+            if (Input.GetMouseButtonDown(0))
             {
-                _playerMovement.SetMovementEnabled(false);
+                HandleAttackInput();
+            }
+        }
+
+        private void HandleAttackInput()
+        {
+            switch (currentState)
+            {
+                case ComboState.Idle:
+                    // Idle 상태: 즉시 첫 번째 공격 실행
+                    StartCombo();
+                    break;
+
+                case ComboState.Attacking:
+                    // 공격 중: 입력을 버퍼에 저장
+                    BufferInput();
+                    break;
+
+                case ComboState.ComboWindow:
+                    // 콤보 윈도우: 즉시 다음 공격 실행
+                    ExecuteNextCombo();
+                    break;
+
+                case ComboState.Recovery:
+                    // 회복 중: 입력 무시
+                    if (showDebugLogs)
+                        Debug.Log("[PlayerCombat] 회복 중에는 공격할 수 없습니다.");
+                    break;
+            }
+        }
+
+        private void UpdateInputBuffer()
+        {
+            if (!hasBufferedInput) return;
+
+            // 버퍼 시간 경과 체크
+            bufferedInputTime -= Time.deltaTime;
+
+            if (bufferedInputTime <= 0)
+            {
+                // 버퍼 시간 초과
+                ClearInputBuffer();
+
+                if (showDebugLogs)
+                    Debug.Log("[PlayerCombat] 입력 버퍼 시간 초과");
+                return;
             }
 
-            // 공격 방향으로 캐릭터 회전 (적이 없으면 카메라 방향)
+            // 콤보 윈도우에 진입하면 버퍼된 입력 실행
+            if (currentState == ComboState.ComboWindow)
+            {
+                ExecuteBufferedInput();
+            }
+        }
+
+        private void BufferInput()
+        {
+            hasBufferedInput = true;
+            bufferedInputTime = inputBufferDuration;
+
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] 입력 버퍼 저장됨 ({inputBufferDuration}초)");
+        }
+
+        private void ExecuteBufferedInput()
+        {
+            if (!hasBufferedInput) return;
+
+            ClearInputBuffer();
+            ExecuteNextCombo();
+
+            if (showDebugLogs)
+                Debug.Log("[PlayerCombat] 버퍼된 입력 실행!");
+        }
+
+        private void ClearInputBuffer()
+        {
+            hasBufferedInput = false;
+            bufferedInputTime = 0f;
+        }
+
+        private void StartCombo()
+        {
+            currentComboIndex = 0;
+            ChangeState(ComboState.Attacking);
+            ExecuteAttack(currentComboIndex);
+
+            OnComboStarted?.Invoke(currentComboIndex);
+
+            if (showDebugLogs)
+                Debug.Log("[PlayerCombat] 콤보 시작!");
+        }
+
+        private void ExecuteNextCombo()
+        {
+            // 다음 콤보 인덱스 계산
+            int nextComboIndex = currentComboIndex + 1;
+
+            // 최대 콤보 수를 초과하면 첫 번째 콤보로 리셋
+            if (nextComboIndex >= comboAttacks.Length)
+            {
+                if (showDebugLogs)
+                    Debug.Log("[PlayerCombat] 최대 콤보 도달, 콤보 리셋");
+
+                ResetCombo();
+                return;
+            }
+
+            currentComboIndex = nextComboIndex;
+            ChangeState(ComboState.Attacking);
+            ExecuteAttack(currentComboIndex);
+
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] 다음 콤보 실행: {currentComboIndex + 1}단");
+        }
+        private void ExecuteAttack(int comboIndex)
+        {
+            if (comboIndex < 0 || comboIndex >= comboAttacks.Length)
+            {
+                Debug.LogError($"[PlayerCombat] 잘못된 콤보 인덱스: {comboIndex}");
+                return;
+            }
+
+            ComboAttackData attackData = comboAttacks[comboIndex];
+
+            // 공격 상태 초기화
+            damageDealtThisAttack = false;
+            hitEnemiesThisAttack.Clear();
+            isInComboWindow = false;
+            ClearInputBuffer();
+
+            // 플레이어 회전 (적 방향 or 카메라 방향)
             RotateTowardsTarget();
 
+            // 이동 제한
+            if (!canMoveWhileAttacking && playerMovement != null)
+            {
+                playerMovement.SetMovementEnabled(false);
+            }
+
             // 애니메이션 재생
-            PlayAttackAnimation();
+            PlayAttackAnimation(comboIndex);
 
             // 공격 이펙트 생성
-            SpawnAttackEffect();
+            SpawnAttackVFX(comboIndex);
 
-            // 공격 코루틴 시작
-            if (_attackCoroutine != null)
+            // 공격 타이밍 코루틴 시작
+            if (attackCoroutine != null)
             {
-                StopCoroutine(_attackCoroutine);
+                StopCoroutine(attackCoroutine);
             }
-            _attackCoroutine = StartCoroutine(AttackRoutine());
+            attackCoroutine = StartCoroutine(AttackRoutine(attackData, comboIndex));
 
-            // 콤보 리셋 타이머 재시작
-            ResetComboTimer();
+            // 콤보 타임아웃 갱신
+            RefreshComboTimeout();
 
             // 이벤트 발생
-            OnAttackExecuted?.Invoke(_currentComboIndex);
+            OnComboExecuted?.Invoke(comboIndex);
 
-            Debug.Log($"공격 실행: 콤보 {_currentComboIndex + 1}타");
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] {attackData.comboName} 실행!");
         }
 
-        private IEnumerator AttackRoutine()
+        private IEnumerator AttackRoutine(ComboAttackData attackData, int comboIndex)
         {
-            AttackData currentAttack = GetCurrentAttackData();
+            float elapsedTime = 0f;
+            float duration = attackData.animationDuration;
 
-            // 공격 애니메이션 진행 (데미지 적용 타이밍까지)
-            float damageDelay = currentAttack.animationDuration * 0.4f;
-            yield return new WaitForSeconds(damageDelay);
+            // 타이밍 계산
+            float damageTime = duration * attackData.damageFrame;
+            float windowStartTime = duration * attackData.comboWindowStart;
+            float windowEndTime = duration * attackData.comboWindowEnd;
 
-            // 데미지 적용
-            if (!_hasDealtDamage)
+            bool damageApplied = false;
+            bool windowOpened = false;
+
+            // 애니메이션 진행
+            while (elapsedTime < duration)
             {
-                ApplyDamage();
-                _hasDealtDamage = true;
+                elapsedTime += Time.deltaTime;
+                float progress = elapsedTime / duration;
+
+                // 데미지 적용 타이밍
+                if (!damageApplied && elapsedTime >= damageTime)
+                {
+                    ApplyDamage(attackData, comboIndex);
+                    damageApplied = true;
+                }
+
+                // 콤보 윈도우 시작
+                if (!windowOpened && elapsedTime >= windowStartTime)
+                {
+                    OpenComboWindow();
+                    windowOpened = true;
+                }
+
+                // 콤보 윈도우 종료
+                if (windowOpened && elapsedTime >= windowEndTime)
+                {
+                    CloseComboWindow();
+                }
+
+                yield return null;
             }
 
-            // 나머지 애니메이션 대기
-            float remainingTime = currentAttack.animationDuration - damageDelay;
-            yield return new WaitForSeconds(remainingTime);
-
             // 공격 종료
-            CompleteAttack();
+            FinishAttack(comboIndex);
+        }
+
+        private void OpenComboWindow()
+        {
+            isInComboWindow = true;
+            ChangeState(ComboState.ComboWindow);
+
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] 콤보 윈도우 열림 (입력 대기 중...)");
+        }
+
+        private void CloseComboWindow()
+        {
+            if (currentState == ComboState.ComboWindow)
+            {
+                isInComboWindow = false;
+                ChangeState(ComboState.Recovery);
+
+                if (showDebugLogs)
+                    Debug.Log("[PlayerCombat] 콤보 윈도우 닫힘");
+            }
+        }
+        private void FinishAttack(int comboIndex)
+        {
+            // 이동 허용
+            if (playerMovement != null)
+            {
+                playerMovement.SetMovementEnabled(true);
+            }
+
+            // Animator 상태 업데이트
+            if (animator != null)
+            {
+                animator.SetBool(IsAttackingHash, false);
+            }
+
+            // Idle 상태로 전환 (콤보 타임아웃에 의해 관리됨)
+            if (currentState != ComboState.Attacking) // 다음 공격이 시작되지 않았다면
+            {
+                ChangeState(ComboState.Idle);
+            }
+
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] 공격 종료: {comboAttacks[comboIndex].comboName}");
+        }
+
+        private void ResetCombo()
+        {
+            currentComboIndex = 0;
+            queuedComboIndex = -1;
+
+            ClearInputBuffer();
+            CancelComboTimeout();
+
+            ChangeState(ComboState.Idle);
+
+            if (animator != null)
+            {
+                animator.SetInteger(ComboIndexHash, 0);
+                animator.SetBool(IsAttackingHash, false);
+            }
+
+            OnComboReset?.Invoke();
+
+            if (showDebugLogs)
+                Debug.Log("[PlayerCombat] 콤보 리셋");
+        }
+
+        private void RefreshComboTimeout()
+        {
+            CancelComboTimeout();
+            comboTimeoutCoroutine = StartCoroutine(ComboTimeoutRoutine());
+        }
+
+        private void CancelComboTimeout()
+        {
+            if (comboTimeoutCoroutine != null)
+            {
+                StopCoroutine(comboTimeoutCoroutine);
+                comboTimeoutCoroutine = null;
+            }
+        }
+
+        private IEnumerator ComboTimeoutRoutine()
+        {
+            yield return new WaitForSeconds(comboTimeout);
+
+            if (showDebugLogs)
+                Debug.Log("[PlayerCombat] 콤보 타임아웃");
+
+            ResetCombo();
+        }
+
+        private void ApplyDamage(ComboAttackData attackData, int comboIndex)
+        {
+            if (damageDealtThisAttack) return;
+
+            damageDealtThisAttack = true;
+
+            // 공격 범위 내 적 탐지
+            Collider[] hitColliders = Physics.OverlapSphere(
+                attackPoint.position,
+                attackData.attackRange,
+                enemyLayer
+            );
+
+            int hitCount = 0;
+
+            foreach (Collider enemyCollider in hitColliders)
+            {
+                // 이미 타격한 적은 스킵
+                if (hitEnemiesThisAttack.Contains(enemyCollider))
+                    continue;
+
+                // 데미지 적용
+                IDamageable damageable = enemyCollider.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    damageable.TakeDamage(attackData.damage);
+                    hitCount++;
+                }
+
+                // 넉백 적용
+                ApplyKnockback(enemyCollider, attackData.knockbackForce);
+
+                // 타격 이펙트 생성
+                SpawnHitVFX(enemyCollider.transform.position, comboIndex);
+
+                // 타격 목록에 추가
+                hitEnemiesThisAttack.Add(enemyCollider);
+
+                // 이벤트 발생
+                OnEnemyHit?.Invoke(comboIndex, enemyCollider.gameObject);
+
+                if (showDebugLogs)
+                    Debug.Log($"[PlayerCombat] {enemyCollider.name}에게 {attackData.damage} 데미지!");
+            }
+
+            if (hitCount > 0 && showDebugLogs)
+            {
+                Debug.Log($"[PlayerCombat] 총 {hitCount}명 타격!");
+            }
+        }
+
+        private void ApplyKnockback(Collider enemyCollider, float force)
+        {
+            Vector3 knockbackDir = (enemyCollider.transform.position - transform.position).normalized;
+            knockbackDir.y = 0.3f; // 약간 위로
+
+            // Rigidbody 넉백
+            Rigidbody rb = enemyCollider.GetComponent<Rigidbody>();
+            if (rb != null && !rb.isKinematic)
+            {
+                rb.AddForce(knockbackDir * force, ForceMode.Impulse);
+            }
+
+            // IKnockbackable 인터페이스
+            IKnockbackable knockbackable = enemyCollider.GetComponent<IKnockbackable>();
+            if (knockbackable != null)
+            {
+                knockbackable.ApplyKnockback(knockbackDir, force);
+            }
         }
 
         private void RotateTowardsTarget()
@@ -202,36 +558,40 @@ namespace SJ
             // 가장 가까운 적 찾기
             Collider nearestEnemy = FindNearestEnemy();
 
+            Vector3 targetDirection;
+
             if (nearestEnemy != null)
             {
-                // 적 방향으로 회전
-                Vector3 directionToEnemy = (nearestEnemy.transform.position - transform.position).normalized;
-                directionToEnemy.y = 0;
-
-                if (directionToEnemy.magnitude > 0.1f && _playerMovement != null)
-                {
-                    _playerMovement.SetLookDirection(directionToEnemy);
-                    transform.rotation = Quaternion.LookRotation(directionToEnemy);
-                }
+                // 적이 있으면 적 방향
+                targetDirection = (nearestEnemy.transform.position - transform.position).normalized;
+                targetDirection.y = 0;
             }
             else if (Camera.main != null)
             {
-                // 적이 없으면 카메라 방향으로
-                Vector3 cameraForward = Camera.main.transform.forward;
-                cameraForward.y = 0;
-                cameraForward.Normalize();
+                // 적이 없으면 카메라 방향
+                targetDirection = Camera.main.transform.forward;
+                targetDirection.y = 0;
+                targetDirection.Normalize();
+            }
+            else
+            {
+                return;
+            }
 
-                if (cameraForward.magnitude > 0.1f && _playerMovement != null)
+            if (targetDirection.magnitude > 0.1f)
+            {
+                transform.rotation = Quaternion.LookRotation(targetDirection);
+
+                if (playerMovement != null)
                 {
-                    _playerMovement.SetLookDirection(cameraForward);
-                    transform.rotation = Quaternion.LookRotation(cameraForward);
+                    playerMovement.SetLookDirection(targetDirection);
                 }
             }
         }
 
         private Collider FindNearestEnemy()
         {
-            Collider[] enemies = Physics.OverlapSphere(transform.position, _attackRange * 2f, _enemyLayer);
+            Collider[] enemies = Physics.OverlapSphere(transform.position, detectionRadius, enemyLayer);
 
             if (enemies.Length == 0) return null;
 
@@ -251,296 +611,205 @@ namespace SJ
             return nearest;
         }
 
-        private void ApplyDamage()
+        private void PlayAttackAnimation(int comboIndex)
         {
-            // 공격 범위 내의 적 탐지
-            Collider[] hitEnemies = Physics.OverlapSphere(
-                _attackPoint.position,
-                _attackRadius,
-                _enemyLayer
-            );
+            if (animator == null) return;
 
-            AttackData currentAttack = GetCurrentAttackData();
-            int hitCount = 0;
-
-            // 감지된 적들에게 데미지 적용
-            foreach (Collider enemy in hitEnemies)
-            {
-                // 이미 이 공격에서 맞은 적은 스킵
-                if (hitEnemiesInCurrentAttack.Contains(enemy))
-                    continue;
-
-                // 데미지 적용
-                IDamageable damageable = enemy.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    damageable.TakeDamage(currentAttack.damage);
-                    hitEnemiesInCurrentAttack.Add(enemy);
-                    hitCount++;
-
-                    // 넉백 적용
-                    ApplyKnockback(enemy, currentAttack.knockbackForce);
-
-                    // 히트 이펙트 생성
-                    SpawnHitEffect(enemy.transform.position);
-
-                    // 이벤트 발생
-                    OnEnemyHit?.Invoke(_currentComboIndex, enemy.gameObject);
-
-                    Debug.Log($"{enemy.name}에게 {currentAttack.damage} 데미지를 입혔습니다!");
-                }
-            }
-
-            if (hitCount > 0)
-            {
-                Debug.Log($"총 {hitCount}명의 적을 타격했습니다!");
-            }
+            animator.SetTrigger(AttackTrigger);
+            animator.SetInteger(ComboIndexHash, comboIndex);
+            animator.SetBool(IsAttackingHash, true);
         }
 
-        private void ApplyKnockback(Collider enemy, float force)
+        private void SpawnAttackVFX(int comboIndex)
         {
-            // 넉백 방향 계산
-            Vector3 knockbackDirection = (enemy.transform.position - transform.position).normalized;
-            knockbackDirection.y = 0.3f; // 약간 위로
+            if (attackVFX == null || comboIndex >= attackVFX.Length) return;
 
-            // Rigidbody가 있으면 물리적 넉백
-            Rigidbody rb = enemy.GetComponent<Rigidbody>();
-            if (rb != null && !rb.isKinematic)
-            {
-                rb.AddForce(knockbackDirection * force, ForceMode.Impulse);
-            }
+            GameObject vfxPrefab = attackVFX[comboIndex];
+            if (vfxPrefab == null) return;
 
-            // IKnockbackable 넉백 전달
-            IKnockbackable knockbackable = enemy.GetComponent<IKnockbackable>();
-            if (knockbackable != null)
-            {
-                knockbackable.ApplyKnockback(knockbackDirection, force);
-            }
+            GameObject vfx = Instantiate(vfxPrefab, attackPoint.position, attackPoint.rotation);
+            Destroy(vfx, 2f);
         }
 
-        private void CompleteAttack()
+        private void SpawnHitVFX(Vector3 position, int comboIndex)
         {
-            _isAttacking = false;
+            if (hitVFX == null || comboIndex >= hitVFX.Length) return;
 
-            // 애니메이터 상태 업데이트
-            if (_animator != null)
-            {
-                _animator.SetBool(_isAttackingHash, false);
-            }
+            GameObject vfxPrefab = hitVFX[comboIndex];
+            if (vfxPrefab == null) return;
 
-            // 이동 다시 허용
-            if (_playerMovement != null)
-            {
-                _playerMovement.SetMovementEnabled(true);
-            }
-
-            // 다음 콤보 준비
-            AdvanceCombo();
-
-            // 공격 쿨다운 후 다시 공격 가능
-            StartCoroutine(AttackCooldownRoutine());
+            GameObject vfx = Instantiate(vfxPrefab, position, Quaternion.identity);
+            Destroy(vfx, 2f);
         }
 
-        private IEnumerator AttackCooldownRoutine()
+        private void ChangeState(ComboState newState)
         {
-            yield return new WaitForSeconds(_attackCooldown);
-            _canAttack = true;
-        }
+            if (currentState == newState) return;
 
-        private void AdvanceCombo()
-        {
-            _currentComboIndex++;
+            ComboState previousState = currentState;
+            currentState = newState;
 
-            // 콤보 인덱스가 최대치를 넘으면 초기화
-            if (_currentComboIndex >= _maxComboCount)
-            {
-                _currentComboIndex = 0;
-            }
-
-            // 애니메이터에 콤보 인덱스 전달
-            if (_animator != null)
-            {
-                _animator.SetInteger(_comboIndexHash, _currentComboIndex);
-            }
-
-            // 이벤트 발생
-            OnComboChanged?.Invoke(_currentComboIndex);
-        }
-
-        private void ResetCombo()
-        {
-            _currentComboIndex = 0;
-
-            if (_animator != null)
-            {
-                _animator.SetInteger(_comboIndexHash, _currentComboIndex);
-            }
-
-            OnComboChanged?.Invoke(_currentComboIndex);
-
-            Debug.Log("콤보가 초기화되었습니다.");
-        }
-
-        private void ResetComboTimer()
-        {
-            // 기존 타이머 중지
-            if (_comboResetCoroutine != null)
-            {
-                StopCoroutine(_comboResetCoroutine);
-            }
-
-            // 새 타이머 시작
-            _comboResetCoroutine = StartCoroutine(ComboResetRoutine());
-        }
-
-        private IEnumerator ComboResetRoutine()
-        {
-            yield return new WaitForSeconds(_comboResetTime);
-            ResetCombo();
-        }
-
-        private void PlayAttackAnimation()
-        {
-            if (_animator == null) return;
-
-            // 공격 트리거 발동
-            _animator.SetTrigger(_attackTriggerHash);
-            _animator.SetInteger(_comboIndexHash, _currentComboIndex);
-            _animator.SetBool(_isAttackingHash, true);
-
-    /*        // 공격 속도 조절 (옵션)
-            if (_animator.HasParameter(_attackSpeedHash))
-            {
-                _animator.SetFloat(_attackSpeedHash, 1f);
-            }*/
-        }
-
-        private void SpawnAttackEffect()
-        {
-            if (_attackEffectPrefabs == null || _attackEffectPrefabs.Length == 0) return;
-
-            int index = Mathf.Min(_currentComboIndex, _attackEffectPrefabs.Length - 1);
-            if (_attackEffectPrefabs[index] != null)
-            {
-                GameObject effect = Instantiate(
-                    _attackEffectPrefabs[index],
-                    _attackPoint.position,
-                    _attackPoint.rotation
-                );
-
-                Destroy(effect, 2f);
-            }
-        }
-
-        private void SpawnHitEffect(Vector3 position)
-        {
-            if (_hitEffectPrefabs == null || _hitEffectPrefabs.Length == 0) return;
-
-            int index = Mathf.Min(_currentComboIndex, _hitEffectPrefabs.Length - 1);
-            if (_hitEffectPrefabs[index] != null)
-            {
-                GameObject effect = Instantiate(
-                    _hitEffectPrefabs[index],
-                    position,
-                    Quaternion.identity
-                );
-
-                Destroy(effect, 2f);
-            }
-        }
-
-        private AttackData GetCurrentAttackData()
-        {
-            if (_currentComboIndex >= 0 && _currentComboIndex < _comboAttacks.Length)
-            {
-                return _comboAttacks[_currentComboIndex];
-            }
-
-            Debug.LogWarning($"잘못된 콤보 인덱스: {_currentComboIndex}");
-            return new AttackData { damage = 10f, animationDuration = 0.5f, knockbackForce = 2f };
+            if (showDebugLogs)
+                Debug.Log($"[PlayerCombat] State: {previousState} → {newState}");
         }
 
         public void SetCombatEnabled(bool enabled)
         {
             this.enabled = enabled;
+
             if (!enabled)
             {
                 ResetCombo();
-                _isAttacking = false;
-                _canAttack = true;
             }
         }
 
         public bool IsAttacking()
         {
-            return _isAttacking;
+            return currentState == ComboState.Attacking ||
+                   currentState == ComboState.ComboWindow ||
+                   currentState == ComboState.Recovery;
         }
 
         public int GetCurrentComboIndex()
         {
-            return _currentComboIndex;
+            return currentComboIndex;
+        }
+
+        public ComboState GetCurrentState()
+        {
+            return currentState;
         }
 
         public void ForceResetCombo()
         {
-            if (_comboResetCoroutine != null)
+            if (attackCoroutine != null)
             {
-                StopCoroutine(_comboResetCoroutine);
+                StopCoroutine(attackCoroutine);
             }
+
             ResetCombo();
         }
-
         public void CancelAttack()
         {
-            if (_attackCoroutine != null)
+            if (attackCoroutine != null)
             {
-                StopCoroutine(_attackCoroutine);
+                StopCoroutine(attackCoroutine);
             }
 
-            CompleteAttack();
+            if (playerMovement != null)
+            {
+                playerMovement.SetMovementEnabled(true);
+            }
+
+            ResetCombo();
         }
 
         private void OnDrawGizmosSelected()
         {
-            if (_attackPoint == null) return;
+            if (attackPoint == null) return;
 
-            // 공격 범위 시각화
-            Gizmos.color = _isAttacking ? Color.red : Color.yellow;
-            Gizmos.DrawWireSphere(_attackPoint.position, _attackRadius);
+            // 현재 콤보의 공격 범위
+            float range = (comboAttacks != null && currentComboIndex < comboAttacks.Length)
+                ? comboAttacks[currentComboIndex].attackRange
+                : 2f;
+
+            // 공격 범위
+            Gizmos.color = IsAttacking() ? Color.red : Color.yellow;
+            Gizmos.DrawWireSphere(attackPoint.position, range);
 
             // 적 탐지 범위
             Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
-            Gizmos.DrawWireSphere(transform.position, _attackRange * 2f);
+            Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
-            // 공격 방향 표시
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, _attackPoint.position);
+            // 상태 표시
+            Gizmos.color = GetStateColor();
+            Gizmos.DrawWireSphere(transform.position + Vector3.up * 2.5f, 0.3f);
+
+            // 콤보 윈도우 표시
+            if (isInComboWindow)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireCube(transform.position + Vector3.up * 3f, Vector3.one * 0.5f);
+            }
+
+            // 입력 버퍼 표시
+            if (hasBufferedInput)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireCube(transform.position + Vector3.up * 3.5f, Vector3.one * 0.3f);
+            }
         }
 
+        private Color GetStateColor()
+        {
+            switch (currentState)
+            {
+                case ComboState.Idle: return Color.white;
+                case ComboState.Attacking: return Color.red;
+                case ComboState.ComboWindow: return Color.green;
+                case ComboState.Recovery: return Color.yellow;
+                default: return Color.gray;
+            }
+        }
     }
 
-
-        [System.Serializable]
-    public struct AttackData
+    public enum ComboState
     {
+        Idle,           // 대기 (공격 가능)
+        Attacking,      // 공격 중 (애니메이션 재생 중)
+        ComboWindow,    // 콤보 윈도우 (다음 공격 입력 가능)
+        Recovery        // 회복 중 (공격 불가)
+    }
+
+    /// <summary>
+    /// 콤보 공격 데이터
+    /// </summary>
+    [System.Serializable]
+    public struct ComboAttackData
+    {
+        [Header("Basic Info")]
+        [Tooltip("콤보 이름 (예: Light Attack 1)")]
+        public string comboName;
+
+        [Header("Damage")]
         [Tooltip("공격 데미지")]
         public float damage;
-
-        [Tooltip("애니메이션 지속 시간")]
-        public float animationDuration;
 
         [Tooltip("넉백 강도")]
         public float knockbackForce;
 
-        [Tooltip("공격 범위 배율 (옵션)")]
-        public float rangeMultiplier;
+        [Tooltip("공격 범위")]
+        public float attackRange;
+
+        [Header("Animation Timing")]
+        [Tooltip("애니메이션 전체 길이 (초)")]
+        public float animationDuration;
+
+        [Tooltip("데미지 적용 타이밍 (0~1, 애니메이션의 몇 % 지점)")]
+        [Range(0f, 1f)]
+        public float damageFrame;
+
+        [Header("Combo Window")]
+        [Tooltip("콤보 윈도우 시작 시점 (0~1, 애니메이션의 몇 % 지점)")]
+        [Range(0f, 1f)]
+        public float comboWindowStart;
+
+        [Tooltip("콤보 윈도우 종료 시점 (0~1, 애니메이션의 몇 % 지점)")]
+        [Range(0f, 1f)]
+        public float comboWindowEnd;
     }
 
+    /// <summary>
+    /// 데미지를 받을 수 있는 오브젝트 인터페이스
+    /// </summary>
     public interface IDamageable
     {
         void TakeDamage(float damage);
     }
 
+    /// <summary>
+    /// 넉백을 받을 수 있는 오브젝트 인터페이스
+    /// </summary>
     public interface IKnockbackable
     {
         void ApplyKnockback(Vector3 direction, float force);
