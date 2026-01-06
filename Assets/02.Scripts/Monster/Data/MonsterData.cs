@@ -46,6 +46,12 @@ namespace Monster
         [Tooltip("공격 후딜 시간")]
         [SerializeField] private float _recoverTime = 0.5f;
 
+        [Header("근접 공격 - 돌진 패턴")]
+        [Tooltip("돌진 속도 (기본 이동 속도보다 빠름)")]
+        [SerializeField] private float _chargeSpeed = 7f;
+        [Tooltip("후퇴 거리 (공격 후 뒤로 물러나는 거리)")]
+        [SerializeField] private float _retreatDistance = 2f;
+
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
         [SerializeField] private int _goldReward = 5;
@@ -72,5 +78,9 @@ namespace Monster
         public float WindupTime => _windupTime;
         public float ExecuteTime => _executeTime;
         public float RecoverTime => _recoverTime;
+
+        // 근접 공격 Properties
+        public float ChargeSpeed => _chargeSpeed;
+        public float RetreatDistance => _retreatDistance;
     }
 }

@@ -13,6 +13,8 @@ namespace Monster
         private readonly Transform _transform;
 
         private float _recoverTimer = 0f;
+        private Vector3 _retreatTarget;
+        private bool _isRetreating = false;
 
         public MonsterState StateType => MonsterState.Recover;
 
@@ -25,13 +27,36 @@ namespace Monster
 
         public void Enter()
         {
-            // 이동 정지
-            if (_controller.NavAgent != null)
+            _recoverTimer = 0f;
+
+            // 후퇴 시작
+            StartRetreat();
+        }
+
+        /// <summary>
+        /// 플레이어 반대 방향으로 후퇴 시작
+        /// </summary>
+        private void StartRetreat()
+        {
+            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
             {
-                _controller.NavAgent.isStopped = true;
+                _isRetreating = false;
+                return;
             }
 
-            _recoverTimer = 0f;
+            // 플레이어 반대 방향 계산
+            Vector3 directionFromPlayer = (_transform.position - _controller.PlayerTransform.position).normalized;
+            directionFromPlayer.y = 0f;
+
+            // 후퇴 목표 지점 설정
+            _retreatTarget = _transform.position + directionFromPlayer * _controller.Data.RetreatDistance;
+
+            // NavMesh로 후퇴
+            _controller.NavAgent.isStopped = false;
+            _controller.NavAgent.SetDestination(_retreatTarget);
+            _isRetreating = true;
+
+            Debug.Log($"{_controller.gameObject.name}: 후퇴 시작");
         }
 
         public void Update()
@@ -42,7 +67,21 @@ namespace Monster
                 return;
             }
 
-            // 회복 시간 체크
+            // 후퇴 중이면 도착 여부 체크
+            if (_isRetreating)
+            {
+                float distanceToRetreatTarget = Vector3.Distance(_transform.position, _retreatTarget);
+
+                // 후퇴 목표에 도착하면 후퇴 종료
+                if (distanceToRetreatTarget <= 0.5f || !_controller.NavAgent.pathPending && _controller.NavAgent.remainingDistance <= 0.5f)
+                {
+                    _isRetreating = false;
+                    _controller.NavAgent.isStopped = true;
+                    Debug.Log($"{_controller.gameObject.name}: 후퇴 완료");
+                }
+            }
+
+            // 회복 시간 체크 (후퇴와 동시에 진행)
             _recoverTimer += Time.deltaTime;
 
             if (_recoverTimer >= _controller.Data.RecoverTime)

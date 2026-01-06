@@ -23,6 +23,8 @@ namespace Monster
         private AttackPhase _currentPhase;
         private float _phaseTimer;
         private bool _damageDealt; // Execute에서 한 번만 데미지 처리
+        private float _originalSpeed; // 원래 이동 속도 저장
+        private float _originalStoppingDistance; // 원래 정지 거리 저장
 
         public MonsterState StateType => MonsterState.Attack;
 
@@ -35,9 +37,12 @@ namespace Monster
 
         public void Enter()
         {
-            // 공격 시작 시 이동 정지
+            // 원래 속도 및 정지 거리 저장
             if (_controller.NavAgent != null)
             {
+                _originalSpeed = _controller.NavAgent.speed;
+                _originalStoppingDistance = _controller.NavAgent.stoppingDistance;
+                // Windup 단계에서는 이동 정지 (준비 자세)
                 _controller.NavAgent.isStopped = true;
             }
 
@@ -90,16 +95,20 @@ namespace Monster
                 case AttackPhase.Windup:
                     if (_phaseTimer >= _controller.Data.WindupTime)
                     {
-                        // Execute 단계로 전환
+                        // Execute 단계로 전환 - 돌진 시작
+                        StartCharge();
                         _currentPhase = AttackPhase.Execute;
                         _phaseTimer = 0f;
-                        Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Execute)");
+                        Debug.Log($"{_controller.gameObject.name}: 돌진 시작 (Execute)");
                     }
                     break;
 
                 case AttackPhase.Execute:
-                    // 데미지는 Execute 시작 시 한 번만
-                    if (!_damageDealt)
+                    // 플레이어를 향해 계속 이동 (돌진)
+                    UpdateCharge();
+
+                    // 플레이어와 가까워지면 데미지 처리
+                    if (!_damageDealt && distanceToPlayer <= 0.5f)
                     {
                         DealDamage();
                         _damageDealt = true;
@@ -107,7 +116,7 @@ namespace Monster
 
                     if (_phaseTimer >= _controller.Data.ExecuteTime)
                     {
-                        // Recover 상태로 전환
+                        // Recover 상태로 전환 (후퇴)
                         _stateMachine.ChangeState(MonsterState.Recover);
                     }
                     break;
@@ -119,12 +128,51 @@ namespace Monster
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.isStopped = false;
+                // 원래 속도 및 정지 거리로 복원
+                _controller.NavAgent.speed = _originalSpeed;
+                _controller.NavAgent.stoppingDistance = _originalStoppingDistance;
             }
 
             // 공격 슬롯 반환 (다른 몬스터가 사용 가능하도록)
             if (_controller.EnemyGroup != null)
             {
                 _controller.EnemyGroup.ReleaseAttackSlot(_controller);
+            }
+        }
+
+        /// <summary>
+        /// 돌진 시작 (Execute 단계 진입 시)
+        /// </summary>
+        private void StartCharge()
+        {
+            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
+            {
+                return;
+            }
+
+            // 돌진 설정: 속도 증가 + 정지 거리 0 (플레이어까지 정확히 돌진)
+            _controller.NavAgent.speed = _controller.Data.ChargeSpeed;
+            _controller.NavAgent.stoppingDistance = 0f;
+            _controller.NavAgent.isStopped = false;
+
+            // 플레이어를 향해 이동 시작
+            _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
+        }
+
+        /// <summary>
+        /// 돌진 중 업데이트 (플레이어 위치 추적)
+        /// </summary>
+        private void UpdateCharge()
+        {
+            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
+            {
+                return;
+            }
+
+            // 플레이어가 움직이면 목적지 갱신 (추적)
+            if (!_controller.NavAgent.isStopped)
+            {
+                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
             }
         }
 

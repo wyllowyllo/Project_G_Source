@@ -17,6 +17,11 @@ namespace Monster
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private EnemyGroup _enemyGroup;
 
+        [Header("디버그 정보")]
+        [SerializeField] private MonsterState _currentState;
+        [SerializeField] private float _distanceToPlayer;
+        [SerializeField] private float _distanceToHome;
+
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private MonsterStateMachine _stateMachine;
@@ -66,6 +71,24 @@ namespace Monster
             CheckTether();
 
             _stateMachine?.Update();
+
+            // 디버그 정보 업데이트 (인스펙터 표시용)
+            UpdateDebugInfo();
+        }
+
+        /// <summary>
+        /// 인스펙터에 표시할 디버그 정보 업데이트
+        /// </summary>
+        private void UpdateDebugInfo()
+        {
+            _currentState = _stateMachine?.CurrentStateType ?? MonsterState.Idle;
+
+            if (_playerTransform != null)
+            {
+                _distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
+            }
+
+            _distanceToHome = Vector3.Distance(transform.position, _homePosition);
         }
 
         private void InitializeMonster()

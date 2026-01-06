@@ -22,5 +22,14 @@ MonoBehaviour:
   _rotationSpeed: 120
   _detectionRange: 12
   _engageRange: 10
+  _preferredMinDistance: 2
+  _preferredMaxDistance: 4
+  _strafeSpeed: 2.5
+  _tetherRadius: 20
+  _windupTime: 0.3
+  _executeTime: 0.2
+  _recoverTime: 0.5
+  _chargeSpeed: 7
+  _retreatDistance: 2
   _experienceReward: 10
   _goldReward: 5
