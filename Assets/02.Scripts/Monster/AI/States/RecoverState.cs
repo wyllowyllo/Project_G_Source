@@ -1,7 +1,6 @@
-using Monster.AI;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.AI.States
 {
     /// <summary>
     /// BDO 스타일 - 회복 상태.
@@ -33,10 +32,7 @@ namespace Monster
             // 후퇴 시작
             StartRetreat();
         }
-
-        /// <summary>
-        /// 플레이어 반대 방향으로 후퇴 시작
-        /// </summary>
+        
         private void StartRetreat()
         {
             if (_controller.NavAgent == null || _controller.PlayerTransform == null)
@@ -62,13 +58,7 @@ namespace Monster
 
         public void Update()
         {
-            if (_controller.PlayerTransform == null)
-            {
-                _stateMachine.ChangeState(EMonsterState.Idle);
-                return;
-            }
-
-            // 후퇴 중이면 도착 여부 체크
+            
             if (_isRetreating)
             {
                 float distanceToRetreatTarget = Vector3.Distance(_transform.position, _retreatTarget);
@@ -82,19 +72,15 @@ namespace Monster
                 }
             }
 
-            // 회복 시간 체크 (후퇴와 동시에 진행)
+           
             _recoverTimer += Time.deltaTime;
 
             if (_recoverTimer >= _controller.Data.RecoverTime)
             {
-                // 회복 완료 - 다시 전투로 복귀
                 TransitionBackToCombat();
             }
         }
-
-        /// <summary>
-        /// 전투 상태로 복귀 (거리에 따라 Approach 또는 Strafe)
-        /// </summary>
+        
         private void TransitionBackToCombat()
         {
             float distanceToPlayer = Vector3.Distance(
@@ -102,13 +88,7 @@ namespace Monster
                 _controller.PlayerTransform.position
             );
 
-            // 감지 범위를 벗어나면 Idle로 복귀 (그룹 시스템이 있으면 이 체크는 무시)
-            if (_controller.EnemyGroup == null && distanceToPlayer > _controller.Data.DetectionRange)
-            {
-                _stateMachine.ChangeState(EMonsterState.Idle);
-                return;
-            }
-
+            
             // 거리에 따라 상태 전환
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {

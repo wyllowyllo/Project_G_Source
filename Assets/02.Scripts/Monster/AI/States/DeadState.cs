@@ -1,7 +1,6 @@
-using Monster.AI;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.AI.States
 {
     /// <summary>
     /// 몬스터의 사망 상태.

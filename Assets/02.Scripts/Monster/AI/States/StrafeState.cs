@@ -1,7 +1,6 @@
-using Monster.AI;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.AI.States
 {
     /// <summary>
     /// BDO 스타일 - 스트레이프 상태.
@@ -56,14 +55,7 @@ namespace Monster
                 _transform.position,
                 _controller.PlayerTransform.position
             );
-
-            // 감지 범위를 벗어나면 Idle로 복귀 (개별 감지 방식)
-            if (distanceToPlayer > _controller.Data.DetectionRange)
-            {
-                _stateMachine.ChangeState(EMonsterState.Idle);
-                return;
-            }
-
+            
             // 거리 밴드 체크
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {

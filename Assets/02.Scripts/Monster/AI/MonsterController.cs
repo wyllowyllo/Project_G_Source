@@ -1,4 +1,5 @@
 using Monster.AI;
+using Monster.AI.States;
 using Monster.Data;
 using Monster.Group;
 using UnityEngine;
@@ -71,7 +72,7 @@ namespace Monster
             }
 
             // BDO 스타일 - 테더 체크
-            CheckTether();
+            //CheckTether();
 
             _stateMachine?.Update();
 
@@ -107,7 +108,7 @@ namespace Monster
             // NavMeshAgent 설정
             _navAgent.speed = _monsterData.MoveSpeed;
             _navAgent.angularSpeed = _monsterData.RotationSpeed;
-            _navAgent.stoppingDistance = _monsterData.AttackRange;
+            _navAgent.stoppingDistance = 0f; // 각 상태에서 필요 시 동적으로 조정
 
             // BDO 스타일 - 홈 포지션 설정 (스폰 위치)
             _homePosition = transform.position;
@@ -209,7 +210,7 @@ namespace Monster
             MonsterTracker.MonsterTracker.Instance?.UnregisterMonster(this);
         }
 
-        // 디버그용
+        /*// 디버그용
         private void OnDrawGizmosSelected()
         {
             if (_monsterData == null)
@@ -237,6 +238,6 @@ namespace Monster
             Gizmos.color = Color.magenta;
             Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMinDistance);
             Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMaxDistance);
-        }
+        }*/
     }
 }

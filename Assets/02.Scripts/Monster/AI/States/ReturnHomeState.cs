@@ -1,7 +1,6 @@
-using Monster.AI;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.AI.States
 {
     /// <summary>
     /// BDO 스타일 - 귀환 상태.
