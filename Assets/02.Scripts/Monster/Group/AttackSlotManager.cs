@@ -5,7 +5,6 @@ namespace Monster.Group
 {
     /// <summary>
     /// 공격 슬롯을 관리하여 동시에 공격하는 몬스터 수를 제한하는 클래스.
-    /// 난이도 조절과 가독성 확보를 위해 사용됩니다.
     /// </summary>
     public class AttackSlotManager
     {

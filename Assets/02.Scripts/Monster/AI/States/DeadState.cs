@@ -3,8 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// 몬스터의 사망 상태.
-    /// 사망 처리 및 보상 드롭을 담당합니다.
+    /// 몬스터의 사망 상태
     /// </summary>
     public class DeadState : IMonsterState
     {

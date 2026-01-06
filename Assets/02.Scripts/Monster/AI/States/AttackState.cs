@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// BDO 스타일 - 공격 상태.
+    /// 공격 상태
     /// Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성됩니다.
     /// 공격 슬롯 시스템과 연동하여 동시 공격을 제한합니다.
     /// </summary>
@@ -12,21 +12,20 @@ namespace Monster.AI.States
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
-
-        // BDO 스타일 3단계
-        private enum AttackPhase
+        
+        private enum EAttackPhase
         {
-            Windup,     // 텔레그래프 (준비 동작)
-            Execute     // 실행 (데미지 발생)
+            Windup,     
+            Execute     
         }
 
-        private AttackPhase _currentPhase;
+        private EAttackPhase _currentPhase;
         private float _phaseTimer;
         private bool _damageDealt; // Execute에서 한 번만 데미지 처리
-        private float _originalSpeed; // 원래 이동 속도 저장
-        private float _originalStoppingDistance; // 원래 정지 거리 저장
-        private Vector3 _chargeDirection; // 돌진 방향 (시작 시점에 고정)
-        private Vector3 _chargeStartPosition; // 돌진 시작 위치
+        private float _originalSpeed;
+        private float _originalStoppingDistance; 
+        private Vector3 _chargeDirection; 
+        private Vector3 _chargeStartPosition;
         private float _maxChargeDistance = 2f; // 최대 돌진 거리
 
         public EMonsterState StateType => EMonsterState.Attack;
@@ -45,12 +44,13 @@ namespace Monster.AI.States
             {
                 _originalSpeed = _controller.NavAgent.speed;
                 _originalStoppingDistance = _controller.NavAgent.stoppingDistance;
+                
                 // Windup 단계에서는 이동 정지 (준비 자세)
                 _controller.NavAgent.isStopped = true;
             }
 
-            // Windup 단계 시작
-            _currentPhase = AttackPhase.Windup;
+           
+            _currentPhase = EAttackPhase.Windup;
             _phaseTimer = 0f;
             _damageDealt = false;
 
@@ -59,12 +59,6 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            if (_controller.PlayerTransform == null)
-            {
-                _stateMachine.ChangeState(EMonsterState.Idle);
-                return;
-            }
-
             // 공격 슬롯을 잃으면 Strafe로 복귀 (다른 몬스터에게 공격 기회 양보)
             if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
             {
@@ -77,8 +71,8 @@ namespace Monster.AI.States
                 _controller.PlayerTransform.position
             );
 
-            // Windup 단계에서만 거리 체크 및 플레이어 바라보기
-            if (_currentPhase == AttackPhase.Windup)
+          
+            if (_currentPhase == EAttackPhase.Windup)
             {
                 // 너무 멀어지면 공격 취소 (여유 있게 AttackRange * 2)
                 if (distanceToPlayer > _controller.Data.AttackRange * 2f)
@@ -90,30 +84,29 @@ namespace Monster.AI.States
                 // 플레이어를 바라보기
                 LookAtPlayer();
             }
-            // Execute 단계에서는 거리 체크 안 함 (돌진 중이므로)
+           
 
-            // 단계별 처리
+            
             _phaseTimer += Time.deltaTime;
 
             switch (_currentPhase)
             {
-                case AttackPhase.Windup:
+                case EAttackPhase.Windup:
                     if (_phaseTimer >= _controller.Data.WindupTime)
                     {
-                        // Execute 단계로 전환 - 돌진 시작
+                        // 돌진 시작
                         StartCharge();
-                        _currentPhase = AttackPhase.Execute;
+                        _currentPhase = EAttackPhase.Execute;
                         _phaseTimer = 0f;
                         Debug.Log($"{_controller.gameObject.name}: 돌진 시작 (Execute)");
                     }
                     break;
 
-                case AttackPhase.Execute:
+                case EAttackPhase.Execute:
                     // 플레이어를 향해 계속 이동 (돌진)
                     UpdateCharge();
 
                     // 플레이어와 가까워지면 데미지 처리
-                    //TODO : 실제로 닿았을 때 데미지 처리로 변경
                     if (!_damageDealt && distanceToPlayer <= 0.5f)
                     {
                         DealDamage();
@@ -136,7 +129,7 @@ namespace Monster.AI.States
                 // NavAgent 재활성화
                 _controller.NavAgent.enabled = true;
                 _controller.NavAgent.isStopped = false;
-                // 원래 속도 및 정지 거리로 복원
+                
                 _controller.NavAgent.speed = _originalSpeed;
                 _controller.NavAgent.stoppingDistance = _originalStoppingDistance;
             }
@@ -148,30 +141,23 @@ namespace Monster.AI.States
             }
         }
 
-        /// <summary>
-        /// 돌진 시작 (Execute 단계 진입 시)
-        /// </summary>
+       
         private void StartCharge()
         {
-            if (_controller.PlayerTransform == null)
-            {
-                return;
-            }
-
             // NavAgent 비활성화 (직접 이동 제어)
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.enabled = false;
             }
 
-            // 돌진 시작 위치 저장
+          
             _chargeStartPosition = _transform.position;
 
-            // 돌진 방향 설정 (이 시점의 플레이어 위치를 향해 고정!)
+            // 돌진 방향 설정 
             _chargeDirection = (_controller.PlayerTransform.position - _transform.position).normalized;
-            _chargeDirection.y = 0f; // 수평 방향으로만
+            _chargeDirection.y = 0f; 
 
-            // 플레이어 방향으로 회전 (돌진 전 준비)
+            // 플레이어 방향으로 회전 
             if (_chargeDirection != Vector3.zero)
             {
                 _transform.rotation = Quaternion.LookRotation(_chargeDirection);
@@ -179,13 +165,9 @@ namespace Monster.AI.States
 
             Debug.Log($"{_controller.gameObject.name}: 돌진 시작 - 고정 방향 {_chargeDirection}");
         }
-
-        /// <summary>
-        /// 돌진 중 업데이트 (직선 돌진, 추적 안 함)
-        /// </summary>
+        
         private void UpdateCharge()
         {
-            // 돌진한 거리 계산
             float chargedDistance = Vector3.Distance(_chargeStartPosition, _transform.position);
 
             // 최대 거리 도달하면 돌진 중단
@@ -194,13 +176,10 @@ namespace Monster.AI.States
                 return;
             }
 
-            // 고정된 방향으로 직선 돌진 (추적 안 함)
+          
             _transform.position += _chargeDirection * _controller.Data.ChargeSpeed * Time.deltaTime;
         }
-
-        /// <summary>
-        /// 플레이어를 바라보기 (Windup 단계)
-        /// </summary>
+        
         private void LookAtPlayer()
         {
             Vector3 directionToPlayer = (_controller.PlayerTransform.position - _transform.position).normalized;
@@ -217,13 +196,11 @@ namespace Monster.AI.States
             }
         }
 
-        /// <summary>
-        /// 데미지 처리 (Execute 단계)
-        /// </summary>
+       
         private void DealDamage()
         {
             // TODO: 애니메이션 트리거
-
+            // TODO : 실제로 닿았을 때 데미지 처리로 변경
             Debug.Log($"{_controller.gameObject.name} 공격! 데미지: {_controller.Data.AttackDamage}");
 
             // 플레이어가 IDamageable을 구현했다면 데미지 적용
@@ -233,9 +210,7 @@ namespace Monster.AI.States
             }
         }
 
-        /// <summary>
-        /// 전투 상태로 복귀 (거리에 따라 Approach 또는 Strafe)
-        /// </summary>
+      
         private void ReturnToCombat()
         {
             float distanceToPlayer = Vector3.Distance(
@@ -245,12 +220,12 @@ namespace Monster.AI.States
 
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
-                // 거리 밴드 밖이면 Approach
+                
                 _stateMachine.ChangeState(EMonsterState.Approach);
             }
             else
             {
-                // 거리 밴드 안이면 Strafe
+               
                 _stateMachine.ChangeState(EMonsterState.Strafe);
             }
         }

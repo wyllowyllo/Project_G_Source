@@ -3,8 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// BDO 스타일 - 접근 상태.
-    /// 플레이어가 거리 밴드 밖에 있을 때 접근합니다.
+    /// 플레이어에게 접근
     /// </summary>
     public class ApproachState : IMonsterState
     {
@@ -36,18 +35,8 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            if (_controller.PlayerTransform == null)
-            {
-                _stateMachine.ChangeState(EMonsterState.Idle);
-                return;
-            }
-
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
-
-            // 감지 범위를 벗어나면 Idle로 복귀 (개별 감지 방식)
+            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
+            
             if (distanceToPlayer > _controller.Data.DetectionRange)
             {
                 _stateMachine.ChangeState(EMonsterState.ReturnHome);

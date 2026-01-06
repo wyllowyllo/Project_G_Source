@@ -6,7 +6,7 @@ namespace Monster.Group
 {
     /// <summary>
     /// 몬스터 그룹의 전투를 운영하는 핵심 클래스.
-    /// Aggro 관리, 공격 슬롯 분배를 담당합니다. (핵앤슬래시 스타일)
+    /// Aggro 관리, 공격 슬롯 분배를 담당합니다. 
     /// </summary>
     public class EnemyGroup : MonoBehaviour
     {
@@ -34,16 +34,10 @@ namespace Monster.Group
         {
             InitializeGroup();
         }
-
-        private void Update()
-        {
-            // EnemyGroup은 공격 슬롯만 관리
-            // Aggro 감지는 각 몬스터의 IdleState에서 개별적으로 처리 (업계 표준)
-        }
+        
 
         private void InitializeGroup()
         {
-            // 그룹 센터가 설정되지 않았으면 현재 위치 사용
             if (_groupCenter == Vector3.zero)
             {
                 _groupCenter = transform.position;

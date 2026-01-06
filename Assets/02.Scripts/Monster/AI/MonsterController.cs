@@ -14,18 +14,16 @@ namespace Monster
     [RequireComponent(typeof(NavMeshAgent))]
     public class MonsterController : MonoBehaviour, IDamageable
     {
+        
+        [SerializeField] private EMonsterState _currentState;
+        
         [Header("설정")]
         [SerializeField] private MonsterData _monsterData;
 
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private EnemyGroup _enemyGroup;
-
-        [Header("디버그 정보")]
-        [SerializeField] private EMonsterState _currentState;
-        [SerializeField] private float _distanceToPlayer;
-        [SerializeField] private float _distanceToHome;
-
+        
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private MonsterStateMachine _stateMachine;
@@ -70,29 +68,19 @@ namespace Monster
             {
                 return;
             }
-
-            // BDO 스타일 - 테더 체크
-            //CheckTether();
-
+            
             _stateMachine?.Update();
 
             // 디버그 정보 업데이트 (인스펙터 표시용)
             UpdateDebugInfo();
         }
 
-        /// <summary>
-        /// 인스펙터에 표시할 디버그 정보 업데이트
-        /// </summary>
+       
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
 
-            if (_playerTransform != null)
-            {
-                _distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
-            }
-
-            _distanceToHome = Vector3.Distance(transform.position, _homePosition);
+          
         }
 
         private void InitializeMonster()
@@ -108,9 +96,7 @@ namespace Monster
             // NavMeshAgent 설정
             _navAgent.speed = _monsterData.MoveSpeed;
             _navAgent.angularSpeed = _monsterData.RotationSpeed;
-            _navAgent.stoppingDistance = 0f; // 각 상태에서 필요 시 동적으로 조정
-
-            // BDO 스타일 - 홈 포지션 설정 (스폰 위치)
+            
             _homePosition = transform.position;
         }
 
@@ -118,7 +104,7 @@ namespace Monster
         {
             _stateMachine = new MonsterStateMachine(this);
 
-            // BDO 스타일 - 상태 등록
+            // 상태 등록
             _stateMachine.RegisterState(EMonsterState.Idle, new IdleState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine));
@@ -152,26 +138,7 @@ namespace Monster
         {
             _enemyGroup = group;
         }
-
-        /// <summary>
-        /// BDO 스타일 - 테더 체크 (홈 포지션으로부터 너무 멀어지면 복귀)
-        /// </summary>
-        private void CheckTether()
-        {
-            if (_monsterData == null || _isTethered)
-            {
-                return;
-            }
-
-            float distanceFromHome = Vector3.Distance(transform.position, _homePosition);
-
-            // 테더 범위를 벗어나면 복귀 상태로 전환
-            if (distanceFromHome > _monsterData.TetherRadius)
-            {
-                _isTethered = true;
-                _stateMachine?.ChangeState(EMonsterState.ReturnHome);
-            }
-        }
+        
 
         /// <summary>
         /// 테더 리셋 (홈 복귀 완료 시 호출)
@@ -210,34 +177,6 @@ namespace Monster
             MonsterTracker.MonsterTracker.Instance?.UnregisterMonster(this);
         }
 
-        /*// 디버그용
-        private void OnDrawGizmosSelected()
-        {
-            if (_monsterData == null)
-            {
-                return;
-            }
-
-            // 감지 범위
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, _monsterData.DetectionRange);
-
-            // 공격 범위
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, _monsterData.AttackRange);
-
-            // BDO 스타일 - 테더 범위 (홈 포지션 기준)
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(_homePosition, _monsterData.TetherRadius);
-
-            // 홈 포지션
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(_homePosition, 0.5f);
-
-            // 거리 밴드 (선호 거리)
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMinDistance);
-            Gizmos.DrawWireSphere(transform.position, _monsterData.PreferredMaxDistance);
-        }*/
+        
     }
 }

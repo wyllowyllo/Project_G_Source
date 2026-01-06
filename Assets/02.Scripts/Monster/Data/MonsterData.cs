@@ -26,7 +26,7 @@ namespace Monster.Data
         [SerializeField] private float _detectionRange = 12f;
         [SerializeField] private float _engageRange = 10f;
 
-        [Header("BDO 스타일 - 거리 밴드 시스템")]
+        [Header("거리 밴드 시스템")]
         [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
         [SerializeField] private float _preferredMinDistance = 2.0f;
         [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
@@ -34,11 +34,11 @@ namespace Monster.Data
         [Tooltip("스트레이프(좌우 이동) 속도")]
         [SerializeField] private float _strafeSpeed = 2.5f;
 
-        [Header("BDO 스타일 - 테더 시스템")]
+        [Header("테더 시스템")]
         [Tooltip("홈 포지션으로부터 최대 이탈 거리")]
         [SerializeField] private float _tetherRadius = 20f;
 
-        [Header("BDO 스타일 - 스킬 패턴")]
+        [Header("스킬 패턴")]
         [Tooltip("공격 준비 시간 (텔레그래프)")]
         [SerializeField] private float _windupTime = 0.3f;
         [Tooltip("공격 실행 시간")]

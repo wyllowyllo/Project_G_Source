@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// BDO 스타일 - 스트레이프 상태.
+    /// 스트레이프 상태.
     /// 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동합니다.
     /// </summary>
     public class StrafeState : IMonsterState
@@ -56,34 +56,32 @@ namespace Monster.AI.States
                 _controller.PlayerTransform.position
             );
             
-            // 거리 밴드 체크
+            
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
-                // 너무 멀면 Approach로 전환
+              
                 _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
             }
             else if (distanceToPlayer < _controller.Data.PreferredMinDistance)
             {
-                // 너무 가까우면 후퇴
+               
                 Retreat();
             }
             else
             {
-                // 적절한 거리 - 좌우 스트레이프
+                
                 PerformStrafe();
             }
 
-            // 공격 범위 내에 들어오면 공격 시도
+            
             if (distanceToPlayer <= _controller.Data.AttackRange)
             {
                 TryRequestAttackSlot();
             }
         }
 
-        /// <summary>
-        /// 플레이어로부터 후퇴
-        /// </summary>
+       
         private void Retreat()
         {
             if (_controller.NavAgent == null || !_controller.NavAgent.isActiveAndEnabled)
@@ -97,10 +95,7 @@ namespace Monster.AI.States
 
             _controller.NavAgent.SetDestination(retreatPosition);
         }
-
-        /// <summary>
-        /// 좌우 스트레이프 (압박 느낌)
-        /// </summary>
+        
         private void PerformStrafe()
         {
             if (_controller.NavAgent == null || !_controller.NavAgent.isActiveAndEnabled)
@@ -126,42 +121,35 @@ namespace Monster.AI.States
 
             _controller.NavAgent.SetDestination(strafeDestination);
         }
-
-        /// <summary>
-        /// 공격 슬롯 요청 및 Attack 상태로 전환 시도
-        /// </summary>
+        
         private void TryRequestAttackSlot()
         {
-            // EnemyGroup이 있으면 슬롯 시스템 사용
+            
             if (_controller.EnemyGroup != null)
             {
-                // 이미 슬롯을 보유한 경우
+                
                 if (_controller.EnemyGroup.CanAttack(_controller))
                 {
                     _stateMachine.ChangeState(EMonsterState.Attack);
                     return;
                 }
 
-                // 슬롯 요청 타이머 갱신
+               
                 _slotRequestTimer += Time.deltaTime;
 
-                // 주기적으로 공격 슬롯 요청
+                
                 if (_slotRequestTimer >= _slotRequestCooldown)
                 {
                     _slotRequestTimer = 0f;
 
-                    // 공격 슬롯 획득 시도
+                   
                     if (_controller.EnemyGroup.RequestAttackSlot(_controller))
                     {
                         _stateMachine.ChangeState(EMonsterState.Attack);
                     }
                 }
             }
-            else
-            {
-                // EnemyGroup이 없으면 바로 공격 (프로토타입 모드)
-                _stateMachine.ChangeState(EMonsterState.Attack);
-            }
+            
         }
 
         public void Exit()

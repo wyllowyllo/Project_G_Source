@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// BDO 스타일 - 회복 상태.
+    /// 회복 상태
     /// 공격 후 짧은 후딜 시간을 가진 후 다시 전투로 복귀합니다.
     /// </summary>
     public class RecoverState : IMonsterState
@@ -35,12 +35,6 @@ namespace Monster.AI.States
         
         private void StartRetreat()
         {
-            if (_controller.NavAgent == null || _controller.PlayerTransform == null)
-            {
-                _isRetreating = false;
-                return;
-            }
-
             // 플레이어 반대 방향 계산
             Vector3 directionFromPlayer = (_transform.position - _controller.PlayerTransform.position).normalized;
             directionFromPlayer.y = 0f;
@@ -83,21 +77,17 @@ namespace Monster.AI.States
         
         private void TransitionBackToCombat()
         {
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
+            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
 
             
-            // 거리에 따라 상태 전환
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
-                // 거리 밴드 밖이면 Approach
+                
                 _stateMachine.ChangeState(EMonsterState.Approach);
             }
             else
             {
-                // 거리 밴드 안이면 Strafe
+                
                 _stateMachine.ChangeState(EMonsterState.Strafe);
             }
         }

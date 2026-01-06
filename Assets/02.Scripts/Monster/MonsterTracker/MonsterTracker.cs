@@ -96,9 +96,7 @@ namespace Monster.MonsterTracker
             return GetAliveMonsters().Count;
         }
 
-        /// <summary>
-        /// 클리어 조건 체크
-        /// </summary>
+       
         private void CheckClearCondition()
         {
             if (_isCleared)

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Monster.Data
 {
     /// <summary>
-    /// BDO 스타일 몬스터 스킬 패턴 데이터.
+    /// 몬스터 스킬 패턴 데이터.
     /// 텔레그래프 → 실행 → 후딜 구조를 정의합니다.
     /// </summary>
     [CreateAssetMenu(fileName = "SkillData", menuName = "ProjectG/Monster/SkillData")]
@@ -13,7 +13,7 @@ namespace Monster.Data
         [SerializeField] private string _skillName = "Basic Attack";
         [SerializeField] private string _skillDescription = "";
 
-        [Header("타이밍 (BDO 스타일 3단계)")]
+        [Header("타이밍")]
         [Tooltip("텔레그래프 시간 (준비 동작)")]
         [SerializeField] private float _windupTime = 0.3f;
         [Tooltip("실행 시간 (데미지 발생)")]

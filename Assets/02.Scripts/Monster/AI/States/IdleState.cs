@@ -3,9 +3,7 @@ using UnityEngine;
 namespace Monster.AI.States
 {
     /// <summary>
-    /// BDO 스타일 - 대기 상태.
-    /// 그룹 시스템이 없으면 개별적으로 플레이어를 감지하여 Approach 상태로 전환합니다.
-    /// 그룹 시스템이 있으면 EnemyGroup이 Aggro를 관리합니다.
+    /// 대기 상태
     /// </summary>
     public class IdleState : IMonsterState
     {
@@ -33,18 +31,13 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            // 개별 몬스터가 독립적으로 플레이어 감지 (업계 표준)
-            if (_controller.PlayerTransform == null)
-            {
-                return;
-            }
-
+            
             float distanceToPlayer = Vector3.Distance(
                 _transform.position,
                 _controller.PlayerTransform.position
             );
 
-            // 감지 범위 내에 플레이어가 있으면 Approach 상태로 전환
+          
             if (distanceToPlayer <= _controller.Data.DetectionRange)
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
