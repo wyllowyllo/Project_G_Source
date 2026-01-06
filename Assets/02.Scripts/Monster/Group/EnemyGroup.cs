@@ -24,11 +24,9 @@ namespace Monster.Group
 
         // 그룹 상태
         private List<MonsterController> _monsters = new List<MonsterController>();
-        private bool _isInCombat = false;
 
         // 프로퍼티
         public Vector3 GroupCenter => _groupCenter;
-        public bool IsInCombat => _isInCombat;
         public int MonsterCount => _monsters.Count;
         public Transform PlayerTransform => _playerTransform;
 
@@ -39,22 +37,8 @@ namespace Monster.Group
 
         private void Update()
         {
-            if (_monsters.Count == 0)
-            {
-                return;
-            }
-
-            // 전투 상태 체크 및 리셋
-            if (_isInCombat)
-            {
-                CheckCombatReset();
-            }
-
-            // Aggro 체크
-            if (!_isInCombat)
-            {
-                CheckAggro();
-            }
+            // EnemyGroup은 공격 슬롯만 관리
+            // Aggro 감지는 각 몬스터의 IdleState에서 개별적으로 처리 (업계 표준)
         }
 
         private void InitializeGroup()
@@ -120,87 +104,6 @@ namespace Monster.Group
                 Debug.LogWarning("EnemyGroup: Player를 찾을 수 없습니다.");
             }
         }
-
-        /// <summary>
-        /// Aggro 범위 체크 - 플레이어가 범위 안에 들어오면 전투 시작
-        /// </summary>
-        private void CheckAggro()
-        {
-            if (_playerTransform == null)
-            {
-                FindPlayer();
-                return;
-            }
-
-            float distanceToPlayer = Vector3.Distance(_groupCenter, _playerTransform.position);
-
-            if (distanceToPlayer <= _aggroRange)
-            {
-                TransitionToCombat();
-            }
-        }
-
-        /// <summary>
-        /// BDO 스타일 - 그룹 전체를 전투 상태로 전환
-        /// </summary>
-        private void TransitionToCombat()
-        {
-            if (_isInCombat)
-            {
-                return;
-            }
-
-            _isInCombat = true;
-            Debug.Log($"EnemyGroup: 전투 시작! 그룹 크기: {_monsters.Count}");
-
-            // 모든 몬스터를 Approach 상태로 전환 (BDO 스타일)
-            foreach (MonsterController monster in _monsters)
-            {
-                if (monster != null && monster.IsAlive)
-                {
-                    monster.StateMachine.ChangeState(EMonsterState.Approach);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 전투 상태 리셋 체크 - 모든 몬스터가 비전투 상태면 전투 종료
-        /// </summary>
-        private void CheckCombatReset()
-        {
-            if (!_isInCombat)
-            {
-                return;
-            }
-
-            // 모든 몬스터가 Idle 또는 Dead 상태인지 확인
-            bool allMonstersNonCombat = true;
-
-            foreach (MonsterController monster in _monsters)
-            {
-                if (monster == null || !monster.IsAlive)
-                {
-                    continue;
-                }
-
-                EMonsterState currentState = monster.StateMachine.CurrentStateType;
-
-                // 전투 관련 상태가 하나라도 있으면 계속 전투 중
-                if (currentState != EMonsterState.Idle && currentState != EMonsterState.Dead)
-                {
-                    allMonstersNonCombat = false;
-                    break;
-                }
-            }
-
-            // 모든 몬스터가 비전투 상태면 전투 종료
-            if (allMonstersNonCombat)
-            {
-                _isInCombat = false;
-                Debug.Log($"EnemyGroup: 전투 종료 - 모든 몬스터가 비전투 상태");
-            }
-        }
-
 
         /// <summary>
         /// 공격 슬롯 요청

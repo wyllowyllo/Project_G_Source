@@ -34,15 +34,7 @@ namespace Monster
 
         public void Update()
         {
-            // EnemyGroup이 있으면 그룹이 Aggro를 관리하므로 개별 감지 불필요
-            if (_controller.EnemyGroup != null)
-            {
-                // EnemyGroup.CheckAggro()가 플레이어 진입을 감지하고
-                // EnemyGroup.TransitionToCombat()이 그룹 전체를 Approach로 전환합니다.
-                return;
-            }
-
-            // EnemyGroup이 없으면 개별적으로 플레이어 감지 (BDO 스타일)
+            // 개별 몬스터가 독립적으로 플레이어 감지 (업계 표준)
             if (_controller.PlayerTransform == null)
             {
                 return;

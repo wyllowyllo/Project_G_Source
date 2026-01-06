@@ -34,7 +34,7 @@ namespace Monster.Group
 
         private EnemyGroup _enemyGroup;
         private readonly List<MonsterController> _spawnedMonsters = new();
-        private bool _hasSpawned;
+       
 
         private void Start()
         {
@@ -43,18 +43,9 @@ namespace Monster.Group
                 Spawn();
             }
         }
-
-        /// <summary>
-        /// 몬스터 그룹 스폰
-        /// </summary>
-        public void Spawn()
+        
+        private void Spawn()
         {
-            if (_hasSpawned)
-            {
-                Debug.LogWarning($"SpawnGroup [{gameObject.name}]: 이미 스폰되었습니다.");
-                return;
-            }
-
             if (_monsterSpawns == null || _monsterSpawns.Count == 0)
             {
                 Debug.LogWarning($"SpawnGroup [{gameObject.name}]: 몬스터 스폰 설정이 없습니다.");
@@ -68,7 +59,6 @@ namespace Monster.Group
             }
 
             SpawnEnemyGroup();
-            _hasSpawned = true;
         }
 
         private void SpawnEnemyGroup()
@@ -118,19 +108,13 @@ namespace Monster.Group
 
                     Debug.Log($"SpawnGroup [{gameObject.name}]: 몬스터 스폰 - {monsterObj.name}");
                 }
-                else
-                {
-                    Debug.LogError($"SpawnGroup [{gameObject.name}]: 스폰된 프리팹에 MonsterController가 없습니다 - {monsterObj.name}");
-                }
+               
             }
-
-            Debug.Log($"SpawnGroup [{gameObject.name}]: EnemyGroup 생성 완료, 몬스터 수: {_spawnedMonsters.Count}");
+            
         }
 
-        /// <summary>
-        /// 이 그룹의 살아있는 몬스터 반환
-        /// </summary>
-        public List<MonsterController> GetAliveMonsters()
+       
+        private List<MonsterController> GetAliveMonsters()
         {
             _spawnedMonsters.RemoveAll(m => m == null || !m.IsAlive);
             return _spawnedMonsters;
@@ -165,7 +149,7 @@ namespace Monster.Group
                 }
             }
 
-            // 그룹 범위 표시 (EnemyGroup이 있을 경우)
+            // 그룹 범위 표시 
             if (_enemyGroup != null)
             {
                 Gizmos.color = Color.yellow;

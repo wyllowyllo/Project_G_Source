@@ -48,8 +48,8 @@ namespace Monster
                 _controller.PlayerTransform.position
             );
 
-            // 감지 범위를 벗어나면 Idle로 복귀 (그룹 시스템이 있으면 이 체크는 무시)
-            if (_controller.EnemyGroup == null && distanceToPlayer > _controller.Data.DetectionRange)
+            // 감지 범위를 벗어나면 Idle로 복귀 (개별 감지 방식)
+            if (distanceToPlayer > _controller.Data.DetectionRange)
             {
                 _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
