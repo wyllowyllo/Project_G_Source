@@ -25,12 +25,7 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            // 공격 슬롯 반환 
-            if (_controller.EnemyGroup != null)
-            {
-                _controller.EnemyGroup.ReleaseAttackSlot(_controller);
-            }
-
+            
             // 홈 포지션으로 이동
             if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
             {

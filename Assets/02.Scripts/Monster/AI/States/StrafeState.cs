@@ -12,7 +12,7 @@ namespace Monster.AI.States
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
 
-        private float _slotRequestCooldown = 0.5f;
+        private float _slotRequestCooldown = 5f;
         private float _slotRequestTimer = 0f;
 
         // 스트레이프 관련
