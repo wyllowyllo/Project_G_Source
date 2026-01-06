@@ -12,7 +12,7 @@ namespace Monster
         [Header("그룹 설정")]
         [SerializeField] private Vector3 _groupCenter;
         [SerializeField] private float _aggroRange = 12f;
-        [SerializeField] private int _maxAttackSlots = 8;
+        [SerializeField] private int _maxAttackSlots = 2;
 
         [Header("디버그")]
         [SerializeField] private bool _showDebugGizmos = true;
