@@ -24,13 +24,19 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
     private Vector3 _moveInputVector;
     private Vector3 _currentVelocity;
     private Vector3 _lookDirection;
-
+   
     // Animation Parameters
     private readonly int _moveSpeedHash = Animator.StringToHash("MoveSpeed");
     private readonly int _isMovingHash = Animator.StringToHash("IsMoving");
 
     // Control Flags
     private bool _movementEnabled = true;
+
+    // Root Motion
+    private Vector3 _rootMotionPositionDelta;
+    private Quaternion _rootMotionRotationDelta;
+    private bool _applyRootMotion = true;
+    private float _animationMoveSpeed = 5f;
 
     private void Awake()
     {
@@ -128,6 +134,15 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
         return (cameraForward * inputVector.z + cameraRight * inputVector.x).normalized;
     }
 
+    private void OnAnimatorMove()
+    {
+        if (_animator == null) return;
+
+        // Root Motion 델타 값 저장
+        _rootMotionPositionDelta = _animator.deltaPosition * _animationMoveSpeed;
+        _rootMotionRotationDelta = _animator.deltaRotation;
+    }
+
     public void BeforeCharacterUpdate(float deltaTime)
     {
         // 필요한 경우 여기서 추가 로직 수행
@@ -154,27 +169,43 @@ public class PlayerMovement : MonoBehaviour, ICharacterController
 
     public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
     {
-        // 목표 속도 계산
-        Vector3 targetVelocity = _moveInputVector * _moveSpeed;
-
-        // 부드러운 가속/감속
-        if (_moveInputVector.magnitude > 0.1f)
+        // Root Motion 위치 적용 여부 확인
+        if (_applyRootMotion && _rootMotionPositionDelta.magnitude > 0.001f)
         {
-            // 가속
-            currentVelocity = Vector3.Lerp(
-                currentVelocity,
-                targetVelocity,
-                _acceleration * deltaTime
-            );
+            // Root Motion을 속도로 변환
+            Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
+
+            // Y축 속도는 유지하고 XZ 평면만 Root Motion 적용
+            currentVelocity.x = rootMotionVelocity.x;
+            currentVelocity.z = rootMotionVelocity.z;
+
+            // Root Motion 델타 초기화
+            _rootMotionPositionDelta = Vector3.zero;
         }
         else
         {
-            // 감속
-            currentVelocity = Vector3.Lerp(
-                currentVelocity,
-                Vector3.zero,
-                _deceleration * deltaTime
-            );
+            // 일반 이동 처리
+            Vector3 targetVelocity = _moveInputVector * _moveSpeed;
+
+            // 부드러운 가속/감속
+            if (_moveInputVector.magnitude > 0.1f)
+            {
+                // 가속
+                currentVelocity = Vector3.Lerp(
+                    currentVelocity,
+                    targetVelocity,
+                    _acceleration * deltaTime
+                );
+            }
+            else
+            {
+                // 감속
+                currentVelocity = Vector3.Lerp(
+                    currentVelocity,
+                    Vector3.zero,
+                    _deceleration * deltaTime
+                );
+            }
         }
 
         // 현재 속도 저장 (다른 스크립트에서 참조 가능)
