@@ -11,13 +11,24 @@ namespace Wave
     public class WaveManager : MonoBehaviour
     {
         [System.Serializable]
+        public class MonsterSpawn
+        {
+            [Tooltip("몬스터가 스폰될 위치")]
+            public Transform spawnPoint;
+            [Tooltip("스폰할 몬스터 프리팹")]
+            public GameObject monsterPrefab;
+        }
+
+        [System.Serializable]
         public class SpawnGroup
         {
             [Header("그룹 설정")]
-            [Tooltip("EnemyGroup 프리팹 (파라미터는 프리팹 인스펙터에서 설정)")]
-            public EnemyGroup EnemyGroupPrefab;
-            public List<Transform> SpawnPoints;
-            public GameObject MonsterPrefab;
+            [Tooltip("EnemyGroup 프리팹 (aggroRange, maxAttackSlots 등은 프리팹 인스펙터에서 설정)")]
+            public EnemyGroup enemyGroupPrefab;
+
+            [Header("몬스터 스폰 설정")]
+            [Tooltip("각 위치에 스폰할 몬스터")]
+            public List<MonsterSpawn> monsterSpawns;
         }
 
         [Header("스폰 설정")]
@@ -53,15 +64,15 @@ namespace Wave
 
             foreach (SpawnGroup spawnGroup in _spawnGroups)
             {
-                if (spawnGroup.SpawnPoints == null || spawnGroup.SpawnPoints.Count == 0)
+                if (spawnGroup.monsterSpawns == null || spawnGroup.monsterSpawns.Count == 0)
                 {
-                    Debug.LogWarning("WaveManager: 스폰 포인트가 설정되지 않았습니다.");
+                    Debug.LogWarning("WaveManager: 몬스터 스폰 설정이 없습니다.");
                     continue;
                 }
 
-                if (spawnGroup.MonsterPrefab == null)
+                if (spawnGroup.enemyGroupPrefab == null)
                 {
-                    Debug.LogWarning("WaveManager: 몬스터 프리팹이 null입니다.");
+                    Debug.LogWarning("WaveManager: EnemyGroup 프리팹이 null입니다.");
                     continue;
                 }
 
@@ -74,7 +85,7 @@ namespace Wave
         /// </summary>
         private void SpawnEnemyGroup(SpawnGroup spawnGroup)
         {
-            if (spawnGroup.EnemyGroupPrefab == null)
+            if (spawnGroup.enemyGroupPrefab == null)
             {
                 Debug.LogError("WaveManager: EnemyGroup 프리팹이 null입니다.");
                 return;
@@ -82,7 +93,7 @@ namespace Wave
 
             // EnemyGroup 프리팹 인스턴스 생성
             EnemyGroup enemyGroup = Instantiate(
-                spawnGroup.EnemyGroupPrefab,
+                spawnGroup.enemyGroupPrefab,
                 transform
             );
             enemyGroup.name = $"EnemyGroup_{_enemyGroups.Count + 1}";
@@ -93,16 +104,23 @@ namespace Wave
             // 몬스터 스폰 및 그룹 등록
             List<MonsterController> groupMonsters = new List<MonsterController>();
 
-            foreach (Transform spawnPoint in spawnGroup.SpawnPoints)
+            foreach (MonsterSpawn monsterSpawn in spawnGroup.monsterSpawns)
             {
-                if (spawnPoint == null)
+                if (monsterSpawn.spawnPoint == null)
                 {
+                    Debug.LogWarning("WaveManager: 스폰 포인트가 null입니다.");
+                    continue;
+                }
+
+                if (monsterSpawn.monsterPrefab == null)
+                {
+                    Debug.LogWarning("WaveManager: 몬스터 프리팹이 null입니다.");
                     continue;
                 }
 
                 GameObject monsterObj = Instantiate(
-                    spawnGroup.MonsterPrefab,
-                    spawnPoint.position,
+                    monsterSpawn.monsterPrefab,
+                    monsterSpawn.spawnPoint.position,
                     Quaternion.identity,
                     enemyGroup.transform
                 );
@@ -158,21 +176,21 @@ namespace Wave
 
             foreach (SpawnGroup spawnGroup in _spawnGroups)
             {
-                if (spawnGroup.SpawnPoints == null)
+                if (spawnGroup.monsterSpawns == null)
                 {
                     continue;
                 }
 
                 // 스폰 포인트
                 Gizmos.color = Color.cyan;
-                foreach (Transform spawnPoint in spawnGroup.SpawnPoints)
+                foreach (MonsterSpawn monsterSpawn in spawnGroup.monsterSpawns)
                 {
-                    if (spawnPoint != null)
+                    if (monsterSpawn.spawnPoint != null)
                     {
-                        Gizmos.DrawWireSphere(spawnPoint.position, 0.5f);
+                        Gizmos.DrawWireSphere(monsterSpawn.spawnPoint.position, 0.5f);
                         Gizmos.DrawLine(
-                            spawnPoint.position,
-                            spawnPoint.position + Vector3.up * 2f
+                            monsterSpawn.spawnPoint.position,
+                            monsterSpawn.spawnPoint.position + Vector3.up * 2f
                         );
                     }
                 }
