@@ -20,7 +20,7 @@ namespace Monster
         private float _strafeDirectionTimer = 0f;
         private int _strafeDirection = 1; // 1 = 오른쪽, -1 = 왼쪽
 
-        public MonsterState StateType => MonsterState.Strafe;
+        public EMonsterState StateType => EMonsterState.Strafe;
 
         public StrafeState(MonsterController controller, MonsterStateMachine stateMachine)
         {
@@ -47,7 +47,7 @@ namespace Monster
         {
             if (_controller.PlayerTransform == null)
             {
-                _stateMachine.ChangeState(MonsterState.Idle);
+                _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
             }
 
@@ -59,7 +59,7 @@ namespace Monster
             // 감지 범위를 벗어나면 Idle로 복귀 (그룹 시스템이 있으면 이 체크는 무시)
             if (_controller.EnemyGroup == null && distanceToPlayer > _controller.Data.DetectionRange)
             {
-                _stateMachine.ChangeState(MonsterState.Idle);
+                _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
             }
 
@@ -67,7 +67,7 @@ namespace Monster
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
                 // 너무 멀면 Approach로 전환
-                _stateMachine.ChangeState(MonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
             }
             else if (distanceToPlayer < _controller.Data.PreferredMinDistance)
@@ -145,7 +145,7 @@ namespace Monster
                 // 이미 슬롯을 보유한 경우
                 if (_controller.EnemyGroup.CanAttack(_controller))
                 {
-                    _stateMachine.ChangeState(MonsterState.Attack);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
                     return;
                 }
 
@@ -160,14 +160,14 @@ namespace Monster
                     // 공격 슬롯 획득 시도
                     if (_controller.EnemyGroup.RequestAttackSlot(_controller))
                     {
-                        _stateMachine.ChangeState(MonsterState.Attack);
+                        _stateMachine.ChangeState(EMonsterState.Attack);
                     }
                 }
             }
             else
             {
                 // EnemyGroup이 없으면 바로 공격 (프로토타입 모드)
-                _stateMachine.ChangeState(MonsterState.Attack);
+                _stateMachine.ChangeState(EMonsterState.Attack);
             }
         }
 

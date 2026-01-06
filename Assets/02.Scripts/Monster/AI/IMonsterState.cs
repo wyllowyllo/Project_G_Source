@@ -15,6 +15,6 @@ namespace Monster
         void Exit();
 
        
-        MonsterState StateType { get; }
+        EMonsterState StateType { get; }
     }
 }

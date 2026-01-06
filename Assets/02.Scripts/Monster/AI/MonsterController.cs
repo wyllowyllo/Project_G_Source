@@ -18,7 +18,7 @@ namespace Monster
         [SerializeField] private EnemyGroup _enemyGroup;
 
         [Header("디버그 정보")]
-        [SerializeField] private MonsterState _currentState;
+        [SerializeField] private EMonsterState _currentState;
         [SerializeField] private float _distanceToPlayer;
         [SerializeField] private float _distanceToHome;
 
@@ -81,7 +81,7 @@ namespace Monster
         /// </summary>
         private void UpdateDebugInfo()
         {
-            _currentState = _stateMachine?.CurrentStateType ?? MonsterState.Idle;
+            _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
 
             if (_playerTransform != null)
             {
@@ -115,16 +115,16 @@ namespace Monster
             _stateMachine = new MonsterStateMachine(this);
 
             // BDO 스타일 - 상태 등록
-            _stateMachine.RegisterState(MonsterState.Idle, new IdleState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Approach, new ApproachState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Strafe, new StrafeState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Attack, new AttackState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Recover, new RecoverState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.ReturnHome, new ReturnHomeState(this, _stateMachine));
-            _stateMachine.RegisterState(MonsterState.Dead, new DeadState(this));
+            _stateMachine.RegisterState(EMonsterState.Idle, new IdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Recover, new RecoverState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.ReturnHome, new ReturnHomeState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Dead, new DeadState(this));
 
             // 초기 상태 설정
-            _stateMachine.Initialize(MonsterState.Idle);
+            _stateMachine.Initialize(EMonsterState.Idle);
         }
 
         private void FindPlayer()
@@ -165,7 +165,7 @@ namespace Monster
             if (distanceFromHome > _monsterData.TetherRadius)
             {
                 _isTethered = true;
-                _stateMachine?.ChangeState(MonsterState.ReturnHome);
+                _stateMachine?.ChangeState(EMonsterState.ReturnHome);
             }
         }
 
@@ -197,7 +197,7 @@ namespace Monster
         private void Die()
         {
             _isAlive = false;
-            _stateMachine?.ChangeState(MonsterState.Dead);
+            _stateMachine?.ChangeState(EMonsterState.Dead);
         }
 
         // 디버그용

@@ -9,22 +9,22 @@ namespace Monster
     public class MonsterStateMachine
     {
         private readonly MonsterController _controller;
-        private readonly Dictionary<MonsterState, IMonsterState> _states;
+        private readonly Dictionary<EMonsterState, IMonsterState> _states;
         private IMonsterState _currentState;
 
         public IMonsterState CurrentState => _currentState;
-        public MonsterState CurrentStateType => _currentState?.StateType ?? MonsterState.Idle;
+        public EMonsterState CurrentStateType => _currentState?.StateType ?? EMonsterState.Idle;
 
         public MonsterStateMachine(MonsterController controller)
         {
             _controller = controller;
-            _states = new Dictionary<MonsterState, IMonsterState>();
+            _states = new Dictionary<EMonsterState, IMonsterState>();
         }
 
         /// <summary>
         /// 상태를 등록합니다.
         /// </summary>
-        public void RegisterState(MonsterState stateType, IMonsterState state)
+        public void RegisterState(EMonsterState stateType, IMonsterState state)
         {
             if (!_states.ContainsKey(stateType))
             {
@@ -35,7 +35,7 @@ namespace Monster
         /// <summary>
         /// 초기 상태를 설정합니다.
         /// </summary>
-        public void Initialize(MonsterState initialState)
+        public void Initialize(EMonsterState initialState)
         {
             if (_states.TryGetValue(initialState, out IMonsterState state))
             {
@@ -59,7 +59,7 @@ namespace Monster
         /// <summary>
         /// 상태를 전환합니다.
         /// </summary>
-        public void ChangeState(MonsterState newStateType)
+        public void ChangeState(EMonsterState newStateType)
         {
             if (_currentState?.StateType == newStateType)
             {

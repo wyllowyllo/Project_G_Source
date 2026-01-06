@@ -29,7 +29,7 @@ namespace Monster
         private Vector3 _chargeStartPosition; // 돌진 시작 위치
         private float _maxChargeDistance = 2f; // 최대 돌진 거리
 
-        public MonsterState StateType => MonsterState.Attack;
+        public EMonsterState StateType => EMonsterState.Attack;
 
         public AttackState(MonsterController controller, MonsterStateMachine stateMachine)
         {
@@ -61,7 +61,7 @@ namespace Monster
         {
             if (_controller.PlayerTransform == null)
             {
-                _stateMachine.ChangeState(MonsterState.Idle);
+                _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
             }
 
@@ -113,6 +113,7 @@ namespace Monster
                     UpdateCharge();
 
                     // 플레이어와 가까워지면 데미지 처리
+                    //TODO : 실제로 닿았을 때 데미지 처리로 변경
                     if (!_damageDealt && distanceToPlayer <= 0.5f)
                     {
                         DealDamage();
@@ -122,7 +123,7 @@ namespace Monster
                     if (_phaseTimer >= _controller.Data.ExecuteTime)
                     {
                         // Recover 상태로 전환 (후퇴)
-                        _stateMachine.ChangeState(MonsterState.Recover);
+                        _stateMachine.ChangeState(EMonsterState.Recover);
                     }
                     break;
             }
@@ -245,12 +246,12 @@ namespace Monster
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
                 // 거리 밴드 밖이면 Approach
-                _stateMachine.ChangeState(MonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Approach);
             }
             else
             {
                 // 거리 밴드 안이면 Strafe
-                _stateMachine.ChangeState(MonsterState.Strafe);
+                _stateMachine.ChangeState(EMonsterState.Strafe);
             }
         }
     }

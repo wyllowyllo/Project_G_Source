@@ -14,7 +14,7 @@ namespace Monster
         private const float DestroyDelay = 3f;
         private float _destroyTimer;
 
-        public MonsterState StateType => MonsterState.Dead;
+        public EMonsterState StateType => EMonsterState.Dead;
 
         public DeadState(MonsterController controller)
         {

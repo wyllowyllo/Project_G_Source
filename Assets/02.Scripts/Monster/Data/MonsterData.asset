@@ -16,14 +16,14 @@ MonoBehaviour:
   _monsterLevel: 1
   _maxHealth: 100
   _attackDamage: 10
-  _attackRange: 3
+  _attackRange: 4
   _attackCooldown: 1.5
   _moveSpeed: 3.5
   _rotationSpeed: 120
   _detectionRange: 12
   _engageRange: 10
-  _preferredMinDistance: 3
-  _preferredMaxDistance: 5
+  _preferredMinDistance: 4
+  _preferredMaxDistance: 6
   _strafeSpeed: 2.5
   _tetherRadius: 20
   _windupTime: 0.3

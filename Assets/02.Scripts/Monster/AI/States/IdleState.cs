@@ -13,7 +13,7 @@ namespace Monster
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
 
-        public MonsterState StateType => MonsterState.Idle;
+        public EMonsterState StateType => EMonsterState.Idle;
 
         public IdleState(MonsterController controller, MonsterStateMachine stateMachine)
         {
@@ -55,7 +55,7 @@ namespace Monster
             // 감지 범위 내에 플레이어가 있으면 Approach 상태로 전환
             if (distanceToPlayer <= _controller.Data.DetectionRange)
             {
-                _stateMachine.ChangeState(MonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Approach);
             }
 
             // TODO: 추후 Roam(순찰) 기능 추가 가능

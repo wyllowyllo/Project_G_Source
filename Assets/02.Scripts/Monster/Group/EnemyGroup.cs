@@ -157,7 +157,7 @@ namespace Monster
             {
                 if (monster != null && monster.IsAlive)
                 {
-                    monster.StateMachine.ChangeState(MonsterState.Approach);
+                    monster.StateMachine.ChangeState(EMonsterState.Approach);
                 }
             }
         }
@@ -182,10 +182,10 @@ namespace Monster
                     continue;
                 }
 
-                MonsterState currentState = monster.StateMachine.CurrentStateType;
+                EMonsterState currentState = monster.StateMachine.CurrentStateType;
 
                 // 전투 관련 상태가 하나라도 있으면 계속 전투 중
-                if (currentState != MonsterState.Idle && currentState != MonsterState.Dead)
+                if (currentState != EMonsterState.Idle && currentState != EMonsterState.Dead)
                 {
                     allMonstersNonCombat = false;
                     break;

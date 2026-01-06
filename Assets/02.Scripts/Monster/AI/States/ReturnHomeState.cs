@@ -14,7 +14,7 @@ namespace Monster
 
         private const float ArrivalThreshold = 2f; // 홈 도착 판정 거리
 
-        public MonsterState StateType => MonsterState.ReturnHome;
+        public EMonsterState StateType => EMonsterState.ReturnHome;
 
         public ReturnHomeState(MonsterController controller, MonsterStateMachine stateMachine)
         {
@@ -62,7 +62,7 @@ namespace Monster
             _controller.ResetTether();
 
             // Idle 상태로 전환
-            _stateMachine.ChangeState(MonsterState.Idle);
+            _stateMachine.ChangeState(EMonsterState.Idle);
 
             Debug.Log($"{_controller.gameObject.name}: 홈 복귀 완료");
         }

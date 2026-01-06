@@ -6,7 +6,7 @@ namespace Monster
     ///                       ↓
     ///                  ReturnHome (테더 초과 시)
     /// </summary>
-    public enum MonsterState
+    public enum EMonsterState
     {
         Idle,           // 대기 (홈 주변)
         Approach,       // 접근 (거리 밴드 밖)

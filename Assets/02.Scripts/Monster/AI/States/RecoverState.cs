@@ -16,7 +16,7 @@ namespace Monster
         private Vector3 _retreatTarget;
         private bool _isRetreating = false;
 
-        public MonsterState StateType => MonsterState.Recover;
+        public EMonsterState StateType => EMonsterState.Recover;
 
         public RecoverState(MonsterController controller, MonsterStateMachine stateMachine)
         {
@@ -63,7 +63,7 @@ namespace Monster
         {
             if (_controller.PlayerTransform == null)
             {
-                _stateMachine.ChangeState(MonsterState.Idle);
+                _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
             }
 
@@ -104,7 +104,7 @@ namespace Monster
             // 감지 범위를 벗어나면 Idle로 복귀 (그룹 시스템이 있으면 이 체크는 무시)
             if (_controller.EnemyGroup == null && distanceToPlayer > _controller.Data.DetectionRange)
             {
-                _stateMachine.ChangeState(MonsterState.Idle);
+                _stateMachine.ChangeState(EMonsterState.Idle);
                 return;
             }
 
@@ -112,12 +112,12 @@ namespace Monster
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
                 // 거리 밴드 밖이면 Approach
-                _stateMachine.ChangeState(MonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Approach);
             }
             else
             {
                 // 거리 밴드 안이면 Strafe
-                _stateMachine.ChangeState(MonsterState.Strafe);
+                _stateMachine.ChangeState(EMonsterState.Strafe);
             }
         }
 
