@@ -33,6 +33,23 @@ namespace Monster.Group
         [SerializeField] private float _attackRangeBuffer = 0.75f;        // AttackRange + buffer 내 후보 선호
         [SerializeField] private LayerMask _losBlockMask = ~0;            // 필요 시 장애물 마스크로 조절
         
+        [Header("Front crowding (빈 공간 감지)")]
+        [SerializeField] private float _frontConeAngle = 55f;      // 전방 콘(±각도)
+        [SerializeField] private int _frontCrowdCount = 4;         // 이 이상이면 전방 포화로 판단
+        [SerializeField] private float _frontCrowdExtraDist = 1.0f;// PreferredMaxDistance에 더할 거리
+        [SerializeField] private int _frontKeepCount = 2;          // 포화 시에도 전방 유지할 전열 수(가까운 순)
+
+// 포화 시 배치 후보 각도(도). 전방(0도)은 의도적으로 제외.
+        [SerializeField] private float[] _crowdReliefAngles =
+        {
+            70f, -70f,
+            110f, -110f,
+            150f, -150f,
+            180f
+        };
+
+        [SerializeField] private float _angleOccupancySigma = 20f; // "그 방향이 차있다" 판단 폭
+        
         [Header("디버그")]
         [SerializeField] private bool _showDebugGizmos = true;
 
@@ -210,6 +227,11 @@ namespace Monster.Group
 
             Vector3 playerPos = _playerTransform.position;
 
+            bool frontCrowded = IsFrontCrowded(playerPos);
+
+            if (frontCrowded)
+                UpdateDesiredAnglesWhenCrowded(playerPos);
+            
             for (int i = 0; i < _monsters.Count; i++)
             {
                 var monster = _monsters[i];
@@ -236,6 +258,21 @@ namespace Monster.Group
                     target = monsterPosition + dirIn * Mathf.Min(2.0f, dist - maxDistance); 
                 }
                 
+                // 전방이 포화일 때만: 각도 기반 목표점으로 "빈 공간 파고들기"
+                if (frontCrowded && _desiredAngleDeg.TryGetValue(monster, out float angDeg))
+                {
+                    // 반경은 밴드 안에서 유지하되 약간 랜덤/분산 가능
+                    float radius = Mathf.Clamp(dist, minDistance, maxDistance);
+
+                    Vector3 fwd = _playerTransform.forward;
+                    fwd.y = 0f;
+                    if (fwd.sqrMagnitude < 0.001f) fwd = Vector3.forward;
+                    fwd.Normalize();
+
+                    Vector3 dir = Quaternion.Euler(0f, angDeg, 0f) * fwd;
+                    target = playerPos + dir * radius;
+                }
+                
                 // 몬스터 살짝 퍼져서 배치되도록 조정
                 Vector3 sep = ComputeSeparation(monster);
                 target += sep * _separationWeight;
@@ -244,6 +281,145 @@ namespace Monster.Group
                 _desiredPosition[monster] = target;
             }
         }
+
+        private bool IsFrontCrowded(Vector3 playerPos)
+        {
+            if (_playerTransform == null) return false;
+
+            Vector3 fwd = _playerTransform.forward;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude < 0.001f) fwd = Vector3.forward;
+            fwd.Normalize();
+
+            int count = 0;
+            for (int i = 0; i < _monsters.Count; i++)
+            {
+                var m = _monsters[i];
+                if (m == null || !m.IsAlive) continue;
+
+                Vector3 toM = m.transform.position - playerPos;
+                toM.y = 0f;
+
+                float dist = toM.magnitude;
+                float nearDist = m.Data.PreferredMaxDistance + _frontCrowdExtraDist;
+                if (dist > nearDist) continue;
+
+                if (toM.sqrMagnitude < 0.001f) continue;
+                float ang = Vector3.Angle(fwd, toM.normalized); // 0=전방
+                if (ang <= _frontConeAngle)
+                {
+                    count++;
+                    if (count >= _frontCrowdCount) return true;
+                }
+            }
+            return false;
+        }
+
+        private void UpdateDesiredAnglesWhenCrowded(Vector3 playerPos)
+{
+    if (_playerTransform == null) return;
+
+    Vector3 fwd = _playerTransform.forward;
+    fwd.y = 0f;
+    if (fwd.sqrMagnitude < 0.001f) fwd = Vector3.forward;
+    fwd.Normalize();
+
+    // 1) 살아있는 몬스터 정리 + 거리순 정렬
+    List<MonsterController> alive = new();
+    for (int i = 0; i < _monsters.Count; i++)
+    {
+        var m = _monsters[i];
+        if (m == null || !m.IsAlive) continue;
+        alive.Add(m);
+    }
+
+    alive.Sort((a, b) =>
+    {
+        float da = (a.transform.position - playerPos).sqrMagnitude;
+        float db = (b.transform.position - playerPos).sqrMagnitude;
+        return da.CompareTo(db);
+    });
+
+    // 2) "전열 유지"는 현재 각도(혹은 0 근처)로 유지
+    int keep = Mathf.Clamp(_frontKeepCount, 0, alive.Count);
+
+    // 현재 점유(각도 히스토그램 비슷한) 정보: 몬스터들의 "현재 각도"를 기준으로 혼잡도를 측정
+    List<float> occupiedAngles = new(alive.Count);
+    for (int i = 0; i < alive.Count; i++)
+    {
+        Vector3 toM = alive[i].transform.position - playerPos;
+        toM.y = 0f;
+        if (toM.sqrMagnitude < 0.001f) continue;
+
+        float signed = SignedAngleOnY(fwd, toM.normalized); // [-180,180]
+        occupiedAngles.Add(signed);
+    }
+
+    // 3) 전열(가까운 애)은 현재 각도 유지(혹은 전방 쪽으로 당겨도 됨)
+    for (int i = 0; i < keep; i++)
+    {
+        var m = alive[i];
+        if (m == null) continue;
+
+        Vector3 toM = m.transform.position - playerPos;
+        toM.y = 0f;
+
+        float ang = 0f;
+        if (toM.sqrMagnitude > 0.001f)
+            ang = SignedAngleOnY(fwd, toM.normalized);
+
+        _desiredAngleDeg[m] = ang; // "전방에서 싸우려는 애"는 그대로 둠
+    }
+
+    // 4) 후열은 빈 방향 선택
+    for (int i = keep; i < alive.Count; i++)
+    {
+        var m = alive[i];
+        if (m == null) continue;
+
+        // 후보 각도 중 "점유도가 최소"인 방향을 선택
+        float bestAng = _crowdReliefAngles[0];
+        float bestOcc = float.MaxValue;
+
+        for (int k = 0; k < _crowdReliefAngles.Length; k++)
+        {
+            float cand = _crowdReliefAngles[k];
+            float occ = AngleOccupancy(cand, occupiedAngles, _angleOccupancySigma);
+            if (occ < bestOcc)
+            {
+                bestOcc = occ;
+                bestAng = cand;
+            }
+        }
+
+        _desiredAngleDeg[m] = bestAng;
+
+        // 배정한 각도는 점유 목록에 추가해서 다음 애가 같은 곳만 가는 걸 완화
+        occupiedAngles.Add(bestAng);
+    }
+}
+
+private float AngleOccupancy(float candidateDeg, List<float> occupied, float sigma)
+{
+    // candidate 근처(±sigma)에 많을수록 값이 커짐
+    float sum = 0f;
+    float denom = 2f * sigma * sigma;
+
+    for (int i = 0; i < occupied.Count; i++)
+    {
+        float d = Mathf.DeltaAngle(candidateDeg, occupied[i]);
+        sum += Mathf.Exp(-(d * d) / Mathf.Max(0.0001f, denom));
+    }
+
+    return sum;
+}
+
+private float SignedAngleOnY(Vector3 from, Vector3 to)
+{
+    // from->to signed angle around Y axis
+    float ang = Vector3.SignedAngle(from, to, Vector3.up);
+    return ang; // [-180, 180]
+}
 
         private Vector3 ComputeSeparation(MonsterController self)
         {
