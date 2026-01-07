@@ -82,6 +82,17 @@ namespace Monster.AI.States
             _isHeavyAttack = _controller.NextAttackIsHeavy;
             _controller.MarkCurrentAttackHeavy(_isHeavyAttack);
             _controller.SetNextAttackHeavy(false);
+
+            // 약공일 때: 플레이어와 직접 대면한 경우만 공격 (다른 몬스터에게 가로막힌 경우 Strafe)
+            if (!_isHeavyAttack)
+            {
+                if (!HasDirectLineOfSightToPlayer())
+                {
+                    Debug.Log($"{_controller.gameObject.name}: 약공 취소 (플레이어 시야 차단됨) - Strafe로 전환");
+                    _stateMachine.ChangeState(EMonsterState.Strafe);
+                    return;
+                }
+            }
             
             // 강/약공 파라미터 분기(최소 튜닝)
             if (_isHeavyAttack)
@@ -296,9 +307,15 @@ namespace Monster.AI.States
             }
         }
 
-      
+
         private void ReturnToCombat()
         {
+            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                renderer.material.color = _controller.OriginalMaterialColor;
+            }
+                
             float distanceToPlayer = Vector3.Distance(
                 _transform.position,
                 _controller.PlayerTransform.position
@@ -308,6 +325,29 @@ namespace Monster.AI.States
                 _stateMachine.ChangeState(EMonsterState.Approach);
             else
                 _stateMachine.ChangeState(EMonsterState.Strafe);
+        }
+
+        /// <summary>
+        /// 플레이어까지 직접 시야가 확보되었는지 확인 (다른 몬스터에게 가로막히지 않았는지)
+        /// </summary>
+        private bool HasDirectLineOfSightToPlayer()
+        {
+            Vector3 startPosition = _transform.position + Vector3.up * 1.0f; // 몬스터 중심 높이
+            Vector3 playerPosition = _controller.PlayerTransform.position + Vector3.up * 1.0f;
+            Vector3 directionToPlayer = playerPosition - startPosition;
+            float distanceToPlayer = directionToPlayer.magnitude;
+
+            // 플레이어까지 Raycast
+            if (Physics.Raycast(startPosition, directionToPlayer.normalized, out RaycastHit hit, distanceToPlayer))
+            {
+                // 플레이어가 아닌 다른 오브젝트에 맞았으면 시야 차단
+                if (hit.transform != _controller.PlayerTransform)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -13,7 +13,10 @@ namespace Monster.AI.States
         private readonly Transform _transform;
 
         private float _recoverTimer = 0f;
-        private const float RecoverDuration = 2f; // 2초간 추스름
+        private float _recoverDuration; // 동적으로 설정 (강공/약공에 따라)
+
+        private const float HeavyAttackRecoverTime = 2f; // 강공: 2초
+        private const float LightAttackRecoverTime = 0.5f; // 약공: 0.5초
 
         public EMonsterState StateType => EMonsterState.Recover;
 
@@ -28,20 +31,26 @@ namespace Monster.AI.States
         {
             _recoverTimer = 0f;
 
+            // 강공/약공에 따라 회복 시간 설정
+            _recoverDuration = _controller.CurrentAttackWasHeavy
+                ? HeavyAttackRecoverTime
+                : LightAttackRecoverTime;
+
             // 그 자리에서 멈춤
             if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
             {
                 _controller.NavAgent.isStopped = true;
             }
 
-            Debug.Log($"{_controller.gameObject.name}: 공격 후 추스르는 중...");
+            string attackType = _controller.CurrentAttackWasHeavy ? "강공" : "약공";
+            Debug.Log($"{_controller.gameObject.name}: {attackType} 후 추스르는 중... ({_recoverDuration}초)");
         }
 
         public void Update()
         {
             _recoverTimer += Time.deltaTime;
 
-            if (_recoverTimer >= RecoverDuration)
+            if (_recoverTimer >= _recoverDuration)
             {
                 TransitionBackToCombat();
             }
