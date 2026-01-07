@@ -4,7 +4,7 @@ namespace Monster.AI.States
 {
     /// <summary>
     /// 회복 상태
-    /// 공격 후 짧은 후딜 시간을 가진 후 다시 전투로 복귀합니다.
+    /// 공격 후 그 자리에서 잠깐 멈춰서 추스른 후 다시 전투로 복귀합니다.
     /// </summary>
     public class RecoverState : IMonsterState
     {
@@ -13,8 +13,7 @@ namespace Monster.AI.States
         private readonly Transform _transform;
 
         private float _recoverTimer = 0f;
-        private Vector3 _retreatTarget;
-        private bool _isRetreating = false;
+        private const float RecoverDuration = 2f; // 2초간 추스름
 
         public EMonsterState StateType => EMonsterState.Recover;
 
@@ -29,66 +28,35 @@ namespace Monster.AI.States
         {
             _recoverTimer = 0f;
 
-            // 후퇴 시작
-            StartRetreat();
-        }
-        
-        private void StartRetreat()
-        {
-            // 플레이어 반대 방향 계산
-            Vector3 directionFromPlayer = (_transform.position - _controller.PlayerTransform.position).normalized;
-            directionFromPlayer.y = 0f;
+            // 그 자리에서 멈춤
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.isStopped = true;
+            }
 
-            // 후퇴 목표 지점 설정
-            _retreatTarget = _transform.position + directionFromPlayer * _controller.Data.RetreatDistance;
-
-            // NavMesh로 후퇴
-            _controller.NavAgent.isStopped = false;
-            _controller.NavAgent.SetDestination(_retreatTarget);
-            _isRetreating = true;
-
-            Debug.Log($"{_controller.gameObject.name}: 후퇴 시작");
+            Debug.Log($"{_controller.gameObject.name}: 공격 후 추스르는 중...");
         }
 
         public void Update()
         {
-            
-            if (_isRetreating)
-            {
-                float distanceToRetreatTarget = Vector3.Distance(_transform.position, _retreatTarget);
-
-                // 후퇴 목표에 도착하면 후퇴 종료
-                if (distanceToRetreatTarget <= 0.5f || !_controller.NavAgent.pathPending && _controller.NavAgent.remainingDistance <= 0.5f)
-                {
-                    _isRetreating = false;
-                    _controller.NavAgent.isStopped = true;
-                    Debug.Log($"{_controller.gameObject.name}: 후퇴 완료");
-                }
-            }
-
-           
             _recoverTimer += Time.deltaTime;
 
-            if (_recoverTimer >= _controller.Data.RecoverTime)
+            if (_recoverTimer >= RecoverDuration)
             {
                 TransitionBackToCombat();
             }
         }
-        
+
         private void TransitionBackToCombat()
         {
-            
             float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
 
-            
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
-                
                 _stateMachine.ChangeState(EMonsterState.Approach);
             }
             else
             {
-                
                 _stateMachine.ChangeState(EMonsterState.Strafe);
             }
         }
