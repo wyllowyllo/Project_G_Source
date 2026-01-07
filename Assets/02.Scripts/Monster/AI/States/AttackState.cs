@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Monster.AI.States
 {
@@ -13,21 +14,38 @@ namespace Monster.AI.States
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
         
-        private enum EAttackPhase
-        {
-            Windup,     
-            Execute     
-        }
-
+        private enum EAttackPhase { Windup, Execute }
         private EAttackPhase _currentPhase;
+
+        private float distanceToPlayer;
+        
         private float _phaseTimer;
         private bool _damageDealt; // Execute에서 한 번만 데미지 처리
+        
         private float _originalSpeed;
         private float _originalStoppingDistance; 
+        private bool _originalIsStopped;
+        
         private Vector3 _chargeDirection; 
         private Vector3 _chargeStartPosition;
-        private float _maxChargeDistance = 2f; // 최대 돌진 거리
+        private Vector3 _chargeTargetOnNavMesh;
+        
+        private float _maxChargeDistance = 2f;
+        private float _hitRadius = 0.6f;
+        private float _navSampleRadius = 1f;  // 목표점이 NavMesh 밖일 때 주변 샘플 범위
 
+        // 돌진 설정
+        private float _originalAcceleration;
+        private float _originalAngularSpeed;
+        private bool _originalAutoBraking;
+
+        // Execute 종료 안전장치
+        private float _maxExecuteDuration = 0.8f; // ExecuteTime 대신/또는 상한으로 사용 권장
+        private float _chargeAcceleration = 60f;  // 돌진 중 가속
+        private float _chargeAngularSpeed = 720f; // 돌진 중 회전(너무 크면 과회전)
+      
+        
+        // 프로퍼티
         public EMonsterState StateType => EMonsterState.Attack;
 
         public AttackState(MonsterController controller, MonsterStateMachine stateMachine)
@@ -39,17 +57,21 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            // 원래 속도 및 정지 거리 저장
-            if (_controller.NavAgent != null)
+            var agent = _controller.NavAgent;
+
+            if (agent != null && agent.isActiveAndEnabled)
             {
-                _originalSpeed = _controller.NavAgent.speed;
-                _originalStoppingDistance = _controller.NavAgent.stoppingDistance;
-                
-                // Windup 단계에서는 이동 정지 (준비 자세)
-                _controller.NavAgent.isStopped = true;
+                _originalSpeed = agent.speed;
+                _originalStoppingDistance = agent.stoppingDistance;
+                _originalIsStopped = agent.isStopped;
+
+                _originalAcceleration = agent.acceleration;
+                _originalAngularSpeed = agent.angularSpeed;
+                _originalAutoBraking = agent.autoBraking;
+
+                agent.isStopped = true;
             }
 
-           
             _currentPhase = EAttackPhase.Windup;
             _phaseTimer = 0f;
             _damageDealt = false;
@@ -59,33 +81,25 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            // 공격 슬롯을 잃으면 Strafe로 복귀 (다른 몬스터에게 공격 기회 양보)
             if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
             {
                 ReturnToCombat();
                 return;
             }
 
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
+            distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
 
           
             if (_currentPhase == EAttackPhase.Windup)
             {
-                // 너무 멀어지면 공격 취소 (여유 있게 AttackRange * 2)
                 if (distanceToPlayer > _controller.Data.AttackRange * 2f)
                 {
                     ReturnToCombat();
                     return;
                 }
-
-                // 플레이어를 바라보기
+                
                 LookAtPlayer();
             }
-           
-
             
             _phaseTimer += Time.deltaTime;
 
@@ -94,7 +108,6 @@ namespace Monster.AI.States
                 case EAttackPhase.Windup:
                     if (_phaseTimer >= _controller.Data.WindupTime)
                     {
-                        // 돌진 시작
                         StartCharge();
                         _currentPhase = EAttackPhase.Execute;
                         _phaseTimer = 0f;
@@ -103,19 +116,10 @@ namespace Monster.AI.States
                     break;
 
                 case EAttackPhase.Execute:
-                    // 플레이어를 향해 계속 이동 (돌진)
                     UpdateCharge();
-
-                    // 플레이어와 가까워지면 데미지 처리
-                    if (!_damageDealt && distanceToPlayer <= 0.5f)
-                    {
-                        DealDamage();
-                        _damageDealt = true;
-                    }
-
+                    
                     if (_phaseTimer >= _controller.Data.ExecuteTime)
                     {
-                        // Recover 상태로 전환 (후퇴)
                         _stateMachine.ChangeState(EMonsterState.Recover);
                     }
                     break;
@@ -124,17 +128,22 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            if (_controller.NavAgent != null)
+            var agent = _controller.NavAgent;
+
+            if (agent != null && agent.isActiveAndEnabled)
             {
-                // NavAgent 재활성화
-                _controller.NavAgent.enabled = true;
-                _controller.NavAgent.isStopped = false;
+                agent.speed = _originalSpeed;
+                agent.stoppingDistance = _originalStoppingDistance;
+                agent.isStopped = _originalIsStopped;
                 
-                _controller.NavAgent.speed = _originalSpeed;
-                _controller.NavAgent.stoppingDistance = _originalStoppingDistance;
+                agent.acceleration = _originalAcceleration;
+                agent.angularSpeed = _originalAngularSpeed;
+                agent.autoBraking = _originalAutoBraking;
+
+                agent.updateRotation = true; 
             }
 
-            // 공격 슬롯 반환 (다른 몬스터가 사용 가능하도록)
+            // 공격 슬롯 반환 
             if (_controller.EnemyGroup != null)
             {
                 _controller.EnemyGroup.ReleaseAttackSlot(_controller);
@@ -144,40 +153,77 @@ namespace Monster.AI.States
        
         private void StartCharge()
         {
-            // NavAgent 비활성화 (직접 이동 제어)
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.enabled = false;
-            }
-
-          
+            var agent = _controller.NavAgent;
+            if (agent == null || !agent.isActiveAndEnabled) return;
+            
             _chargeStartPosition = _transform.position;
 
             // 돌진 방향 설정 
             _chargeDirection = (_controller.PlayerTransform.position - _transform.position).normalized;
             _chargeDirection.y = 0f; 
+            _chargeDirection.Normalize();
+            
+            // 1) "가장 먼 유효 목표점" 찾기: 전방으로 여러 단계 샘플링
+            _chargeTargetOnNavMesh = FindFarthestNavMeshPoint(_chargeStartPosition, _chargeDirection, _maxChargeDistance);
 
-            // 플레이어 방향으로 회전 
-            if (_chargeDirection != Vector3.zero)
+            // 2) navAgent 돌진 설정
+            agent.speed = _controller.Data.ChargeSpeed;
+            agent.acceleration = _chargeAcceleration;
+            agent.angularSpeed = _chargeAngularSpeed;
+            agent.autoBraking = false;
+            agent.stoppingDistance = 0f;
+            agent.isStopped = false;
+            agent.SetDestination(_chargeTargetOnNavMesh);
+            
+            _transform.rotation = Quaternion.LookRotation(_chargeDirection);
+        }
+        
+        private Vector3 FindFarthestNavMeshPoint(Vector3 start, Vector3 dir, float maxDist)
+        {
+            const int steps = 8;
+            Vector3 best = start;
+            float bestDist = 0f;
+
+            for (int i = 1; i <= steps; i++)
             {
-                _transform.rotation = Quaternion.LookRotation(_chargeDirection);
+                float d = (maxDist * i) / steps;
+                Vector3 raw = start + dir * d;
+
+                if (NavMesh.SamplePosition(raw, out NavMeshHit hit, 1.0f, NavMesh.AllAreas))
+                {
+                    float hd = Vector3.Distance(start, hit.position);
+                    if (hd > bestDist)
+                    {
+                        bestDist = hd;
+                        best = hit.position;
+                    }
+                }
             }
 
-            Debug.Log($"{_controller.gameObject.name}: 돌진 시작 - 고정 방향 {_chargeDirection}");
+            return best;
         }
         
         private void UpdateCharge()
         {
-            float chargedDistance = Vector3.Distance(_chargeStartPosition, _transform.position);
-
-            // 최대 거리 도달하면 돌진 중단
-            if (chargedDistance >= _maxChargeDistance)
+            var agent = _controller.NavAgent;
+            if (agent == null || !agent.isActiveAndEnabled) return;
+            
+            // 타격 판정
+            if (!_damageDealt && distanceToPlayer <= _hitRadius)
             {
-                return;
+                DealDamage();
+                _damageDealt = true;
             }
 
-          
-            _transform.position += _chargeDirection * _controller.Data.ChargeSpeed * Time.deltaTime;
+            float traveled = Vector3.Distance(_chargeStartPosition, _transform.position);
+            bool reachedDistance = traveled >= (_maxChargeDistance * 0.92f); // 약간 여유
+            bool timeout = _phaseTimer >= _maxExecuteDuration;
+
+            if (reachedDistance || timeout)
+            {
+                _stateMachine.ChangeState(EMonsterState.Recover);
+                return;
+            }
         }
         
         private void LookAtPlayer()
@@ -219,15 +265,9 @@ namespace Monster.AI.States
             );
 
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
-            {
-                
                 _stateMachine.ChangeState(EMonsterState.Approach);
-            }
             else
-            {
-               
                 _stateMachine.ChangeState(EMonsterState.Strafe);
-            }
         }
     }
 }

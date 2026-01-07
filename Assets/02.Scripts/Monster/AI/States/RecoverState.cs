@@ -77,11 +77,6 @@ namespace Monster.AI.States
         
         private void TransitionBackToCombat()
         {
-            // 공격 슬롯 반환 
-            if (_controller.EnemyGroup != null)
-            {
-                _controller.EnemyGroup.ReleaseAttackSlot(_controller);
-            }
             
             float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
 
@@ -100,7 +95,6 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            // NavAgent 재개
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.isStopped = false;
