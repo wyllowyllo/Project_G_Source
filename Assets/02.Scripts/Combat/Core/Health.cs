@@ -61,5 +61,13 @@ namespace Combat.Core
                 _currentHealth = _maxHealth;
             }
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetMaxHealthForTest(float maxHealth)
+        {
+            _maxHealth = maxHealth;
+            _currentHealth = maxHealth;
+        }
+#endif
     }
 }

@@ -98,5 +98,9 @@ namespace Combat.Attack
 
             return s_defaultComboMultipliers[step - 1];
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetComboSettingsForTest(ComboSettings settings) => _comboSettings = settings;
+#endif
     }
 }

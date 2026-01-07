@@ -20,7 +20,7 @@ namespace Progression
         public int Level { get; private set; } = 1;
         public int CurrentXp { get; private set; }
         public bool IsMaxLevel => Level >= _config.MaxLevel;
-        public int XpToNextLevel => IsMaxLevel ? 0 : _config.GetRequiredXp(Level + 1) - CurrentXp;
+        public int XpToNextLevel => IsMaxLevel ? 0 : _config.GetRequiredXp(Level + 1);
         public float LevelProgress => IsMaxLevel ? 1f : (float)CurrentXp / _config.GetRequiredXp(Level + 1);
 
         public HunterRank Rank => ProgressionConfig.GetRank(Level);
@@ -94,5 +94,9 @@ namespace Progression
             CurrentXp = 0;
             ApplyLevelStats();
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetConfigForTest(ProgressionConfig config) => _config = config;
+#endif
     }
 }

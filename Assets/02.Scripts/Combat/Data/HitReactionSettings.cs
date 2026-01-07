@@ -17,5 +17,21 @@ namespace Combat.Data
         public bool AutoInvincibilityOnHit => _autoInvincibilityOnHit;
         public float HitStunDuration => _hitStunDuration;
         public bool AutoHitStunOnHit => _autoHitStunOnHit;
+
+#if UNITY_INCLUDE_TESTS
+        public static HitReactionSettings CreateForTest(
+            float invincibilityDuration = 0.5f,
+            bool autoInvincibility = true,
+            float hitStunDuration = 0.2f,
+            bool autoHitStun = true)
+        {
+            var settings = CreateInstance<HitReactionSettings>();
+            settings._invincibilityDuration = invincibilityDuration;
+            settings._autoInvincibilityOnHit = autoInvincibility;
+            settings._hitStunDuration = hitStunDuration;
+            settings._autoHitStunOnHit = autoHitStun;
+            return settings;
+        }
+#endif
     }
 }

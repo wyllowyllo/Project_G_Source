@@ -117,5 +117,9 @@ namespace Combat.Attack
             hitInfo.Target.TakeDamage(damageInfo);
             OnHit?.Invoke(hitInfo.Target, damageInfo);
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetHitboxForTest(HitboxTrigger hitbox) => _hitbox = hitbox;
+#endif
     }
 }

@@ -62,5 +62,28 @@ namespace Progression
             >= 11 => HunterRank.B,
             _ => HunterRank.C
         };
+
+#if UNITY_INCLUDE_TESTS
+        public static ProgressionConfig CreateForTest(
+            int maxLevel = 30,
+            int baseXp = 100,
+            float exponent = 1.5f,
+            float attackPerLevel = 5f,
+            int qSkillLevel = 11,
+            int eSkillLevel = 21,
+            int rSkillLevel = 30)
+        {
+            var config = CreateInstance<ProgressionConfig>();
+            config._maxLevel = maxLevel;
+            config._baseXp = baseXp;
+            config._exponent = exponent;
+            config._attackPerLevel = attackPerLevel;
+            config._qSkillLevel = qSkillLevel;
+            config._eSkillLevel = eSkillLevel;
+            config._rSkillLevel = rSkillLevel;
+            config.CacheXpThresholds();
+            return config;
+        }
+#endif
     }
 }
