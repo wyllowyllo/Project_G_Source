@@ -31,14 +31,14 @@ namespace SJ
         [SerializeField] private float detectionRadius = 2f;
 
         [Header("=== Visual Effects ===")]
-        [SerializeField] private GameObject[] attackVFX; 
-        [SerializeField] private GameObject[] hitVFX;    
+        [SerializeField] private GameObject[] attackVFX;
+        [SerializeField] private GameObject[] hitVFX;
 
         [Header("=== Events ===")]
-        public UnityEvent<int> OnComboStarted;          
-        public UnityEvent<int> OnComboExecuted;          
-        public UnityEvent<int, GameObject> OnEnemyHit;   
-        public UnityEvent OnComboReset;                
+        public UnityEvent<int> OnComboStarted;
+        public UnityEvent<int> OnComboExecuted;
+        public UnityEvent<int, GameObject> OnEnemyHit;
+        public UnityEvent OnComboReset;
 
         // Components
         private Animator animator;
@@ -704,114 +704,57 @@ namespace SJ
             ResetCombo();
         }
 
-        private void OnDrawGizmosSelected()
+        public enum ComboState
         {
-            if (attackPoint == null) return;
-
-            // 현재 콤보의 공격 범위
-            float range = (comboAttacks != null && currentComboIndex < comboAttacks.Length)
-                ? comboAttacks[currentComboIndex].attackRange
-                : 2f;
-
-            // 공격 범위
-            Gizmos.color = IsAttacking() ? Color.red : Color.yellow;
-            Gizmos.DrawWireSphere(attackPoint.position, range);
-
-            // 적 탐지 범위
-            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
-            Gizmos.DrawWireSphere(transform.position, detectionRadius);
-
-            // 상태 표시
-            Gizmos.color = GetStateColor();
-            Gizmos.DrawWireSphere(transform.position + Vector3.up * 2.5f, 0.3f);
-
-            // 콤보 윈도우 표시
-            if (isInComboWindow)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireCube(transform.position + Vector3.up * 3f, Vector3.one * 0.5f);
-            }
-
-            // 입력 버퍼 표시
-            if (hasBufferedInput)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawWireCube(transform.position + Vector3.up * 3.5f, Vector3.one * 0.3f);
-            }
+            Idle,           // 대기 (공격 가능)
+            Attacking,      // 공격 중 (애니메이션 재생 중)
+            ComboWindow,    // 콤보 윈도우 (다음 공격 입력 가능)
+            Recovery        // 회복 중 (공격 불가)
         }
 
-        private Color GetStateColor()
+        [System.Serializable]
+        public struct ComboAttackData
         {
-            switch (currentState)
-            {
-                case ComboState.Idle: return Color.white;
-                case ComboState.Attacking: return Color.red;
-                case ComboState.ComboWindow: return Color.green;
-                case ComboState.Recovery: return Color.yellow;
-                default: return Color.gray;
-            }
+            [Header("Basic Info")]
+            [Tooltip("콤보 이름 (예: Light Attack 1)")]
+            public string comboName;
+
+            [Header("Damage")]
+            [Tooltip("공격 데미지")]
+            public float damage;
+
+            [Tooltip("넉백 강도")]
+            public float knockbackForce;
+
+            [Tooltip("공격 범위")]
+            public float attackRange;
+
+            [Header("Animation Timing")]
+            [Tooltip("애니메이션 전체 길이 (초)")]
+            public float animationDuration;
+
+            [Tooltip("데미지 적용 타이밍 (0~1, 애니메이션의 몇 % 지점)")]
+            [Range(0f, 1f)]
+            public float damageFrame;
+
+            [Header("Combo Window")]
+            [Tooltip("콤보 윈도우 시작 시점 (0~1, 애니메이션의 몇 % 지점)")]
+            [Range(0f, 1f)]
+            public float comboWindowStart;
+
+            [Tooltip("콤보 윈도우 종료 시점 (0~1, 애니메이션의 몇 % 지점)")]
+            [Range(0f, 1f)]
+            public float comboWindowEnd;
         }
-    }
 
-    public enum ComboState
-    {
-        Idle,           // 대기 (공격 가능)
-        Attacking,      // 공격 중 (애니메이션 재생 중)
-        ComboWindow,    // 콤보 윈도우 (다음 공격 입력 가능)
-        Recovery        // 회복 중 (공격 불가)
-    }
+        public interface IDamageable
+        {
+            void TakeDamage(float damage);
+        }
 
-    /// <summary>
-    /// 콤보 공격 데이터
-    /// </summary>
-    [System.Serializable]
-    public struct ComboAttackData
-    {
-        [Header("Basic Info")]
-        [Tooltip("콤보 이름 (예: Light Attack 1)")]
-        public string comboName;
-
-        [Header("Damage")]
-        [Tooltip("공격 데미지")]
-        public float damage;
-
-        [Tooltip("넉백 강도")]
-        public float knockbackForce;
-
-        [Tooltip("공격 범위")]
-        public float attackRange;
-
-        [Header("Animation Timing")]
-        [Tooltip("애니메이션 전체 길이 (초)")]
-        public float animationDuration;
-
-        [Tooltip("데미지 적용 타이밍 (0~1, 애니메이션의 몇 % 지점)")]
-        [Range(0f, 1f)]
-        public float damageFrame;
-
-        [Header("Combo Window")]
-        [Tooltip("콤보 윈도우 시작 시점 (0~1, 애니메이션의 몇 % 지점)")]
-        [Range(0f, 1f)]
-        public float comboWindowStart;
-
-        [Tooltip("콤보 윈도우 종료 시점 (0~1, 애니메이션의 몇 % 지점)")]
-        [Range(0f, 1f)]
-        public float comboWindowEnd;
-    }
-
-    /// <summary>
-    /// 데미지를 받을 수 있는 오브젝트 인터페이스
-    /// </summary>
-    public interface IDamageable
-    {
-        void TakeDamage(float damage);
-    }
-
-    /// <summary>
-    /// 넉백을 받을 수 있는 오브젝트 인터페이스
-    /// </summary>
-    public interface IKnockbackable
-    {
-        void ApplyKnockback(Vector3 direction, float force);
+        public interface IKnockbackable
+        {
+            void ApplyKnockback(Vector3 direction, float force);
+        }
     }
 }
