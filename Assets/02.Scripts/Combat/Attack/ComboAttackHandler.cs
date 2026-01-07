@@ -7,7 +7,7 @@ namespace Combat.Attack
     public class ComboAttackHandler : MonoBehaviour
     {
         private const int DefaultMaxComboSteps = 3;
-        private const float DefaultComboWindow = 0.8f;
+        private const float DefaultComboWindow = 2f;
         private static readonly float[] s_defaultComboMultipliers = { 1.0f, 1.1f, 1.3f };
 
         [SerializeField] private ComboSettings _comboSettings;
@@ -39,15 +39,20 @@ namespace Combat.Attack
 
         public bool TryAttack()
         {
+           
             if (_isAttacking)
                 return false;
 
+           
             if (IsComboWindowExpired())
             {
                 ResetCombo();
             }
 
+            Debug.Log($"A : {_currentComboStep}");
             _currentComboStep++;
+            Debug.Log($"B : {_currentComboStep}");
+
             if (_currentComboStep > MaxComboSteps)
             {
                 _currentComboStep = 1;

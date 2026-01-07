@@ -33,7 +33,7 @@ public class PlayerAnimationController : MonoBehaviour
         {
             return;
         }
-
+        Debug.Log($"PlayAttack ComboStep: {comboStep}");
         _animator.SetInteger(_comboStepParameters, comboStep);
         _animator.SetTrigger(_attackTrigger);
         _animator.SetBool(_isAttackingParameters, true);

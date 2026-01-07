@@ -44,7 +44,7 @@ public class PlayerTargetController : MonoBehaviour
     // 가까운 타겟으로 방향 회전
     public void RotateTowardsNearestTarget()
     {
-        if(_autoRotate)
+        if(!_autoRotate)
         {
             return;
         }

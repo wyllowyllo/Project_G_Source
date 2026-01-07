@@ -159,20 +159,21 @@ using UnityEngine.Events;
 
         private void TryStartAttack()
         {
-            // MeleeAttacker를 통해 공격 시도
-            if (!_attacker.TryAttack())
+           
+        // MeleeAttacker를 통해 공격 시도
+        if (!_attacker.TryAttack())
             {
                 return;
             }
 
-            // 버퍼 입력 소비
-            if (_currentState == ComboState.ComboWindow && _inputHandler.HasBufferedInput)
-            {
-                _inputHandler.TryConsumeBuffer();
-            }
+        // 버퍼 입력 소비
+        if (_currentState == ComboState.ComboWindow && _inputHandler.HasBufferedInput)
+        {
+            _inputHandler.TryConsumeBuffer();
+        }
 
-            // 타겟 회전
-            _targetController?.RotateTowardsNearestTarget();
+        // 타겟 회전
+        _targetController?.RotateTowardsNearestTarget();
 
             // 이동 제한
             if (!_canMoveWhileAttacking && _playerMovement != null)
@@ -186,8 +187,10 @@ using UnityEngine.Events;
 
             ChangeState(ComboState.Attacking);
 
-            // 이벤트 발생
-            OnComboExecuted?.Invoke(_attacker.CurrentComboStep);
+       
+
+        // 이벤트 발생
+        OnComboExecuted?.Invoke(_attacker.CurrentComboStep);
 
         }
 
