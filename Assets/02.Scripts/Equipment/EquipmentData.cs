@@ -39,5 +39,25 @@ namespace Equipment
         public float AttackBonus => _attackBonus;
         public float DefenseBonus => _defenseBonus;
         public float CriticalChanceBonus => _criticalChanceBonus;
+
+#if UNITY_INCLUDE_TESTS
+        public static EquipmentData CreateForTest(
+            EquipmentSlot slot,
+            EquipmentGrade grade,
+            float attackBonus = 0f,
+            float defenseBonus = 0f,
+            float criticalChanceBonus = 0f,
+            string equipmentName = "TestEquipment")
+        {
+            var data = CreateInstance<EquipmentData>();
+            data._equipmentName = equipmentName;
+            data._slot = slot;
+            data._grade = grade;
+            data._attackBonus = attackBonus;
+            data._defenseBonus = defenseBonus;
+            data._criticalChanceBonus = criticalChanceBonus;
+            return data;
+        }
+#endif
     }
 }

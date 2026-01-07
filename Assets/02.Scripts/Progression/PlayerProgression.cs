@@ -94,5 +94,9 @@ namespace Progression
             CurrentXp = 0;
             ApplyLevelStats();
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetConfigForTest(ProgressionConfig config) => _config = config;
+#endif
     }
 }

@@ -92,19 +92,7 @@ namespace Combat.Core
 
         public void TakeDamage(float damage)
         {
-            if (!CanTakeDamage) return;
-
-            _health.TakeDamage(damage);
-            OnDamaged?.Invoke(new DamageInfo(damage, false, new HitContext()));
-
-            if (_hitReactionSettings != null)
-            {
-                if (_hitReactionSettings.AutoInvincibilityOnHit)
-                    SetInvincible(_hitReactionSettings.InvincibilityDuration);
-
-                if (_hitReactionSettings.AutoHitStunOnHit)
-                    SetStunned(_hitReactionSettings.HitStunDuration);
-            }
+            TakeDamage(new DamageInfo(damage, false, new HitContext()));
         }
 
         public void TakeDamage(DamageInfo damageInfo)
@@ -199,5 +187,21 @@ namespace Combat.Core
             ClearHitStun();
             OnDeath?.Invoke();
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetTeamForTest(CombatTeam team) => _team = team;
+        public void SetStatsDataForTest(CombatStatsData data)
+        {
+            _statsData = data;
+            _stats = data != null
+                ? CombatStats.FromData(data)
+                : new CombatStats(
+                    CombatConstants.DefaultAttackDamage,
+                    CombatConstants.DefaultCriticalChance,
+                    CombatConstants.DefaultCriticalMultiplier,
+                    CombatConstants.DefaultDefense);
+        }
+        public void SetHitReactionSettingsForTest(HitReactionSettings settings) => _hitReactionSettings = settings;
+#endif
     }
 }

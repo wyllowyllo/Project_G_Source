@@ -35,7 +35,7 @@ namespace Equipment
             int total = normalW + rareW + uniqueW + legendaryW;
             if (total == 0)
             {
-                Debug.LogWarning($"[DropTable] All pools empty on {name}");
+                UnityEngine.Debug.LogWarning($"[DropTable] All pools empty on {name}");
                 return null;
             }
 
@@ -51,5 +51,35 @@ namespace Equipment
         }
 
         private bool HasItems(EquipmentData[] pool) => pool != null && pool.Length > 0;
+
+#if UNITY_INCLUDE_TESTS
+        public static DropTableData CreateForTest(
+            float dropChance = 1f,
+            int normalWeight = 60,
+            int rareWeight = 25,
+            int uniqueWeight = 12,
+            int legendaryWeight = 3)
+        {
+            var data = CreateInstance<DropTableData>();
+            data._dropChance = dropChance;
+            data._normalWeight = normalWeight;
+            data._rareWeight = rareWeight;
+            data._uniqueWeight = uniqueWeight;
+            data._legendaryWeight = legendaryWeight;
+            return data;
+        }
+
+        public void SetPoolsForTest(
+            EquipmentData[] normalPool = null,
+            EquipmentData[] rarePool = null,
+            EquipmentData[] uniquePool = null,
+            EquipmentData[] legendaryPool = null)
+        {
+            _normalPool = normalPool ?? System.Array.Empty<EquipmentData>();
+            _rarePool = rarePool ?? System.Array.Empty<EquipmentData>();
+            _uniquePool = uniquePool ?? System.Array.Empty<EquipmentData>();
+            _legendaryPool = legendaryPool ?? System.Array.Empty<EquipmentData>();
+        }
+#endif
     }
 }

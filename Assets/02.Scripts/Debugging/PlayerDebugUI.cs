@@ -7,22 +7,10 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace ProjectG.Debug
+namespace Debugging
 {
-    /// <summary>
-    /// 플레이어 종합 디버그 UI입니다.
-    /// 상태 확인 및 테스트용 조작 기능을 제공합니다.
-    /// </summary>
-    /// <summary>
-    /// 플레이어 종합 디버그 UI입니다. (Canvas 기반)
-    /// 상태 확인 및 테스트용 조작 기능을 제공합니다.
-    /// </summary>
-    /// <summary>
-    /// 플레이어 종합 디버그 UI입니다. (Canvas 기반)
-    /// </summary>
-    /// <summary>
-    /// 플레이어 종합 디버그 UI입니다. (Canvas 기반)
-    /// </summary>
+    // 플레이어 종합 디버그 UI입니다.
+    // 상태 확인 및 테스트용 조작 기능을 제공합니다.
     public class PlayerDebugUI : MonoBehaviour
     {
         [Header("References")]
@@ -73,35 +61,35 @@ namespace ProjectG.Debug
             _xpFill = CreateBar(_content, new Color(0.2f, 0.6f, 1f));
 
             CreateButtonRow(_content, new[] {
-                ($"+{_debugXp} XP", (System.Action)(() => _progression?.AddExperience(_debugXp))),
-                ("+1000 XP", (System.Action)(() => _progression?.AddExperience(1000)))
+                ($"+{_debugXp} XP", () => _progression?.AddExperience(_debugXp)),
+                ("+1000 XP", (Action)(() => _progression?.AddExperience(1000)))
             });
             CreateButtonRow(_content, new[] {
-                ("Lv+1", (System.Action)(() => _progression?.SetLevel(_progression.Level + 1))),
-                ("Lv-1", (System.Action)(() => _progression?.SetLevel(_progression.Level - 1))),
-                ("Max", (System.Action)(() => _progression?.SetLevel(30)))
+                ("Lv+1", () => _progression?.SetLevel(_progression.Level + 1)),
+                ("Lv-1", () => _progression?.SetLevel(_progression.Level - 1)),
+                ("Max", (Action)(() => _progression?.SetLevel(30)))
             });
 
             CreateSpacer(_content, 10);
             CreateText(_content, "--- Health ---", 14, FontStyle.Bold, 20);
             _hpFill = CreateBar(_content, new Color(0.2f, 0.8f, 0.2f));
             CreateButtonRow(_content, new[] {
-                ("Damage", (System.Action)(() => _combatant?.TakeDamage(_debugDamage))),
-                ("Heal", (System.Action)(() => _combatant?.Heal(_debugHeal))),
-                ("Full", (System.Action)(() => _combatant?.Heal(_combatant?.MaxHealth ?? 0)))
+                ("Damage", () => _combatant?.TakeDamage(_debugDamage)),
+                ("Heal", () => _combatant?.Heal(_debugHeal)),
+                ("Full", (Action)(() => _combatant?.Heal(_combatant?.MaxHealth ?? 0)))
             });
 
             CreateSpacer(_content, 10);
             CreateButton(_content, "Unequip All", () => {
                 if (_equipment == null) return;
-                foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
+                foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
                     _equipment.Unequip(slot);
             });
         }
 
         private void RefreshUI()
         {
-            var sb = new System.Text.StringBuilder();
+            var sb = new StringBuilder();
 
             if (_progression != null)
             {
@@ -113,7 +101,7 @@ namespace ProjectG.Debug
             if (_combatant != null)
             {
                 sb.AppendLine($"HP: {_combatant.CurrentHealth:F0} / {_combatant.MaxHealth:F0}");
-                _hpFill.anchorMax = new Vector2(_combatant.CurrentHealth / _combatant.MaxHealth, 1f);
+                _hpFill.anchorMax = new Vector2(_combatant.MaxHealth > 0 ? _combatant.CurrentHealth / _combatant.MaxHealth : 0f, 1f);
 
                 var stats = _combatant.Stats;
                 sb.AppendLine($"ATK: {stats.AttackDamage.Value:F0}  DEF: {stats.Defense.Value:F0}");
@@ -122,7 +110,7 @@ namespace ProjectG.Debug
 
             if (_equipment != null)
             {
-                foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
+                foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
                 {
                     var item = _equipment.GetEquipment(slot);
                     if (item != null)
@@ -191,7 +179,7 @@ namespace ProjectG.Debug
             viewport.transform.SetParent(scrollObj.transform, false);
             var viewportImage = viewport.AddComponent<Image>();
             viewportImage.color = new Color(0, 0, 0, 0);
-            var mask = viewport.AddComponent<RectMask2D>();
+            viewport.AddComponent<RectMask2D>();
 
             var viewportRect = viewport.GetComponent<RectTransform>();
             viewportRect.anchorMin = Vector2.zero;
@@ -272,7 +260,7 @@ namespace ProjectG.Debug
             return fillRect;
         }
 
-        private void CreateButton(RectTransform parent, string text, System.Action onClick)
+        private void CreateButton(RectTransform parent, string text, Action onClick)
         {
             var obj = new GameObject("Button");
             obj.transform.SetParent(parent, false);
@@ -303,7 +291,7 @@ namespace ProjectG.Debug
             textRect.offsetMax = Vector2.zero;
         }
 
-        private void CreateButtonRow(RectTransform parent, (string text, System.Action onClick)[] buttons)
+        private void CreateButtonRow(RectTransform parent, (string text, Action onClick)[] buttons)
         {
             var row = new GameObject("ButtonRow");
             row.transform.SetParent(parent, false);

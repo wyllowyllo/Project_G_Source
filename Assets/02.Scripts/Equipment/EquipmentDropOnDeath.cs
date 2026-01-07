@@ -1,5 +1,5 @@
-using UnityEngine;
 using Combat.Core;
+using UnityEngine;
 
 namespace Equipment
 {
@@ -26,6 +26,18 @@ namespace Equipment
             _health.OnDeath -= HandleDeath;
         }
 
+        public void SetDropTable(DropTableData table)
+        {
+            if (_dropTable == null)
+                _dropTable = table;
+        }
+
+        public void SetDroppedEquipmentPrefab(DroppedEquipment prefab)
+        {
+            if (_droppedEquipmentPrefab == null)
+                _droppedEquipmentPrefab = prefab;
+        }
+
         private void HandleDeath()
         {
             if (_dropTable == null || _droppedEquipmentPrefab == null)
@@ -37,7 +49,12 @@ namespace Equipment
 
             var dropped = Instantiate(_droppedEquipmentPrefab, transform.position, Quaternion.identity);
             dropped.Initialize(droppedData);
-            Debug.Log($"[Equipment] Dropped {droppedData.EquipmentName} ({droppedData.Grade})");
+            UnityEngine.Debug.Log($"[Equipment] Dropped {droppedData.EquipmentName} ({droppedData.Grade})");
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetDropTableForTest(DropTableData dropTable) => _dropTable = dropTable;
+        public void SetDroppedEquipmentPrefabForTest(DroppedEquipment prefab) => _droppedEquipmentPrefab = prefab;
+#endif
     }
 }

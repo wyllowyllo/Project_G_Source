@@ -23,5 +23,15 @@ namespace Combat.Data
             int index = Mathf.Clamp(step - 1, 0, _comboDamageMultipliers.Length - 1);
             return _comboDamageMultipliers[index];
         }
+
+#if UNITY_INCLUDE_TESTS
+        public static ComboSettings CreateForTest(float[] damageMultipliers = null)
+        {
+            var settings = CreateInstance<ComboSettings>();
+            settings._comboDamageMultipliers = damageMultipliers ?? new float[] { 1.0f, 1.1f, 1.3f };
+            settings._maxComboSteps = settings._comboDamageMultipliers.Length;
+            return settings;
+        }
+#endif
     }
 }

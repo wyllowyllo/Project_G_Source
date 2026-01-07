@@ -2,32 +2,18 @@ using UnityEngine;
 
 namespace Equipment.Sample
 {
-    /// <summary>
-    /// 장비 픽업 상호작용 샘플 코드입니다.
-    /// 
-    /// 필요한 컴포넌트:
-    /// - PlayerEquipment: 장비 관리
-    /// - Collider (Is Trigger): 상호작용 범위 감지
-    /// 
-    /// 사용법:
-    /// 1. 플레이어에 이 스크립트 추가
-    /// 2. Sphere Collider 추가 후 Is Trigger 체크, 반경 설정
-    /// 3. InteractionLayer에 DroppedEquipment가 있는 레이어 설정
-    /// </summary>
-    /// <summary>
-    /// 장비 픽업 상호작용 샘플 코드입니다.
-    /// 
-    /// 필요한 컴포넌트:
-    /// - PlayerEquipment: 장비 관리
-    /// 
-    /// 필요한 자식 오브젝트:
-    /// - InteractionDetector: InteractionTrigger 컴포넌트가 있는 자식 오브젝트
-    ///   - Sphere Collider (Is Trigger) 추가
-    /// 
-    /// 사용법:
-    /// 1. 플레이어에 이 스크립트 추가
-    /// 2. 자식 오브젝트 생성 후 InteractionTrigger 추가
-    /// </summary>
+    // 장비 픽업 상호작용 샘플 코드입니다.
+    //
+    // 필요한 컴포넌트:
+    // - PlayerEquipment: 장비 관리
+    //
+    // 필요한 자식 오브젝트:
+    // - InteractionDetector: InteractionTrigger 컴포넌트가 있는 자식 오브젝트
+    //   - Sphere Collider (Is Trigger) 추가
+    //
+    // 사용법:
+    // 1. 플레이어에 이 스크립트 추가
+    // 2. 자식 오브젝트 생성 후 InteractionTrigger 추가
     [RequireComponent(typeof(PlayerEquipment))]
     public class PlayerInteractionSample : MonoBehaviour
     {
@@ -63,10 +49,16 @@ namespace Equipment.Sample
             if (_currentTarget == null)
                 return;
 
-            if (_currentTarget.TryPickup(_playerEquipment))
-            {
-                _currentTarget = null;
-            }
+            var equipmentData = _currentTarget.EquipmentData;
+            if (equipmentData == null)
+                return;
+
+            if (!_playerEquipment.TryEquip(equipmentData))
+                return;
+
+            Debug.Log($"[Equipment] Picked up {equipmentData.EquipmentName} ({equipmentData.Grade})");
+            Destroy(_currentTarget.gameObject);
+            _currentTarget = null;
         }
 
         public void SetTarget(DroppedEquipment target)

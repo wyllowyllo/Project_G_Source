@@ -44,5 +44,9 @@ namespace Progression
         {
             _player = player;
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetXpRewardForTest(int xpReward) => _xpReward = xpReward;
+#endif
     }
 }

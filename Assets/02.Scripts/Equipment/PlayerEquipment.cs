@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Combat.Core;
+using UnityEngine;
 
 namespace Equipment
 {

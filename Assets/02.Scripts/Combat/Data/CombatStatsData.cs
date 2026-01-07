@@ -19,5 +19,21 @@ namespace Combat.Data
         public float CriticalChance => _criticalChance;
         public float CriticalMultiplier => _criticalMultiplier;
         public float Defense => _defense;
+
+#if UNITY_INCLUDE_TESTS
+        public static CombatStatsData CreateForTest(
+            float baseAttackDamage = 10f,
+            float criticalChance = 0.1f,
+            float criticalMultiplier = 1.5f,
+            float defense = 0f)
+        {
+            var data = CreateInstance<CombatStatsData>();
+            data._baseAttackDamage = baseAttackDamage;
+            data._criticalChance = criticalChance;
+            data._criticalMultiplier = criticalMultiplier;
+            data._defense = defense;
+            return data;
+        }
+#endif
     }
 }
