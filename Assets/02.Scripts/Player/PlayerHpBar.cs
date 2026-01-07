@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHpBarUI : MonoBehaviour
+public class PlayerHpBar : MonoBehaviour
 {
 
     [SerializeField] private Combatant _playerCombatant; 
