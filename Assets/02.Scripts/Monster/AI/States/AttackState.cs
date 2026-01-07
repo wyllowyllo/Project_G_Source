@@ -30,7 +30,7 @@ namespace Monster.AI.States
         private Vector3 _chargeStartPosition;
         private Vector3 _chargeTargetOnNavMesh;
         
-        private float _maxChargeDistance = 2f;
+        private float _maxChargeDistance = 5f;
         private float _hitRadius = 0.6f;
         private float _navSampleRadius = 1f;  // 목표점이 NavMesh 밖일 때 주변 샘플 범위
 
@@ -38,6 +38,7 @@ namespace Monster.AI.States
         private float _originalAcceleration;
         private float _originalAngularSpeed;
         private bool _originalAutoBraking;
+        private ObstacleAvoidanceType _originalObstacleAvoidanceType;
 
         // Execute 종료 안전장치
         private float _maxExecuteDuration = 2f; // ExecuteTime 대신/또는 상한으로 사용 권장
@@ -68,6 +69,7 @@ namespace Monster.AI.States
                 _originalAcceleration = agent.acceleration;
                 _originalAngularSpeed = agent.angularSpeed;
                 _originalAutoBraking = agent.autoBraking;
+                _originalObstacleAvoidanceType = agent.obstacleAvoidanceType;
 
                 agent.isStopped = true;
             }
@@ -146,6 +148,7 @@ namespace Monster.AI.States
                 agent.acceleration = _originalAcceleration;
                 agent.angularSpeed = _originalAngularSpeed;
                 agent.autoBraking = _originalAutoBraking;
+                agent.obstacleAvoidanceType = _originalObstacleAvoidanceType;
 
                 agent.updateRotation = true;
             }
@@ -180,6 +183,7 @@ namespace Monster.AI.States
             agent.angularSpeed = _chargeAngularSpeed;
             agent.autoBraking = false;
             agent.stoppingDistance = 0f;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance; // 장애물 회피 끄기
             agent.isStopped = false;
             agent.SetDestination(_chargeTargetOnNavMesh);
 
