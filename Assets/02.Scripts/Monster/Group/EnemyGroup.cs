@@ -23,6 +23,11 @@ namespace Monster.Group
         [SerializeField] private float _frontArcDegrees = 220f;         // 플레이어 전방 중심 부채꼴로 배치(자연스러움 ↑)
         [SerializeField] private float _slotRadiusLerp = 0.6f;          // PreferredMin~Max 사이 목표 반경 선택 비율
 
+        [Header("각도 가중치(측면 선호)")]
+        [SerializeField] private float _sideAngleCenter = 90f;   // 측면 기준 각도(90도)
+        [SerializeField] private float _sideAngleSigma = 35f;    // 허용 폭(작을수록 엄격)
+        [SerializeField] private float _sideAngleWeight = 3.0f;  // 영향력(크면 측면 우선)
+        
         [Header("Separation")]
         [SerializeField] private float _separationRadius = 1.5f;
         [SerializeField] private float _separationWeight = 1.0f;
@@ -77,7 +82,7 @@ namespace Monster.Group
             if (now >= _nextPositionTickTime)
             {
                 _nextPositionTickTime = now + _positionTickInterval;
-                RebuildAngleSlots();
+                //RebuildAngleSlots();
             }
 
             // 디렉터 틱(DesiredPosition + 공격자 선정)
@@ -125,7 +130,7 @@ namespace Monster.Group
                     _lastAttackTime[monster] = -9999f;
 
                 // 등록 즉시 슬롯 재배치 한번
-                RebuildAngleSlots();
+                //RebuildAngleSlots();
             }
         }
 
@@ -246,9 +251,7 @@ namespace Monster.Group
             }
         }
 
-        // ---------------------------
-        // 2) DesiredPosition 업데이트 + 4) Separation 적용
-        // ---------------------------
+       
         private void UpdateDesiredPositions()
         {
             if (_playerTransform == null) return;
@@ -257,23 +260,36 @@ namespace Monster.Group
 
             for (int i = 0; i < _monsters.Count; i++)
             {
-                var m = _monsters[i];
-                if (m == null) continue;
+                var monster = _monsters[i];
+                if (monster == null) continue;
 
-                float ang = _desiredAngleDeg.TryGetValue(m, out var a) ? a : 0f;
-                float r = _desiredRadius.TryGetValue(m, out var rr) ? rr : m.Data.PreferredMaxDistance;
+                Vector3 monsterPosition = monster.transform.position;
+                Vector3 toMonster = monsterPosition - playerPos;
+                toMonster.y = 0f;
 
-                Vector3 dir = Quaternion.AngleAxis(ang, Vector3.up) * Vector3.forward;
-                Vector3 basePos = playerPos + dir * r;
+                float dist = toMonster.magnitude;
+                float minDistance = monster.Data.PreferredMinDistance;
+                float maxDistance = monster.Data.PreferredMaxDistance;
+                
+                Vector3 target = monsterPosition;
+                
+                if (dist < minDistance)
+                {
+                    Vector3 dirOut = toMonster.normalized; 
+                    target = playerPos + dirOut * minDistance;
+                }
+                else if (dist > maxDistance)
+                {
+                    Vector3 dirIn = (-toMonster).normalized; 
+                    target = monsterPosition + dirIn * Mathf.Min(2.0f, dist - maxDistance); 
+                }
+                
+                // 몬스터 살짝 퍼져서 배치되도록 조정
+                Vector3 sep = ComputeSeparation(monster);
+                target += sep * _separationWeight;
 
-                // Separation 벡터를 살짝 추가
-                Vector3 sep = ComputeSeparation(m);
-                Vector3 finalPos = basePos + sep * _separationWeight;
-
-                // NavMeshAgent가 갈 수 없는 위치가 될 수 있으니, 일단 y는 현재로 유지
-                finalPos.y = m.transform.position.y;
-
-                _desiredPosition[m] = finalPos;
+                target.y = monsterPosition.y;
+                _desiredPosition[monster] = target;
             }
         }
 
@@ -359,44 +375,54 @@ namespace Monster.Group
 
             float dist = Vector3.Distance(mp, pp);
 
-            // 너무 멀면 후보 탈락 (접근 중인 애가 너무 이르게 슬롯 잡는 것 방지)
+            // (기존) 너무 멀면 탈락
             float hardMax = m.Data.AttackRange + _attackRangeBuffer + 2.0f;
             if (dist > hardMax) return 0f;
 
-            // 라인오브사이트(간단 버전): 몬스터 가슴 -> 플레이어 가슴
+            // (기존) LOS 체크
             if (!HasLineOfSight(mp, pp)) return 0f;
 
             float score = 0f;
 
-            // 거리: AttackRange 근처를 선호(가우시안 비슷한 모양)
+            // (기존) 거리 선호
             float ideal = m.Data.AttackRange + 0.25f;
             float distScore = Mathf.Clamp01(1f - Mathf.Abs(dist - ideal) / (m.Data.AttackRange + 1f));
             score += distScore * 3.0f;
 
-            // 자리 도달: 내 DesiredPosition에 가까울수록 가점(“측면에서 각 잡고 들어오는” 느낌)
-            Vector3 dp = GetDesiredPosition(m);
-            float dpDist = Vector3.Distance(mp, dp);
-            float posScore = Mathf.Clamp01(1f - (dpDist / 2.0f));
-            score += posScore * 2.0f;
+            // (기존) DesiredPosition 근접 점수는 “자리 강제”가 되기 쉬우니 약화하거나 제거 권장
+            // score += posScore * 2.0f;  // <- 원하시면 0.5 이하로 낮추거나 제거하세요.
 
-            // 최근 공격자 페널티
+            // (신규) 각도(측면) 점수: 플레이어 forward 대비 몬스터 방향이 90도 근처일수록 가점
+            Vector3 pf = _playerTransform.forward; pf.y = 0f;
+            Vector3 toM = (mp - pp); toM.y = 0f;
+
+            if (pf.sqrMagnitude > 0.001f && toM.sqrMagnitude > 0.001f)
+            {
+                pf.Normalize();
+                toM.Normalize();
+
+                float angle = Vector3.Angle(pf, toM);  // 0=정면, 90=측면, 180=후방
+                float sideScore = Gaussian01(angle, _sideAngleCenter, _sideAngleSigma); // 0..1
+                score += sideScore * _sideAngleWeight;
+            }
+
+            // (기존) 최근 공격자 페널티/공정성
             float last = _lastAttackTime.TryGetValue(m, out var t) ? t : -9999f;
             float since = now - last;
-            if (since < _recentAttackerPenaltySeconds)
-            {
-                score *= 0.35f;
-            }
-            else
-            {
-                // 오래 공격 못 했으면 약간 가점
-                score += Mathf.Clamp01(since / 5f) * 0.5f;
-            }
+            if (since < _recentAttackerPenaltySeconds) score *= 0.35f;
+            else score += Mathf.Clamp01(since / 5f) * 0.5f;
 
-            // 혼잡도 페널티(주변이 너무 빽빽하면 공격자 우선순위 감소)
-            float crowd = ComputeCrowdPenalty(m);
-            score *= crowd;
+            // (기존) 혼잡도 페널티
+            score *= ComputeCrowdPenalty(m);
 
             return score;
+        }
+        private float Gaussian01(float x, float mean, float sigma)
+        {
+            // exp(-((x-mean)^2)/(2*sigma^2)) in [0,1]
+            float d = x - mean;
+            float denom = 2f * sigma * sigma;
+            return Mathf.Exp(-(d * d) / Mathf.Max(0.0001f, denom));
         }
 
         private float ComputeCrowdPenalty(MonsterController m)

@@ -31,7 +31,7 @@ namespace Monster.AI.States
         private Vector3 _probeTarget;
 
         // 튜닝
-        private const float RepositionStopRadius = 0.8f;   // 목표 근처면 멈칫 모드로 전환
+        private const float RepositionStopRadius = 1.3f;   // 목표 근처면 멈칫 모드로 전환
         private const float ShuffleRadius = 1.2f;
         private const float FeintStep = 0.8f;
         
