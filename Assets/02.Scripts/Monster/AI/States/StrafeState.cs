@@ -11,15 +11,7 @@ namespace Monster.AI.States
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
-
-        private float _slotRequestCooldown = 5f;
-        private float _slotRequestTimer = 0f;
-
-        // 스트레이프 관련
-        private float _strafeDirectionChangeInterval = 2f;
-        private float _strafeDirectionTimer = 0f;
-        private int _strafeDirection = 1; // 1 = 오른쪽, -1 = 왼쪽
-
+        
         // Probe 서브모드
         private enum EProbeMode { Reposition, Hold, Shuffle, FeintIn, FeintOut }
 
@@ -63,40 +55,37 @@ namespace Monster.AI.States
             
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
-              
                 _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
             }
+            
             // 공격권을 그룹이 배정하면, 슬롯 보유 시 Attack으로 전환
-            if (_controller.EnemyGroup != null && _controller.EnemyGroup.CanAttack(_controller))
+            if (_controller.EnemyGroup.CanAttack(_controller))
             {
                 _stateMachine.ChangeState(EMonsterState.Attack);
                 return;
             }
 
             // DesiredPosition (각도 슬롯 + separation)
-            Vector3 desired = (_controller.EnemyGroup != null)
-                ? _controller.EnemyGroup.GetDesiredPosition(_controller)
-                : _controller.PlayerTransform.position;
-
-            // Probe 진행
+            Vector3 desired = _controller.EnemyGroup.GetDesiredPosition(_controller);
+            
             _modeTimer += Time.deltaTime;
 
             switch (_mode)
             {
-                case EProbeMode.Reposition:
+                case EProbeMode.Reposition: // 자리 목표 변경 시 이동
                     DoReposition(desired);
                     break;
-                case EProbeMode.Hold:
+                case EProbeMode.Hold: // 이동 정지 + 플레이어 주시
                     DoHold();
                     break;
-                case EProbeMode.Shuffle:
+                case EProbeMode.Shuffle: // 자리 목표 주변에서 옆걸음
                     DoShuffle(desired);
                     break;
-                case EProbeMode.FeintIn:
+                case EProbeMode.FeintIn: // 반걸음 전진
                     DoFeint(desired, towardPlayer: true);
                     break;
-                case EProbeMode.FeintOut:
+                case EProbeMode.FeintOut: // 반걸음 후퇴
                     DoFeint(desired, towardPlayer: false);
                     break;
             }
@@ -109,12 +98,12 @@ namespace Monster.AI.States
 
        private void DoReposition(Vector3 desired)
         {
-            if (_controller.NavAgent == null || !_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_controller.NavAgent.isActiveAndEnabled) return;
 
-            float d = Vector3.Distance(_transform.position, desired);
+            float dist = Vector3.Distance(_transform.position, desired);
 
-            // 목표 근처 도달: 멈칫/셔플로 전환(“눈치보기” 시작)
-            if (d <= RepositionStopRadius)
+            // 목표 근처 도달: 멈칫 or 셔플로 전환(“눈치보기” 시작)
+            if (dist <= RepositionStopRadius)
             {
                 PickMode(Random.value < 0.55f ? EProbeMode.Hold : EProbeMode.Shuffle, 0.25f, 0.6f);
                 return;
@@ -126,13 +115,13 @@ namespace Monster.AI.States
 
         private void DoHold()
         {
-            if (_controller.NavAgent != null) _controller.NavAgent.isStopped = true;
-            LookAtPlayerSoft();
+            _controller.NavAgent.isStopped = true;
+            LookAtTarget();
         }
 
         private void DoShuffle(Vector3 desired)
         {
-            if (_controller.NavAgent == null || !_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_controller.NavAgent.isActiveAndEnabled) return;
 
             // 목표 자리 근방에서 작은 원호 이동(“슬금슬금”)
             if (_modeTimer <= 0.01f)
@@ -140,7 +129,6 @@ namespace Monster.AI.States
                 Vector3 center = desired;
                 Vector3 toSelf = (_transform.position - center);
                 toSelf.y = 0f;
-                if (toSelf.sqrMagnitude < 0.01f) toSelf = _transform.right;
                 toSelf.Normalize();
 
                 Vector3 tangent = Vector3.Cross(Vector3.up, toSelf) * (Random.value < 0.5f ? 1f : -1f);
@@ -151,18 +139,17 @@ namespace Monster.AI.States
             _controller.NavAgent.isStopped = false;
             _controller.NavAgent.SetDestination(_probeTarget);
 
-            LookAtPlayerSoft();
+            LookAtTarget();
         }
 
         private void DoFeint(Vector3 desired, bool towardPlayer)
         {
-            if (_controller.NavAgent == null || !_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_controller.NavAgent.isActiveAndEnabled) return;
 
             if (_modeTimer <= 0.01f)
             {
                 Vector3 dir = (_controller.PlayerTransform.position - _transform.position);
                 dir.y = 0f;
-                if (dir.sqrMagnitude < 0.01f) dir = _transform.forward;
                 dir.Normalize();
 
                 if (!towardPlayer) dir = -dir;
@@ -174,14 +161,14 @@ namespace Monster.AI.States
             _controller.NavAgent.isStopped = false;
             _controller.NavAgent.SetDestination(_probeTarget);
 
-            LookAtPlayerSoft();
+            LookAtTarget();
         }
 
         private void ChooseNextProbeMode(Vector3 desired)
         {
             // 목표로 다시 조금 재배치할 필요가 있으면 Reposition
-            float d = Vector3.Distance(_transform.position, desired);
-            if (d > RepositionStopRadius * 1.25f)
+            float distance = Vector3.Distance(_transform.position, desired);
+            if (distance > RepositionStopRadius * 1.25f)
             {
                 PickMode(EProbeMode.Reposition, 0.2f, 0.35f);
                 return;
@@ -202,7 +189,7 @@ namespace Monster.AI.States
             _modeDuration = Random.Range(minDur, maxDur);
         }
 
-        private void LookAtPlayerSoft()
+        private void LookAtTarget()
         {
             Vector3 dir = (_controller.PlayerTransform.position - _transform.position);
             dir.y = 0f;

@@ -17,12 +17,7 @@ namespace Monster.Group
 
         [Header("디렉터 - 업데이트 주기")]
         [SerializeField] private float _directorTickInterval = 5f;   // 공격자 선정/자리 갱신 주기
-        [SerializeField] private float _positionTickInterval = 0.5f;    // 각도 슬롯 재배치 주기 (너무 잦으면 춤춤)
-
-        [Header("포지션 - 각도 슬롯")]
-        [SerializeField] private float _frontArcDegrees = 220f;         // 플레이어 전방 중심 부채꼴로 배치(자연스러움 ↑)
-        [SerializeField] private float _slotRadiusLerp = 0.6f;          // PreferredMin~Max 사이 목표 반경 선택 비율
-
+        
         [Header("각도 가중치(측면 선호)")]
         [SerializeField] private float _sideAngleCenter = 90f;   // 측면 기준 각도(90도)
         [SerializeField] private float _sideAngleSigma = 35f;    // 허용 폭(작을수록 엄격)
@@ -56,7 +51,6 @@ namespace Monster.Group
         // 공정성/리듬
         private readonly Dictionary<MonsterController, float> _lastAttackTime = new();
         private float _nextDirectorTickTime;
-        private float _nextPositionTickTime;
         private float _nextAttackAssignTime;
         
         // 프로퍼티
@@ -77,14 +71,7 @@ namespace Monster.Group
             _monsters.RemoveAll(m => m == null || !m.IsAlive);
 
             float now = Time.time;
-
-            // 자리 갱신(각도/반경)
-            if (now >= _nextPositionTickTime)
-            {
-                _nextPositionTickTime = now + _positionTickInterval;
-                //RebuildAngleSlots();
-            }
-
+            
             // 디렉터 틱(DesiredPosition + 공격자 선정)
             if (now >= _nextDirectorTickTime)
             {
@@ -128,9 +115,7 @@ namespace Monster.Group
 
                 if (!_lastAttackTime.ContainsKey(monster))
                     _lastAttackTime[monster] = -9999f;
-
-                // 등록 즉시 슬롯 재배치 한번
-                //RebuildAngleSlots();
+                
             }
         }
 
@@ -216,40 +201,7 @@ namespace Monster.Group
             return monster.transform.position;
         }
         
-         private void RebuildAngleSlots()
-        {
-            if (_playerTransform == null) return;
-
-            int n = _monsters.Count;
-            if (n <= 0) return;
-
-            // 플레이어 전방을 중심으로 부채꼴 배치
-            Vector3 fwd = _playerTransform.forward;
-            fwd.y = 0f;
-            if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.forward;
-            fwd.Normalize();
-
-            float halfArc = _frontArcDegrees * 0.5f;
-            float step = (n <= 1) ? 0f : (_frontArcDegrees / (n - 1));
-
-            for (int i = 0; i < n; i++)
-            {
-                var m = _monsters[i];
-                if (m == null) continue;
-
-                float angleOffset = -halfArc + step * i; // [-halfArc, +halfArc]
-                float desiredAngle = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg + angleOffset;
-
-                _desiredAngleDeg[m] = desiredAngle;
-
-                // 반경은 몬스터 데이터 밴드에서 선택
-                float rMin = Mathf.Max(0.5f, m.Data.PreferredMinDistance);
-                float rMax = Mathf.Max(rMin + 0.5f, m.Data.PreferredMaxDistance);
-                float r = Mathf.Lerp(rMin, rMax, _slotRadiusLerp);
-
-                _desiredRadius[m] = r;
-            }
-        }
+         
 
        
         private void UpdateDesiredPositions()
@@ -339,16 +291,16 @@ namespace Monster.Group
 
             for (int i = 0; i < _monsters.Count; i++)
             {
-                var m = _monsters[i];
-                if (m == null || !m.IsAlive) continue;
+                var monster = _monsters[i];
+                if (monster == null || !monster.IsAlive) continue;
 
                 // 이미 슬롯 보유 중이면 후보로 볼 필요 없음
-                if (CanAttack(m)) continue;
+                if (CanAttack(monster)) continue;
 
-                float s = ComputeAttackScore(m, now);
+                float s = ComputeAttackScore(monster, now);
                 if (s > 0f)
                 {
-                    candidates.Add((m, s));
+                    candidates.Add((monster, s));
                 }
             }
 
@@ -366,35 +318,32 @@ namespace Monster.Group
             _nextAttackAssignTime = now + _minAttackReassignInterval;
         }
 
-        private float ComputeAttackScore(MonsterController m, float now)
+        private float ComputeAttackScore(MonsterController monster, float now)
         {
-            if (m == null || _playerTransform == null) return 0f;
+            if (monster == null || _playerTransform == null) return 0f;
 
-            Vector3 mp = m.transform.position;
-            Vector3 pp = _playerTransform.position;
+            Vector3 monsterPosition = monster.transform.position;
+            Vector3 targetPosition = _playerTransform.position;
 
-            float dist = Vector3.Distance(mp, pp);
+            float dist = Vector3.Distance(monsterPosition, targetPosition);
 
-            // (기존) 너무 멀면 탈락
-            float hardMax = m.Data.AttackRange + _attackRangeBuffer + 2.0f;
+            // 너무 멀면 탈락
+            float hardMax = monster.Data.AttackRange + _attackRangeBuffer + 2.0f;
             if (dist > hardMax) return 0f;
 
-            // (기존) LOS 체크
-            if (!HasLineOfSight(mp, pp)) return 0f;
+            // LOS 체크
+            if (!HasLineOfSight(monsterPosition, targetPosition)) return 0f;
 
             float score = 0f;
 
-            // (기존) 거리 선호
-            float ideal = m.Data.AttackRange + 0.25f;
-            float distScore = Mathf.Clamp01(1f - Mathf.Abs(dist - ideal) / (m.Data.AttackRange + 1f));
+            // 거리 선호
+            float ideal = monster.Data.AttackRange + 0.25f;
+            float distScore = Mathf.Clamp01(1f - Mathf.Abs(dist - ideal) / (monster.Data.AttackRange + 1f));
             score += distScore * 3.0f;
-
-            // (기존) DesiredPosition 근접 점수는 “자리 강제”가 되기 쉬우니 약화하거나 제거 권장
-            // score += posScore * 2.0f;  // <- 원하시면 0.5 이하로 낮추거나 제거하세요.
-
-            // (신규) 각도(측면) 점수: 플레이어 forward 대비 몬스터 방향이 90도 근처일수록 가점
+            
+            // 각도(측면) 점수: 플레이어 forward 대비 몬스터 방향이 90도 근처일수록 가점
             Vector3 pf = _playerTransform.forward; pf.y = 0f;
-            Vector3 toM = (mp - pp); toM.y = 0f;
+            Vector3 toM = (monsterPosition - targetPosition); toM.y = 0f;
 
             if (pf.sqrMagnitude > 0.001f && toM.sqrMagnitude > 0.001f)
             {
@@ -406,14 +355,14 @@ namespace Monster.Group
                 score += sideScore * _sideAngleWeight;
             }
 
-            // (기존) 최근 공격자 페널티/공정성
-            float last = _lastAttackTime.TryGetValue(m, out var t) ? t : -9999f;
+            // 최근 공격자 페널티/공정성
+            float last = _lastAttackTime.TryGetValue(monster, out var t) ? t : -9999f;
             float since = now - last;
             if (since < _recentAttackerPenaltySeconds) score *= 0.35f;
             else score += Mathf.Clamp01(since / 5f) * 0.5f;
 
-            // (기존) 혼잡도 페널티
-            score *= ComputeCrowdPenalty(m);
+            // 혼잡도 페널티
+            score *= ComputeCrowdPenalty(monster);
 
             return score;
         }

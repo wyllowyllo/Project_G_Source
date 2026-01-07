@@ -32,7 +32,7 @@ namespace Monster
         private float _currentHealth;
         private bool _isAlive = true;
 
-        // BDO 스타일 - 테더 시스템
+        // 테더 시스템
         private Vector3 _homePosition;
         private bool _isTethered = false;
 
@@ -50,7 +50,7 @@ namespace Monster
         public MonsterStateMachine StateMachine => _stateMachine;
         public EnemyGroup EnemyGroup => _enemyGroup;
 
-        // BDO 스타일 프로퍼티
+        // 프로퍼티
         public Vector3 HomePosition => _homePosition;
         public bool IsTethered => _isTethered;
 
