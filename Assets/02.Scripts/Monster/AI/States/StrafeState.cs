@@ -62,8 +62,13 @@ namespace Monster.AI.States
             // BDO식 전투 리듬
             // 1) 약공: 슬롯 없이 자주
             // 2) 강공: 슬롯(강공권) 있을 때만
+            
+            // DesiredPosition (각도 슬롯 + separation)
+            Vector3 desired = _controller.EnemyGroup.GetDesiredPosition(_controller);
+            float distToDesired = Vector3.Distance(_transform.position, desired);
+            
             float lightRange = _controller.Data.AttackRange + 0.35f;
-            if (distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
             {
                 _controller.SetNextAttackHeavy(false);
                 _controller.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
@@ -81,8 +86,7 @@ namespace Monster.AI.States
                 return;
             }
 
-            // DesiredPosition (각도 슬롯 + separation)
-            Vector3 desired = _controller.EnemyGroup.GetDesiredPosition(_controller);
+            
             
             _modeTimer += Time.deltaTime;
 
