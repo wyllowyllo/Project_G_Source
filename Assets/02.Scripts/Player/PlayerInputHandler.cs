@@ -10,6 +10,8 @@ public class PlayerInputHandler : MonoBehaviour
     [SerializeField] private bool _enableBuffer = true;
 
     private bool _hasBufferedInput; // 콤보 다음 공격 예약확인 시
+    public bool HasBufferedInput => _hasBufferedInput;
+
     private float _bufferInputTime; // 다음 콤보 공격 클릭 저장 유효시간
 
     private bool _isEnabled = true;
