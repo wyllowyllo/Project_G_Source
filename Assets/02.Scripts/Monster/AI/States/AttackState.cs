@@ -126,7 +126,7 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            if (_controller.EnemyGroup != null && !_controller.EnemyGroup.CanAttack(_controller))
+            if ( _isHeavyAttack && !_controller.EnemyGroup.CanAttack(_controller))
             {
                 ReturnToCombat();
                 return;
