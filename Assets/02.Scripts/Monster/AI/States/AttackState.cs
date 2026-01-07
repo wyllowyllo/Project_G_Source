@@ -13,19 +13,19 @@ namespace Monster.AI.States
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
-        
+
         private enum EAttackPhase { Windup, Execute }
         private EAttackPhase _currentPhase;
 
         private float distanceToPlayer;
-        
+
         private float _phaseTimer;
         private bool _damageDealt; // Execute에서 한 번만 데미지 처리
-        
+
         private float _originalSpeed;
-        private float _originalStoppingDistance; 
+        private float _originalStoppingDistance;
         private bool _originalIsStopped;
-        
+
         private Vector3 _chargeDirection; 
         private Vector3 _chargeStartPosition;
         private Vector3 _chargeTargetOnNavMesh;
@@ -70,6 +70,13 @@ namespace Monster.AI.States
                 _originalAutoBraking = agent.autoBraking;
 
                 agent.isStopped = true;
+            }
+
+            // 머티리얼 색상을 빨간색으로 변경
+            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                renderer.material.color = Color.red;
             }
 
             _currentPhase = EAttackPhase.Windup;
@@ -135,18 +142,12 @@ namespace Monster.AI.States
                 agent.speed = _originalSpeed;
                 agent.stoppingDistance = _originalStoppingDistance;
                 agent.isStopped = _originalIsStopped;
-                
+
                 agent.acceleration = _originalAcceleration;
                 agent.angularSpeed = _originalAngularSpeed;
                 agent.autoBraking = _originalAutoBraking;
 
-                agent.updateRotation = true; 
-            }
-
-            // 공격 슬롯 반환 
-            if (_controller.EnemyGroup != null)
-            {
-                _controller.EnemyGroup.ReleaseAttackSlot(_controller);
+                agent.updateRotation = true;
             }
         }
 

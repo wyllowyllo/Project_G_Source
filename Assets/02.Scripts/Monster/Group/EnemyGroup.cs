@@ -16,7 +16,7 @@ namespace Monster.Group
         [SerializeField] private int _maxAttackSlots = 2;
 
         [Header("디렉터 - 업데이트 주기")]
-        [SerializeField] private float _directorTickInterval = 0.25f;   // 공격자 선정/자리 갱신 주기
+        [SerializeField] private float _directorTickInterval = 5f;   // 공격자 선정/자리 갱신 주기
         [SerializeField] private float _positionTickInterval = 0.5f;    // 각도 슬롯 재배치 주기 (너무 잦으면 춤춤)
 
         [Header("포지션 - 각도 슬롯")]
@@ -66,11 +66,8 @@ namespace Monster.Group
         
         private void Update()
         {
-            if (_playerTransform == null)
-            {
-                return;
-            }
-
+            if (_playerTransform == null) return;
+            
             // 죽은 참조 정리
             _monsters.RemoveAll(m => m == null || !m.IsAlive);
 

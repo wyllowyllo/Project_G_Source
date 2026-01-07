@@ -99,6 +99,19 @@ namespace Monster.AI.States
             {
                 _controller.NavAgent.isStopped = false;
             }
+
+            // 머티리얼 색상을 원래대로 복원
+            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                renderer.material.color = _controller.OriginalMaterialColor;
+            }
+
+            // 공격 슬롯 반환
+            if (_controller.EnemyGroup != null)
+            {
+                _controller.EnemyGroup.ReleaseAttackSlot(_controller);
+            }
         }
     }
 }

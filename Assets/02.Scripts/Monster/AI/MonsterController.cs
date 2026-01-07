@@ -14,16 +14,16 @@ namespace Monster
     [RequireComponent(typeof(NavMeshAgent))]
     public class MonsterController : MonoBehaviour, IDamageable
     {
-        
+
         [SerializeField] private EMonsterState _currentState;
-        
+
         [Header("설정")]
         [SerializeField] private MonsterData _monsterData;
 
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private EnemyGroup _enemyGroup;
-        
+
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private MonsterStateMachine _stateMachine;
@@ -36,9 +36,13 @@ namespace Monster
         private Vector3 _homePosition;
         private bool _isTethered = false;
 
+        // 공격 시각화
+        private Color _originalMaterialColor;
+
         // 프로퍼티
         public bool IsAlive => _isAlive;
         public float CurrentHealth => _currentHealth;
+        public Color OriginalMaterialColor => _originalMaterialColor;
         public MonsterData Data => _monsterData;
 
         public NavMeshAgent NavAgent => _navAgent;
@@ -53,6 +57,14 @@ namespace Monster
         private void Awake()
         {
             _navAgent = GetComponent<NavMeshAgent>();
+
+            // 원래 머티리얼 색상 저장
+            Renderer renderer = GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                _originalMaterialColor = renderer.material.color;
+            }
+
             InitializeMonster();
             InitializeStateMachine();
         }
@@ -68,19 +80,18 @@ namespace Monster
             {
                 return;
             }
-            
+
             _stateMachine?.Update();
 
             // 디버그 정보 업데이트 (인스펙터 표시용)
             UpdateDebugInfo();
         }
 
-       
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
 
-          
+
         }
 
         private void InitializeMonster()
