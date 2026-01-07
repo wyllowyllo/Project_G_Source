@@ -31,6 +31,12 @@ namespace Monster
         // 상태
         private float _currentHealth;
         private bool _isAlive = true;
+        
+        // 개체 쿨다운/공격 타입
+        private float _nextLightAttackTime;
+        private float _nextHeavyAttackTime;
+        private bool _nextAttackIsHeavy;
+        private bool _currentAttackWasHeavy;
 
         // 테더 시스템
         private Vector3 _homePosition;
@@ -53,6 +59,8 @@ namespace Monster
         // 프로퍼티
         public Vector3 HomePosition => _homePosition;
         public bool IsTethered => _isTethered;
+        public bool NextAttackIsHeavy => _nextAttackIsHeavy;
+        public bool CurrentAttackWasHeavy => _currentAttackWasHeavy;
 
         private void Awake()
         {
@@ -90,8 +98,6 @@ namespace Monster
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
-
-
         }
 
         private void InitializeMonster()
@@ -109,6 +115,9 @@ namespace Monster
             _navAgent.angularSpeed = _monsterData.RotationSpeed;
             
             _homePosition = transform.position;
+            
+            _nextLightAttackTime = 0f;
+            _nextHeavyAttackTime = 0f;
         }
 
         private void InitializeStateMachine()
@@ -157,6 +166,32 @@ namespace Monster
         public void ResetTether()
         {
             _isTethered = false;
+        }
+        
+        public bool CanLightAttack(float now) => now >= _nextLightAttackTime;
+        public bool CanHeavyAttack(float now) => now >= _nextHeavyAttackTime;
+        public void ConsumeLightAttack(float now, float cd)
+        {
+            _nextLightAttackTime = now + Mathf.Max(0.01f, cd);
+        }
+        public void ConsumeHeavyAttack(float now, float cd)
+        {
+            _nextHeavyAttackTime = now + Mathf.Max(0.01f, cd);
+        }
+    
+        public void SetNextAttackHeavy(bool heavy)
+        {
+            _nextAttackIsHeavy = heavy;
+        }
+    
+        public void MarkCurrentAttackHeavy(bool heavy)
+        {
+            _currentAttackWasHeavy = heavy;
+        }
+    
+        public void ClearCurrentAttackHeavy()
+        {
+            _currentAttackWasHeavy = false;
         }
 
         public void TakeDamage(float damage, Vector3 attackerPosition)

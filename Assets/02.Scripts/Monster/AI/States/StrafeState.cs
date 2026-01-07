@@ -49,19 +49,34 @@ namespace Monster.AI.States
 
         public void Update()
         {
-
+            float now = Time.time;
             float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-            
-            
+
+
             if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
             }
-            
-            // 공격권을 그룹이 배정하면, 슬롯 보유 시 Attack으로 전환
-            if (_controller.EnemyGroup.CanAttack(_controller))
+
+            // BDO식 전투 리듬
+            // 1) 약공: 슬롯 없이 자주
+            // 2) 강공: 슬롯(강공권) 있을 때만
+            float lightRange = _controller.Data.AttackRange + 0.35f;
+            if (distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
             {
+                _controller.SetNextAttackHeavy(false);
+                _controller.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
+                _stateMachine.ChangeState(EMonsterState.Attack);
+                return;
+            }
+
+            // 강공은 강공권이 있을 때만 시도
+            if (_controller.EnemyGroup != null && _controller.EnemyGroup.CanAttack(_controller)
+                && _controller.CanHeavyAttack(now) && Random.value < _controller.Data.HeavyAttackChance)
+            {
+                _controller.SetNextAttackHeavy(true);
+                _controller.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
                 _stateMachine.ChangeState(EMonsterState.Attack);
                 return;
             }
@@ -174,12 +189,12 @@ namespace Monster.AI.States
                 return;
             }
 
-            // 목표 근처면 Hold/Shuffle/Feint를 섞어 “간보기”
+            // 목표 근처면 Hold/Shuffle/Feint를 섞어 "간보기" (짧게 조정)
             float r = Random.value;
-            if (r < 0.50f) PickMode(EProbeMode.Hold, 0.25f, 0.65f);
-            else if (r < 0.80f) PickMode(EProbeMode.Shuffle, 0.35f, 0.75f);
-            else if (r < 0.90f) PickMode(EProbeMode.FeintIn, 0.20f, 0.45f);
-            else PickMode(EProbeMode.FeintOut, 0.20f, 0.45f);
+            if (r < 0.50f) PickMode(EProbeMode.Hold, 0.15f, 0.35f);       // 단축
+            else if (r < 0.80f) PickMode(EProbeMode.Shuffle, 0.2f, 0.45f); // 단축
+            else if (r < 0.90f) PickMode(EProbeMode.FeintIn, 0.15f, 0.3f); // 단축
+            else PickMode(EProbeMode.FeintOut, 0.15f, 0.3f);               // 단축
         }
 
         private void PickMode(EProbeMode mode, float minDur, float maxDur)

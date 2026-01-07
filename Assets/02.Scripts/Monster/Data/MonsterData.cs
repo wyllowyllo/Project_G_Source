@@ -52,6 +52,14 @@ namespace Monster.Data
         [Tooltip("후퇴 거리 (공격 후 뒤로 물러나는 거리)")]
         [SerializeField] private float _retreatDistance = 2f;
 
+        [Header("전투 리듬")]
+        [Tooltip("약공 발동 확률")]
+        [SerializeField, Range(0f, 1f)] private float _lightAttackChance = 0.45f;
+        [Tooltip("강공 발동 확률")]
+        [SerializeField, Range(0f, 1f)] private float _heavyAttackChance = 0.15f;
+        [Tooltip("강공 쿨다운")]
+        [SerializeField] private float _heavyAttackCooldown = 3.0f;
+        
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
         [SerializeField] private int _goldReward = 5;
@@ -70,7 +78,7 @@ namespace Monster.Data
         public int ExperienceReward => _experienceReward;
         public int GoldReward => _goldReward;
 
-        // BDO 스타일 Properties
+       
         public float PreferredMinDistance => _preferredMinDistance;
         public float PreferredMaxDistance => _preferredMaxDistance;
         public float StrafeSpeed => _strafeSpeed;
@@ -82,5 +90,10 @@ namespace Monster.Data
         // 근접 공격 Properties
         public float ChargeSpeed => _chargeSpeed;
         public float RetreatDistance => _retreatDistance;
+
+        // 전투 리듬
+        public float LightAttackChance => _lightAttackChance;
+        public float HeavyAttackChance => _heavyAttackChance;
+        public float HeavyAttackCooldown => _heavyAttackCooldown;
     }
 }

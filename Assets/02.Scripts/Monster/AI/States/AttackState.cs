@@ -17,6 +17,8 @@ namespace Monster.AI.States
         private enum EAttackPhase { Windup, Execute }
         private EAttackPhase _currentPhase;
 
+        private bool _isHeavyAttack;
+
         private float distanceToPlayer;
 
         private float _phaseTimer;
@@ -41,9 +43,11 @@ namespace Monster.AI.States
         private ObstacleAvoidanceType _originalObstacleAvoidanceType;
 
         // Execute 종료 안전장치
-        private float _maxExecuteDuration = 2f; // ExecuteTime 대신/또는 상한으로 사용 권장
+        private float _maxExecuteDuration = 2f; // 상한
         private float _chargeAcceleration = 60f;  // 돌진 중 가속
         private float _chargeAngularSpeed = 720f; // 돌진 중 회전(너무 크면 과회전)
+
+        private float _executeDuration;
       
         
         // 프로퍼티
@@ -74,11 +78,32 @@ namespace Monster.AI.States
                 agent.isStopped = true;
             }
 
-            // 머티리얼 색상을 빨간색으로 변경
+            // 이번 공격이 강공인지 확정(Combat에서 세팅한 NextAttackIsHeavy를 소비)
+            _isHeavyAttack = _controller.NextAttackIsHeavy;
+            _controller.MarkCurrentAttackHeavy(_isHeavyAttack);
+            _controller.SetNextAttackHeavy(false);
+            
+            // 강/약공 파라미터 분기(최소 튜닝)
+            if (_isHeavyAttack)
+            {
+                _maxChargeDistance = 5f;
+                _hitRadius = 0.6f;
+                _executeDuration = _controller.Data.ExecuteTime; // 원래 값
+                _maxExecuteDuration = Mathf.Max(_maxExecuteDuration, _executeDuration + 0.6f);
+            }
+            else
+            {
+                _maxChargeDistance = 1.6f;  // 짧게 "툭" 치고 빠지는 약공
+                _hitRadius = 0.7f;          // 약간 넉넉하게
+                _executeDuration = Mathf.Max(0.08f, _controller.Data.ExecuteTime * 0.6f);
+                _maxExecuteDuration = Mathf.Max(0.9f, _executeDuration + 0.4f);
+            }
+            
+            // 머티리얼 색상 변경 (강공: 빨간색, 약공: 주황색)
             Renderer renderer = _controller.GetComponentInChildren<Renderer>();
             if (renderer != null && renderer.material != null)
             {
-                renderer.material.color = Color.red;
+                renderer.material.color = _isHeavyAttack ? Color.red : new Color(1f, 0.6f, 0f);
             }
 
             _currentPhase = EAttackPhase.Windup;
@@ -127,7 +152,7 @@ namespace Monster.AI.States
                 case EAttackPhase.Execute:
                     UpdateCharge();
                     
-                    if (_phaseTimer >= _controller.Data.ExecuteTime)
+                    if (_phaseTimer >= _executeDuration)
                     {
                         _stateMachine.ChangeState(EMonsterState.Recover);
                     }
@@ -152,6 +177,8 @@ namespace Monster.AI.States
 
                 agent.updateRotation = true;
             }
+
+           
         }
 
 
@@ -178,7 +205,7 @@ namespace Monster.AI.States
             _chargeTargetOnNavMesh = FindFarthestNavMeshPoint(_chargeStartPosition, _chargeDirection, totalChargeDistance);
 
             // navAgent 돌진 설정
-            agent.speed = _controller.Data.ChargeSpeed;
+            agent.speed = _isHeavyAttack ? _controller.Data.ChargeSpeed : Mathf.Max(_controller.Data.MoveSpeed * 1.8f, _controller.Data.MoveSpeed + 2.0f);
             agent.acceleration = _chargeAcceleration;
             agent.angularSpeed = _chargeAngularSpeed;
             agent.autoBraking = false;
