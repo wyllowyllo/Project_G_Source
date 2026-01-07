@@ -40,7 +40,7 @@ namespace Monster.AI.States
         private bool _originalAutoBraking;
 
         // Execute 종료 안전장치
-        private float _maxExecuteDuration = 0.8f; // ExecuteTime 대신/또는 상한으로 사용 권장
+        private float _maxExecuteDuration = 2f; // ExecuteTime 대신/또는 상한으로 사용 권장
         private float _chargeAcceleration = 60f;  // 돌진 중 가속
         private float _chargeAngularSpeed = 720f; // 돌진 중 회전(너무 크면 과회전)
       
@@ -151,23 +151,30 @@ namespace Monster.AI.States
             }
         }
 
-       
+
+
         private void StartCharge()
         {
             var agent = _controller.NavAgent;
             if (agent == null || !agent.isActiveAndEnabled) return;
-            
+
             _chargeStartPosition = _transform.position;
 
-            // 돌진 방향 설정 
-            _chargeDirection = (_controller.PlayerTransform.position - _transform.position).normalized;
-            _chargeDirection.y = 0f; 
-            _chargeDirection.Normalize();
-            
-            // 1) "가장 먼 유효 목표점" 찾기: 전방으로 여러 단계 샘플링
-            _chargeTargetOnNavMesh = FindFarthestNavMeshPoint(_chargeStartPosition, _chargeDirection, _maxChargeDistance);
+            // 돌진 방향 설정: 플레이어를 향하는 방향
+            Vector3 toPlayer = _controller.PlayerTransform.position - _transform.position;
+            toPlayer.y = 0f;
+            _chargeDirection = toPlayer.normalized;
 
-            // 2) navAgent 돌진 설정
+            // 플레이어까지의 거리 계산
+            float distanceToPlayer = toPlayer.magnitude;
+
+            // 플레이어 너머로 돌진: 플레이어 위치 + 추가 거리
+            float totalChargeDistance = distanceToPlayer + _maxChargeDistance;
+
+            // "가장 먼 유효 목표점" 찾기: 플레이어 너머로 샘플링
+            _chargeTargetOnNavMesh = FindFarthestNavMeshPoint(_chargeStartPosition, _chargeDirection, totalChargeDistance);
+
+            // navAgent 돌진 설정
             agent.speed = _controller.Data.ChargeSpeed;
             agent.acceleration = _chargeAcceleration;
             agent.angularSpeed = _chargeAngularSpeed;
@@ -175,7 +182,7 @@ namespace Monster.AI.States
             agent.stoppingDistance = 0f;
             agent.isStopped = false;
             agent.SetDestination(_chargeTargetOnNavMesh);
-            
+
             _transform.rotation = Quaternion.LookRotation(_chargeDirection);
         }
         
@@ -208,7 +215,7 @@ namespace Monster.AI.States
         {
             var agent = _controller.NavAgent;
             if (agent == null || !agent.isActiveAndEnabled) return;
-            
+
             // 타격 판정
             if (!_damageDealt && distanceToPlayer <= _hitRadius)
             {
@@ -216,11 +223,12 @@ namespace Monster.AI.States
                 _damageDealt = true;
             }
 
-            float traveled = Vector3.Distance(_chargeStartPosition, _transform.position);
-            bool reachedDistance = traveled >= (_maxChargeDistance * 0.92f); // 약간 여유
+            // 목표 지점에 도착했거나 타임아웃
+            float distanceToTarget = Vector3.Distance(_transform.position, _chargeTargetOnNavMesh);
+            bool reachedTarget = distanceToTarget <= 0.5f || (!agent.pathPending && agent.remainingDistance <= 0.5f);
             bool timeout = _phaseTimer >= _maxExecuteDuration;
 
-            if (reachedDistance || timeout)
+            if (reachedTarget || timeout)
             {
                 _stateMachine.ChangeState(EMonsterState.Recover);
                 return;
