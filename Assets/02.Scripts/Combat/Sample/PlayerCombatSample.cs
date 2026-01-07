@@ -3,6 +3,7 @@ using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Combat.Sample
 {
@@ -63,6 +64,9 @@ namespace Combat.Sample
         private void HandleAttackInput()
         {
             if (!CanPerformAction())
+                return;
+
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
 
             if (Input.GetButtonDown("Fire1"))

@@ -1,6 +1,6 @@
 {
     "name": "ProjectG",
-    "rootNamespace": "",
+    "rootNamespace": "ProjectG",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

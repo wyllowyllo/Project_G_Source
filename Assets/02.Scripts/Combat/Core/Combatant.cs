@@ -90,6 +90,23 @@ namespace Combat.Core
                 _health.OnDeath -= HandleDeath;
         }
 
+        public void TakeDamage(float damage)
+        {
+            if (!CanTakeDamage) return;
+
+            _health.TakeDamage(damage);
+            OnDamaged?.Invoke(new DamageInfo(damage, false, new HitContext()));
+
+            if (_hitReactionSettings != null)
+            {
+                if (_hitReactionSettings.AutoInvincibilityOnHit)
+                    SetInvincible(_hitReactionSettings.InvincibilityDuration);
+
+                if (_hitReactionSettings.AutoHitStunOnHit)
+                    SetStunned(_hitReactionSettings.HitStunDuration);
+            }
+        }
+
         public void TakeDamage(DamageInfo damageInfo)
         {
             if (!CanTakeDamage) return;
