@@ -12,6 +12,7 @@ namespace Monster.AI.States
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
+        private readonly GroupCommandProvider _groupCommandProvider;
         private readonly Transform _transform;
 
         private enum EAttackPhase { Windup, Execute }
@@ -53,10 +54,11 @@ namespace Monster.AI.States
         // 프로퍼티
         public EMonsterState StateType => EMonsterState.Attack;
 
-        public AttackState(MonsterController controller, MonsterStateMachine stateMachine)
+        public AttackState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
         {
             _controller = controller;
             _stateMachine = stateMachine;
+            _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
         }
 
@@ -85,15 +87,14 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            if (_isHeavyAttack && !_controller.CanAttack())
+            if (_isHeavyAttack && !_groupCommandProvider.CanAttack())
             {
                 ReturnToCombat();
                 return;
             }
 
             distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-
-          
+            
             if (_currentPhase == EAttackPhase.Windup)
             {
                 if (distanceToPlayer > _controller.Data.AttackRange * 2f)
@@ -156,9 +157,9 @@ namespace Monster.AI.States
 
         private void DetermineAttackType()
         {
-            _isHeavyAttack = _controller.NextAttackIsHeavy;
-            _controller.MarkCurrentAttackHeavy(_isHeavyAttack);
-            _controller.SetNextAttackHeavy(false);
+            _isHeavyAttack = _groupCommandProvider.NextAttackIsHeavy;
+            _groupCommandProvider.MarkCurrentAttackHeavy(_isHeavyAttack);
+            _groupCommandProvider.SetNextAttackHeavy(false);
         }
 
         private void ConfigureAttackParameters()

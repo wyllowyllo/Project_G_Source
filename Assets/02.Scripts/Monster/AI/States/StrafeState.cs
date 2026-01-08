@@ -11,6 +11,7 @@ namespace Monster.AI.States
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
+        private readonly GroupCommandProvider _groupCommandProvider;
         private readonly Transform _transform;
         
         // Probe 서브모드
@@ -31,10 +32,11 @@ namespace Monster.AI.States
         // 프로퍼티
         public EMonsterState StateType => EMonsterState.Strafe;
 
-        public StrafeState(MonsterController controller, MonsterStateMachine stateMachine)
+        public StrafeState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
         {
             _controller = controller;
             _stateMachine = stateMachine;
+            _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
         }
 
@@ -58,7 +60,7 @@ namespace Monster.AI.States
                 return;
             }
 
-            Vector3 desired = _controller.GetDesiredPosition();
+            Vector3 desired = _groupCommandProvider.GetDesiredPosition();
 
             // AttackMode에 따라 공격 타입 결정
             EAttackMode attackMode = _controller.Data.AttackMode;
@@ -248,7 +250,7 @@ namespace Monster.AI.States
                 // Cascading push-back 요청 (옵션이 활성화된 경우에만)
                 if (_controller.Data.EnablePushback)
                 {
-                    _controller.RequestPushback(dirAway, backoffDistance);
+                    _groupCommandProvider.RequestPushback(dirAway, backoffDistance);
                 }
 
                 PickMode(EProbeMode.FeintOut, 0.2f, 0.3f);
@@ -264,10 +266,10 @@ namespace Monster.AI.States
             float distToDesired = Vector3.Distance(_transform.position, desired);
             float lightRange = _controller.Data.AttackRange + 0.35f;
 
-            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _groupCommandProvider.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
             {
-                _controller.SetNextAttackHeavy(false);
-                _controller.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
+                _groupCommandProvider.SetNextAttackHeavy(false);
+                _groupCommandProvider.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
                 _stateMachine.ChangeState(EMonsterState.Attack);
                 return true;
             }
@@ -277,11 +279,11 @@ namespace Monster.AI.States
 
         private bool TryExecuteHeavyAttack(float now)
         {
-            if (_controller.CanAttack() && _controller.CanHeavyAttack(now)
+            if (_groupCommandProvider.CanAttack() && _groupCommandProvider.CanHeavyAttack(now)
                 && Random.value < _controller.Data.HeavyAttackChance)
             {
-                _controller.SetNextAttackHeavy(true);
-                _controller.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
+                _groupCommandProvider.SetNextAttackHeavy(true);
+                _groupCommandProvider.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
                 _stateMachine.ChangeState(EMonsterState.Attack);
                 return true;
             }

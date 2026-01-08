@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Monster.AI;
 using UnityEngine;
 
 namespace Monster.Group
@@ -96,7 +97,7 @@ namespace Monster.Group
                 if (monster != null)
                 {
                     // 몬스터에 그룹 설정
-                    monster.SetEnemyGroup(_enemyGroup);
+                    monster.GroupCommandProvider.SetEnemyGroup(_enemyGroup);
 
                     // 그룹에 몬스터 등록
                     _enemyGroup.RegisterMonster(monster);

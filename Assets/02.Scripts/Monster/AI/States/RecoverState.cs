@@ -10,6 +10,7 @@ namespace Monster.AI.States
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
+        private readonly GroupCommandProvider _groupCommandProvider;
         private readonly Transform _transform;
 
         private float _recoverTimer = 0f;
@@ -20,10 +21,11 @@ namespace Monster.AI.States
 
         public EMonsterState StateType => EMonsterState.Recover;
 
-        public RecoverState(MonsterController controller, MonsterStateMachine stateMachine)
+        public RecoverState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
         {
             _controller = controller;
             _stateMachine = stateMachine;
+            _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
         }
 
@@ -33,7 +35,7 @@ namespace Monster.AI.States
             DetermineRecoverDuration();
             StopNavigation();
 
-            string attackType = _controller.CurrentAttackWasHeavy ? "강공" : "약공";
+            string attackType = _groupCommandProvider.CurrentAttackWasHeavy ? "강공" : "약공";
             Debug.Log($"{_controller.gameObject.name}: {attackType} 후 추스르는 중... ({_recoverDuration}초)");
         }
 
@@ -70,7 +72,7 @@ namespace Monster.AI.States
 
         private void DetermineRecoverDuration()
         {
-            _recoverDuration = _controller.CurrentAttackWasHeavy
+            _recoverDuration = _groupCommandProvider.CurrentAttackWasHeavy
                 ? HeavyAttackRecoverTime
                 : LightAttackRecoverTime;
         }
@@ -102,12 +104,12 @@ namespace Monster.AI.States
 
         private void ReleaseAttackResources()
         {
-            if (_controller.CurrentAttackWasHeavy)
+            if (_groupCommandProvider.CurrentAttackWasHeavy)
             {
-                _controller.ReleaseAttackSlot();
+                _groupCommandProvider.ReleaseAttackSlot();
             }
 
-            _controller.ClearCurrentAttackHeavy();
+            _groupCommandProvider.ClearCurrentAttackHeavy();
         }
     }
 }
