@@ -39,30 +39,10 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
+            EnableNavigation();
 
-            // 플레이어와 너무 가까우면 거리 유지
             float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-            if (distanceToPlayer < _controller.Data.PreferredMinDistance)
-            {
-                // 플레이어 반대 방향으로 후퇴하여 최소 거리 확보
-                Vector3 dirAway = (_transform.position - _controller.PlayerTransform.position);
-                dirAway.y = 0f;
-                dirAway.Normalize();
-
-                float backoffDistance = _controller.Data.PreferredMinDistance - distanceToPlayer + 0.5f;
-                _probeTarget = _transform.position + dirAway * backoffDistance;
-                _probeTarget.y = _transform.position.y;
-
-                PickMode(EProbeMode.FeintOut, 0.5f, 1f);
-            }
-            else
-            {
-                PickMode(EProbeMode.Reposition, 0.2f, 0.3f);
-            }
+            EnsureMinimumDistance(distanceToPlayer);
         }
 
         public void Update()
@@ -77,52 +57,36 @@ namespace Monster.AI.States
                 return;
             }
 
-            // BDO식 전투 리듬
-            // 1) 약공: 슬롯 없이 자주
-            // 2) 강공: 슬롯(강공권) 있을 때만
-            
-            // DesiredPosition (각도 슬롯 + separation)
             Vector3 desired = _controller.GetDesiredPosition();
-            float distToDesired = Vector3.Distance(_transform.position, desired);
-            
-            float lightRange = _controller.Data.AttackRange + 0.35f;
-            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+
+            if (TryExecuteLightAttack(desired, distanceToPlayer, now))
             {
-                _controller.SetNextAttackHeavy(false);
-                _controller.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
-                _stateMachine.ChangeState(EMonsterState.Attack);
                 return;
             }
 
-            // 강공은 강공권이 있을 때만 시도
-            if (_controller.CanAttack() && _controller.CanHeavyAttack(now)
-                && Random.value < _controller.Data.HeavyAttackChance)
+            if (TryExecuteHeavyAttack(now))
             {
-                _controller.SetNextAttackHeavy(true);
-                _controller.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
-                _stateMachine.ChangeState(EMonsterState.Attack);
                 return;
             }
 
-            
-            
+
             _modeTimer += Time.deltaTime;
 
             switch (_mode)
             {
-                case EProbeMode.Reposition: // 자리 목표 변경 시 이동
+                case EProbeMode.Reposition:
                     DoReposition(desired);
                     break;
-                case EProbeMode.Hold: // 이동 정지 + 플레이어 주시
+                case EProbeMode.Hold:
                     DoHold();
                     break;
-                case EProbeMode.Shuffle: // 자리 목표 주변에서 옆걸음
+                case EProbeMode.Shuffle:
                     DoShuffle(desired);
                     break;
-                case EProbeMode.FeintIn: // 반걸음 전진
+                case EProbeMode.FeintIn:
                     DoFeint(desired, towardPlayer: true);
                     break;
-                case EProbeMode.FeintOut: // 반걸음 후퇴
+                case EProbeMode.FeintOut:
                     DoFeint(desired, towardPlayer: false);
                     break;
             }
@@ -247,6 +211,64 @@ namespace Monster.AI.States
             {
                 _controller.NavAgent.isStopped = false;
             }
+        }
+
+        private void EnableNavigation()
+        {
+            if (_controller.NavAgent != null)
+            {
+                _controller.NavAgent.isStopped = false;
+            }
+        }
+
+        private void EnsureMinimumDistance(float distanceToPlayer)
+        {
+            if (distanceToPlayer < _controller.Data.PreferredMinDistance)
+            {
+                Vector3 dirAway = (_transform.position - _controller.PlayerTransform.position);
+                dirAway.y = 0f;
+                dirAway.Normalize();
+
+                float backoffDistance = _controller.Data.PreferredMinDistance - distanceToPlayer + 0.5f;
+                _probeTarget = _transform.position + dirAway * backoffDistance;
+                _probeTarget.y = _transform.position.y;
+
+                PickMode(EProbeMode.FeintOut, 0.5f, 1f);
+            }
+            else
+            {
+                PickMode(EProbeMode.Reposition, 0.2f, 0.3f);
+            }
+        }
+
+        private bool TryExecuteLightAttack(Vector3 desired, float distanceToPlayer, float now)
+        {
+            float distToDesired = Vector3.Distance(_transform.position, desired);
+            float lightRange = _controller.Data.AttackRange + 0.35f;
+
+            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _controller.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+            {
+                _controller.SetNextAttackHeavy(false);
+                _controller.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
+                _stateMachine.ChangeState(EMonsterState.Attack);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryExecuteHeavyAttack(float now)
+        {
+            if (_controller.CanAttack() && _controller.CanHeavyAttack(now)
+                && Random.value < _controller.Data.HeavyAttackChance)
+            {
+                _controller.SetNextAttackHeavy(true);
+                _controller.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
+                _stateMachine.ChangeState(EMonsterState.Attack);
+                return true;
+            }
+
+            return false;
         }
     }
 }

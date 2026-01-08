@@ -30,17 +30,8 @@ namespace Monster.AI.States
         public void Enter()
         {
             _recoverTimer = 0f;
-
-            // 강공/약공에 따라 회복 시간 설정
-            _recoverDuration = _controller.CurrentAttackWasHeavy
-                ? HeavyAttackRecoverTime
-                : LightAttackRecoverTime;
-
-            // 그 자리에서 멈춤
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.isStopped = true;
-            }
+            DetermineRecoverDuration();
+            StopNavigation();
 
             string attackType = _controller.CurrentAttackWasHeavy ? "강공" : "약공";
             Debug.Log($"{_controller.gameObject.name}: {attackType} 후 추스르는 중... ({_recoverDuration}초)");
@@ -72,25 +63,50 @@ namespace Monster.AI.States
 
         public void Exit()
         {
+            ResumeNavigation();
+            RestoreMaterialColor();
+            ReleaseAttackResources();
+        }
+
+        private void DetermineRecoverDuration()
+        {
+            _recoverDuration = _controller.CurrentAttackWasHeavy
+                ? HeavyAttackRecoverTime
+                : LightAttackRecoverTime;
+        }
+
+        private void StopNavigation()
+        {
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.isStopped = true;
+            }
+        }
+
+        private void ResumeNavigation()
+        {
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.isStopped = false;
             }
+        }
 
-        
+        private void RestoreMaterialColor()
+        {
             Renderer renderer = _controller.GetComponentInChildren<Renderer>();
             if (renderer != null && renderer.material != null)
             {
                 renderer.material.color = _controller.OriginalMaterialColor;
             }
-            
+        }
 
-            // 공격 슬롯 반환
+        private void ReleaseAttackResources()
+        {
             if (_controller.CurrentAttackWasHeavy)
             {
                 _controller.ReleaseAttackSlot();
             }
-            
+
             _controller.ClearCurrentAttackHeavy();
         }
     }

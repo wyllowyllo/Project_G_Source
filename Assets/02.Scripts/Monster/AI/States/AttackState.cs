@@ -62,26 +62,8 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            var agent = _controller.NavAgent;
-
-            if (agent != null && agent.isActiveAndEnabled)
-            {
-                _originalSpeed = agent.speed;
-                _originalStoppingDistance = agent.stoppingDistance;
-                _originalIsStopped = agent.isStopped;
-
-                _originalAcceleration = agent.acceleration;
-                _originalAngularSpeed = agent.angularSpeed;
-                _originalAutoBraking = agent.autoBraking;
-                _originalObstacleAvoidanceType = agent.obstacleAvoidanceType;
-
-                agent.isStopped = true;
-            }
-
-            // 이번 공격이 강공인지 확정(Combat에서 세팅한 NextAttackIsHeavy를 소비)
-            _isHeavyAttack = _controller.NextAttackIsHeavy;
-            _controller.MarkCurrentAttackHeavy(_isHeavyAttack);
-            _controller.SetNextAttackHeavy(false);
+            InitAgent();
+            DetermineAttackType();
 
             // 약공일 때: 플레이어와 직접 대면한 경우만 공격 (다른 몬스터에게 가로막힌 경우 Strafe)
             if (!_isHeavyAttack)
@@ -93,33 +75,10 @@ namespace Monster.AI.States
                     return;
                 }
             }
-            
-            // 강/약공 파라미터 분기(최소 튜닝)
-            if (_isHeavyAttack)
-            {
-                _maxChargeDistance = 5f;
-                _hitRadius = 0.6f;
-                _executeDuration = _controller.Data.ExecuteTime; // 원래 값
-                _maxExecuteDuration = Mathf.Max(_maxExecuteDuration, _executeDuration + 0.6f);
-            }
-            else
-            {
-                _maxChargeDistance = 1.6f;  // 짧게 "툭" 치고 빠지는 약공
-                _hitRadius = 0.7f;          // 약간 넉넉하게
-                _executeDuration = Mathf.Max(0.08f, _controller.Data.ExecuteTime * 0.6f);
-                _maxExecuteDuration = Mathf.Max(0.9f, _executeDuration + 0.4f);
-            }
-            
-            // 머티리얼 색상 변경 (강공: 빨간색, 약공: 주황색)
-            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
-            {
-                renderer.material.color = _isHeavyAttack ? Color.red : new Color(1f, 0.6f, 0f);
-            }
 
-            _currentPhase = EAttackPhase.Windup;
-            _phaseTimer = 0f;
-            _damageDealt = false;
+            ConfigureAttackParameters();
+            SetAttackVisualFeedback();
+            InitializeAttackPhase();
 
             Debug.Log($"{_controller.gameObject.name}: 공격 시작 (Windup)");
         }
@@ -173,6 +132,71 @@ namespace Monster.AI.States
 
         public void Exit()
         {
+            RestoreNavAgent();
+        }
+
+        private void InitAgent()
+        {
+            var agent = _controller.NavAgent;
+
+            if (agent != null && agent.isActiveAndEnabled)
+            {
+                _originalSpeed = agent.speed;
+                _originalStoppingDistance = agent.stoppingDistance;
+                _originalIsStopped = agent.isStopped;
+
+                _originalAcceleration = agent.acceleration;
+                _originalAngularSpeed = agent.angularSpeed;
+                _originalAutoBraking = agent.autoBraking;
+                _originalObstacleAvoidanceType = agent.obstacleAvoidanceType;
+
+                agent.isStopped = true;
+            }
+        }
+
+        private void DetermineAttackType()
+        {
+            _isHeavyAttack = _controller.NextAttackIsHeavy;
+            _controller.MarkCurrentAttackHeavy(_isHeavyAttack);
+            _controller.SetNextAttackHeavy(false);
+        }
+
+        private void ConfigureAttackParameters()
+        {
+            if (_isHeavyAttack)
+            {
+                _maxChargeDistance = 5f;
+                _hitRadius = 0.6f;
+                _executeDuration = _controller.Data.ExecuteTime;
+                _maxExecuteDuration = Mathf.Max(_maxExecuteDuration, _executeDuration + 0.6f);
+            }
+            else
+            {
+                _maxChargeDistance = 1.6f;
+                _hitRadius = 0.7f;
+                _executeDuration = Mathf.Max(0.08f, _controller.Data.ExecuteTime * 0.6f);
+                _maxExecuteDuration = Mathf.Max(0.9f, _executeDuration + 0.4f);
+            }
+        }
+
+        private void SetAttackVisualFeedback()
+        {
+            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.material != null)
+            {
+                renderer.material.color = _isHeavyAttack ? Color.red : new Color(1f, 0.6f, 0f);
+            }
+        }
+
+        private void InitializeAttackPhase()
+        {
+            _currentPhase = EAttackPhase.Windup;
+            _phaseTimer = 0f;
+            _damageDealt = false;
+        }
+
+        private void RestoreNavAgent()
+        {
             var agent = _controller.NavAgent;
 
             if (agent != null && agent.isActiveAndEnabled)
@@ -188,11 +212,7 @@ namespace Monster.AI.States
 
                 agent.updateRotation = true;
             }
-
-           
         }
-
-
 
         private void StartCharge()
         {

@@ -25,13 +25,7 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            
-            // 홈 포지션으로 이동
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.isStopped = false;
-                _controller.NavAgent.SetDestination(_controller.HomePosition);
-            }
+            StartReturningHome();
 
             Debug.Log($"{_controller.gameObject.name}: 테더 초과 - 홈 복귀 시작");
         }
@@ -59,6 +53,15 @@ namespace Monster.AI.States
             // ReturnHome 상태에서 다른 상태로 전환될 때 테더 리셋
             // (예: 복귀 중 플레이어가 재진입하여 전투 상태로 전환)
             _controller.ResetTether();
+        }
+
+        private void StartReturningHome()
+        {
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.isStopped = false;
+                _controller.NavAgent.SetDestination(_controller.HomePosition);
+            }
         }
     }
 }

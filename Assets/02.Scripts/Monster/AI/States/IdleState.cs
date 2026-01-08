@@ -22,22 +22,18 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            // 대기 상태 진입 시 이동 정지
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = true;
-            }
+            StopNavigation();
         }
 
         public void Update()
         {
-            
+
             float distanceToPlayer = Vector3.Distance(
                 _transform.position,
                 _controller.PlayerTransform.position
             );
 
-          
+
             if (distanceToPlayer <= _controller.Data.DetectionRange)
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
@@ -48,7 +44,19 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            // 상태 종료 시 이동 재개
+            ResumeNavigation();
+        }
+
+        private void StopNavigation()
+        {
+            if (_controller.NavAgent != null)
+            {
+                _controller.NavAgent.isStopped = true;
+            }
+        }
+
+        private void ResumeNavigation()
+        {
             if (_controller.NavAgent != null)
             {
                 _controller.NavAgent.isStopped = false;

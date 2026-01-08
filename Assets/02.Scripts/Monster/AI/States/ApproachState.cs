@@ -25,12 +25,7 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
-
-            _slotRequestTimer = 0f;
+           StateInit();
         }
 
         public void Update()
@@ -43,11 +38,7 @@ namespace Monster.AI.States
                 return;
             }
 
-            // 플레이어에게 접근
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
-            }
+            ApproachToTarget();
 
             // 거리 밴드 안에 들어오면 Strafe로 전환
             if (distanceToPlayer <= _controller.Data.PreferredMaxDistance)
@@ -61,6 +52,25 @@ namespace Monster.AI.States
 
         public void Exit()
         {
+        }
+
+        private void StateInit()
+        {
+            if (_controller.NavAgent != null)
+            {
+                _controller.NavAgent.isStopped = false;
+            }
+
+            _slotRequestTimer = 0f;
+        }
+
+        private void ApproachToTarget()
+        {
+            // 플레이어에게 접근
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
+            }
         }
     }
 }

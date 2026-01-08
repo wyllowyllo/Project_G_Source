@@ -23,12 +23,7 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            // 이동 정지
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.isStopped = true;
-                _controller.NavAgent.enabled = false;
-            }
+            DisableNavigation();
 
             // TODO: 사망 애니메이션 재생
             // TODO: 보상 드롭 (경험치, 골드, 아이템)
@@ -51,6 +46,15 @@ namespace Monster.AI.States
         public void Exit()
         {
             // 사망 상태에서는 다른 상태로 전환되지 않음
+        }
+
+        private void DisableNavigation()
+        {
+            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
+            {
+                _controller.NavAgent.isStopped = true;
+                _controller.NavAgent.enabled = false;
+            }
         }
     }
 }
