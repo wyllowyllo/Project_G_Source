@@ -42,7 +42,6 @@ namespace Monster.AI.States
 
         private void CompleteReturn()
         {
-            _controller.ResetTether();
             _stateMachine.ChangeState(EMonsterState.Idle);
 
             Debug.Log($"{_controller.gameObject.name}: 홈 복귀 완료");
@@ -50,9 +49,7 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            // ReturnHome 상태에서 다른 상태로 전환될 때 테더 리셋
-            // (예: 복귀 중 플레이어가 재진입하여 전투 상태로 전환)
-            _controller.ResetTether();
+           
         }
 
         private void StartReturningHome()

@@ -33,7 +33,7 @@ namespace Monster.AI
         
         // 테더 시스템
         private Vector3 _homePosition;
-        private bool _isTethered = false;
+       
 
         // 공격 시각화
         private Color _originalMaterialColor;
@@ -52,7 +52,7 @@ namespace Monster.AI
 
         // 프로퍼티
         public Vector3 HomePosition => _homePosition;
-        public bool IsTethered => _isTethered;
+        
        
 
         private void Awake()
@@ -71,23 +71,7 @@ namespace Monster.AI
             InitializeMonster();
             InitializeStateMachine();
         }
-
-        private void OnEnable()
-        {
-            if (_combatant != null)
-            {
-                _combatant.OnDeath += HandleDeath;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_combatant != null)
-            {
-                _combatant.OnDeath -= HandleDeath;
-            }
-        }
-
+        
         private void Start()
         {
             // PlayerReferenceProvider로부터 플레이어 참조 가져오기
@@ -113,7 +97,21 @@ namespace Monster.AI
             // 디버그 정보 업데이트 (인스펙터 표시용)
             UpdateDebugInfo();
         }
+        private void OnEnable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath += HandleDeath;
+            }
+        }
 
+        private void OnDisable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath -= HandleDeath;
+            }
+        }
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
@@ -152,13 +150,7 @@ namespace Monster.AI
         }
 
 
-        /// <summary>
-        /// 테더 리셋 (홈 복귀 완료 시 호출)
-        /// </summary>
-        public void ResetTether()
-        {
-            _isTethered = false;
-        }
+       
 
         private void HandleDeath()
         {
