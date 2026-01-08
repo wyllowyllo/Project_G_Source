@@ -2,19 +2,16 @@ using UnityEngine;
 
 namespace Common
 {
-    /// <summary>
-    /// 플레이어 Transform 참조를 전역으로 관리하는 싱글톤.
-    /// GameObject.Find 호출을 씬 로드 시 1회로 제한하여 성능을 개선합니다.
-    /// </summary>
+    // 플레이어 Transform 참조를 전역으로 관리하는 싱글톤입니다.
+    // GameObject.Find 호출을 씬 로드 시 1회로 제한하여 성능을 개선합니다.
     public class PlayerReferenceProvider : MonoBehaviour
     {
         public static PlayerReferenceProvider Instance { get; private set; }
 
         [SerializeField] private Transform _playerTransform;
 
-        /// <summary>
-        /// 플레이어 Transform 참조
-        /// </summary>
+       
+        // 플레이어 Transform 참조
         public Transform PlayerTransform => _playerTransform;
 
         private void Awake()

@@ -21,11 +21,6 @@ namespace Monster.AI.States
         // 셔플/페이크용
         private Vector3 _probeTarget;
 
-        // 튜닝
-        private const float RepositionStopRadius = 1.3f;   // 목표 근처면 멈칫 모드로 전환
-        private const float ShuffleRadius = 1.2f;
-        private const float FeintStep = 0.8f;
-        
         // 프로퍼티
         public EMonsterState StateType => EMonsterState.Strafe;
 
@@ -114,8 +109,8 @@ namespace Monster.AI.States
 
             float dist = Vector3.Distance(_transform.position, desired);
 
-            // 목표 근처 도달: 멈칫 or 셔플로 전환(“눈치보기” 시작)
-            if (dist <= RepositionStopRadius)
+            // 목표 근처 도달: 멈칫 or 셔플로 전환("눈치보기" 시작)
+            if (dist <= _controller.Data.RepositionStopRadius)
             {
                 PickMode(Random.value < 0.55f ? EProbeMode.Hold : EProbeMode.Shuffle, 0.25f, 0.6f);
                 return;
@@ -144,7 +139,8 @@ namespace Monster.AI.States
                 toSelf.Normalize();
 
                 Vector3 tangent = Vector3.Cross(Vector3.up, toSelf) * (Random.value < 0.5f ? 1f : -1f);
-                _probeTarget = center + (toSelf * ShuffleRadius) + (tangent * (ShuffleRadius * 0.6f));
+                float shuffleRadius = _controller.Data.ShuffleRadius;
+                _probeTarget = center + (toSelf * shuffleRadius) + (tangent * (shuffleRadius * 0.6f));
                 _probeTarget.y = _transform.position.y;
             }
 
@@ -166,7 +162,7 @@ namespace Monster.AI.States
 
                 if (!towardPlayer) dir = -dir;
 
-                _probeTarget = _transform.position + dir * FeintStep;
+                _probeTarget = _transform.position + dir * _controller.Data.FeintStep;
                 _probeTarget.y = _transform.position.y;
             }
 
@@ -180,7 +176,7 @@ namespace Monster.AI.States
         {
             // 목표로 다시 조금 재배치할 필요가 있으면 Reposition
             float distance = Vector3.Distance(_transform.position, desired);
-            if (distance > RepositionStopRadius * 1.25f)
+            if (distance > _controller.Data.RepositionStopRadius * 1.25f)
             {
                 PickMode(EProbeMode.Reposition, 0.2f, 0.35f);
                 return;

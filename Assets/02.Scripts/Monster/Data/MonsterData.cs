@@ -73,6 +73,14 @@ namespace Monster.Data
         [SerializeField, Range(0f, 1f)] private float _heavyAttackChance = 0.15f;
         [Tooltip("강공 쿨다운")]
         [SerializeField] private float _heavyAttackCooldown = 3.0f;
+
+        [Header("스트레이프 서브모드")]
+        [Tooltip("목표 위치 근처 도달 판정 거리")]
+        [SerializeField] private float _repositionStopRadius = 1.3f;
+        [Tooltip("셔플 이동 반경")]
+        [SerializeField] private float _shuffleRadius = 1.2f;
+        [Tooltip("페인트 이동 거리")]
+        [SerializeField] private float _feintStep = 0.8f;
         
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
@@ -112,5 +120,10 @@ namespace Monster.Data
         public float LightAttackChance => _lightAttackChance;
         public float HeavyAttackChance => _heavyAttackChance;
         public float HeavyAttackCooldown => _heavyAttackCooldown;
+
+        // 스트레이프 서브모드
+        public float RepositionStopRadius => _repositionStopRadius;
+        public float ShuffleRadius => _shuffleRadius;
+        public float FeintStep => _feintStep;
     }
 }

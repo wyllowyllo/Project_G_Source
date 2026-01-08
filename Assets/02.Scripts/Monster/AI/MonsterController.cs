@@ -103,6 +103,7 @@ namespace Monster.AI
             if (_monsterData == null)
             {
                 Debug.LogError($"{gameObject.name}: MonsterData가 할당되지 않았습니다.");
+                enabled = false;
                 return;
             }
 
