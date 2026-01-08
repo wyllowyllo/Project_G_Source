@@ -17,7 +17,7 @@ namespace Monster.Group
 
         public AttackSlotManager(int maxSlots)
         {
-            _maxSlots = Mathf.Max(1, maxSlots);
+            _maxSlots = Mathf.Max(0, maxSlots);
             _activeSlots = new List<MonsterController>(_maxSlots);
         }
 
