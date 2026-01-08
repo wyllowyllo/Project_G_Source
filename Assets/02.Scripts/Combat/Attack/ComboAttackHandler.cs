@@ -49,9 +49,10 @@ namespace Combat.Attack
                 ResetCombo();
             }
 
-            Debug.Log($"A : {_currentComboStep}");
+            //Debug.Log($"A : {_currentComboStep}");
             _currentComboStep++;
-            Debug.Log($"B : {_currentComboStep}");
+            //Debug.Log($"B : {_currentComboStep}");
+            Debug.Log($"TryAttack called {Time.time}");
 
             if (_currentComboStep > MaxComboSteps)
             {

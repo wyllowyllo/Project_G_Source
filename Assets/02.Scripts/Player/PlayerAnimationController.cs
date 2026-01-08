@@ -36,7 +36,8 @@ public class PlayerAnimationController : MonoBehaviour
         Debug.Log($"PlayAttack ComboStep: {comboStep}");
         _animator.SetInteger(_comboStepParameters, comboStep);
         _animator.SetTrigger(_attackTrigger);
-        _animator.SetBool(_isAttackingParameters, true);
+        
+        
     }
 
     public void PlayDamage() // 피격 애니메이션
@@ -65,8 +66,8 @@ public class PlayerAnimationController : MonoBehaviour
         {
             return;
         }
-        _animator.SetBool(_isAttackingParameters, false);
-        _animator.SetInteger(_comboStepParameters, 0);
+      
+        _animator.SetTrigger("AttackEnd");
     }
 
     public void SetAttackSpeed(float speed)
