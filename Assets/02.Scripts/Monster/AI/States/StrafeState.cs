@@ -43,8 +43,26 @@ namespace Monster.AI.States
             {
                 _controller.NavAgent.isStopped = false;
             }
-            
-            PickMode(EProbeMode.Reposition, 0.2f, 0.3f);
+
+            // 플레이어와 너무 가까우면 거리 유지
+            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
+            if (distanceToPlayer < _controller.Data.PreferredMinDistance)
+            {
+                // 플레이어 반대 방향으로 후퇴하여 최소 거리 확보
+                Vector3 dirAway = (_transform.position - _controller.PlayerTransform.position);
+                dirAway.y = 0f;
+                dirAway.Normalize();
+
+                float backoffDistance = _controller.Data.PreferredMinDistance - distanceToPlayer + 0.5f;
+                _probeTarget = _transform.position + dirAway * backoffDistance;
+                _probeTarget.y = _transform.position.y;
+
+                PickMode(EProbeMode.FeintOut, 0.5f, 1f);
+            }
+            else
+            {
+                PickMode(EProbeMode.Reposition, 0.2f, 0.3f);
+            }
         }
 
         public void Update()
