@@ -1,4 +1,4 @@
-namespace Monster.AI
+namespace Monster.AI.States
 {
     
     public enum EMonsterState

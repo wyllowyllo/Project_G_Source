@@ -1,7 +1,7 @@
+using Monster.AI;
 using UnityEngine;
-using Monster;
 
-namespace ProjectG.TestPlayer
+namespace Test.TestPlayer
 {
     /// <summary>
     /// 플레이어의 체력을 관리하는 컴포넌트.

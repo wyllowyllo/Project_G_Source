@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace ProjectG.TestPlayer
+namespace Test.TestPlayer
 {
     /// <summary>
     /// 몬스터 테스트용 플레이어 컨트롤러.

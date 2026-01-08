@@ -3,7 +3,7 @@ using Monster.AI;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Monster.MonsterTracker
+namespace Monster.Manager
 {
     // 전체 몬스터를 추적하고 클리어 조건을 체크하는 매니저
     public class MonsterTracker : MonoBehaviour

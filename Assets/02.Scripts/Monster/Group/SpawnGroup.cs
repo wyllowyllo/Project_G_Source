@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Monster.AI;
+using Monster.Manager;
 using UnityEngine;
 
 namespace Monster.Group
@@ -17,8 +18,8 @@ namespace Monster.Group
         }
 
         [Header("그룹 설정")]
-        [Tooltip("EnemyGroup 프리팹 (aggroRange, maxAttackSlots 등은 프리팹 인스펙터에서 설정)")]
-        [SerializeField] private EnemyGroup _enemyGroupPrefab;
+        [Tooltip("MonsterGroupDirector 프리팹 (aggroRange, maxAttackSlots 등은 프리팹 인스펙터에서 설정)")]
+        [SerializeField] private MonsterGroupDirector _monsterGroupDirectorPrefab;
 
         [Header("몬스터 스폰 설정")]
         [Tooltip("각 위치에 스폰할 몬스터")]
@@ -30,7 +31,7 @@ namespace Monster.Group
         [Header("디버그")]
         [SerializeField] private bool _showDebugGizmos = true;
 
-        private EnemyGroup _enemyGroup;
+        private MonsterGroupDirector _monsterGroupDirector;
         private readonly List<MonsterController> _spawnedMonsters = new();
        
 
@@ -50,7 +51,7 @@ namespace Monster.Group
                 return;
             }
 
-            if (_enemyGroupPrefab == null)
+            if (_monsterGroupDirectorPrefab == null)
             {
                 Debug.LogError($"SpawnGroup [{gameObject.name}]: EnemyGroup 프리팹이 null입니다.");
                 return;
@@ -62,11 +63,11 @@ namespace Monster.Group
         private void SpawnEnemyGroup()
         {
             // EnemyGroup 프리팹 인스턴스 생성
-            _enemyGroup = Instantiate(_enemyGroupPrefab, transform);
-            _enemyGroup.name = $"{gameObject.name}_EnemyGroup";
+            _monsterGroupDirector = Instantiate(_monsterGroupDirectorPrefab, transform);
+            _monsterGroupDirector.name = $"{gameObject.name}_EnemyGroup";
 
             // 플레이어 찾기
-            _enemyGroup.FindPlayer();
+            _monsterGroupDirector.FindPlayer();
 
             // 몬스터 스폰 및 그룹 등록
             foreach (MonsterSpawn monsterSpawn in _monsterSpawns)
@@ -87,22 +88,22 @@ namespace Monster.Group
                     monsterSpawn.monsterPrefab,
                     monsterSpawn.spawnPoint.position,
                     Quaternion.identity,
-                    _enemyGroup.transform
+                    _monsterGroupDirector.transform
                 );
 
                 MonsterController monster = monsterObj.GetComponent<MonsterController>();
                 if (monster != null)
                 {
                     // 몬스터에 그룹 설정
-                    monster.GroupCommandProvider.SetEnemyGroup(_enemyGroup);
+                    monster.GroupCommandProvider.SetEnemyGroup(_monsterGroupDirector);
 
                     // 그룹에 몬스터 등록
-                    _enemyGroup.RegisterMonster(monster);
+                    _monsterGroupDirector.RegisterMonster(monster);
 
                     _spawnedMonsters.Add(monster);
 
                     // MonsterTracker에 등록
-                    MonsterTracker.MonsterTracker.Instance?.RegisterMonster(monster);
+                    MonsterTracker.Instance?.RegisterMonster(monster);
 
                     Debug.Log($"SpawnGroup [{gameObject.name}]: 몬스터 스폰 - {monsterObj.name}");
                 }
@@ -145,7 +146,7 @@ namespace Monster.Group
             }
 
             // 그룹 범위 표시 
-            if (_enemyGroup != null)
+            if (_monsterGroupDirector != null)
             {
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawWireSphere(transform.position, 1f);

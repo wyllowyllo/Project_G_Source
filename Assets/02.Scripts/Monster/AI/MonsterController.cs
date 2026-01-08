@@ -3,6 +3,7 @@ using Common;
 using Monster.AI.States;
 using Monster.Data;
 using Monster.Group;
+using Monster.Manager;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -154,7 +155,7 @@ namespace Monster.AI
             _groupCommandProvider?.UnregisterFromGroup();
 
             // MonsterTracker에서 제거
-            MonsterTracker.MonsterTracker.Instance?.UnregisterMonster(this);
+            MonsterTracker.Instance?.UnregisterMonster(this);
         }
     }
 }

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Monster.AI;
+using Monster.AI.States;
 using UnityEngine;
 
-namespace Monster
+namespace Monster.AI
 {
     // 몬스터의 상태를 관리하는 상태 머신
     public class MonsterStateMachine

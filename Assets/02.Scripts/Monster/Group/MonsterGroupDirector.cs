@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Monster.Group
 {
     // 몬스터 그룹의 전투를 운영하는 핵심 클래스 (Facade 패턴)
-    public class EnemyGroup : MonoBehaviour
+    public class MonsterGroupDirector : MonoBehaviour
     {
         [Header("그룹 설정")]
         [SerializeField] private Vector3 _groupCenter;

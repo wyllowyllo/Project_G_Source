@@ -6,7 +6,7 @@ namespace Monster.AI
     public class GroupCommandProvider
     {
         private readonly MonsterController _owner;
-        private EnemyGroup _enemyGroup;
+        private MonsterGroupDirector _monsterGroupDirector;
 
         // 개체 쿨다운/공격 타입
         private float _nextLightAttackTime;
@@ -28,39 +28,39 @@ namespace Monster.AI
         // ===== EnemyGroup 상호작용 메서드 =====
 
         // EnemyGroup 설정
-        public void SetEnemyGroup(EnemyGroup group)
+        public void SetEnemyGroup(MonsterGroupDirector groupDirector)
         {
-            _enemyGroup = group;
+            _monsterGroupDirector = groupDirector;
         }
         
         // 공격 슬롯 반환 (EnemyGroup에 위임)
         public void ReleaseAttackSlot()
         {
-            _enemyGroup?.ReleaseAttackSlot(_owner);
+            _monsterGroupDirector?.ReleaseAttackSlot(_owner);
         }
 
         // 공격 가능 여부 확인 (EnemyGroup에 위임)
         public bool CanAttack()
         {
-            return _enemyGroup?.CanAttack(_owner) ?? false;
+            return _monsterGroupDirector?.CanAttack(_owner) ?? false;
         }
 
         // 원하는 위치 가져오기 (EnemyGroup에 위임)
         public Vector3 GetDesiredPosition()
         {
-            return _enemyGroup?.GetDesiredPosition(_owner) ?? _owner.transform.position;
+            return _monsterGroupDirector?.GetDesiredPosition(_owner) ?? _owner.transform.position;
         }
 
         // 후퇴 시 cascading push-back 요청 (EnemyGroup에 위임)
         public void RequestPushback(Vector3 retreatDirection, float distance)
         {
-            _enemyGroup?.RequestPushback(_owner, retreatDirection, distance);
+            _monsterGroupDirector?.RequestPushback(_owner, retreatDirection, distance);
         }
 
         // EnemyGroup에서 몬스터 등록 해제 (EnemyGroup에 위임)
         public void UnregisterFromGroup()
         {
-            _enemyGroup?.UnregisterMonster(_owner);
+            _monsterGroupDirector?.UnregisterMonster(_owner);
         }
 
         // ===== 공격 쿨다운 관리 메서드 =====
