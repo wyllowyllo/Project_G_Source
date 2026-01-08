@@ -1,16 +1,22 @@
+using Monster.Ability;
 using Monster.Data;
 using UnityEngine;
 
 namespace Monster.AI.States
 {
-    // 스트레이프 상태: 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동
+    // 스트레이프 상태: 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동 (Ability 기반 리팩터링)
     public class StrafeState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
         private readonly GroupCommandProvider _groupCommandProvider;
         private readonly Transform _transform;
-        
+
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
+        private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly FacingAbility _facingAbility;
+
         // Probe 서브모드
         private enum EProbeMode { Reposition, Hold, Shuffle, FeintIn, FeintOut }
 
@@ -30,23 +36,27 @@ namespace Monster.AI.States
             _stateMachine = stateMachine;
             _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
+
+            
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _facingAbility = controller.GetAbility<FacingAbility>();
         }
 
         public void Enter()
         {
             EnableNavigation();
 
-            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-            EnsureMinimumDistance(distanceToPlayer);
+           
+            EnsureMinimumDistance();
         }
 
         public void Update()
         {
             float now = Time.time;
-            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
 
-
-            if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
+           
+            if (_playerDetectAbility.IsTooFar())
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
@@ -54,13 +64,13 @@ namespace Monster.AI.States
 
             Vector3 desired = _groupCommandProvider.GetDesiredPosition();
 
-            // AttackMode에 따라 공격 타입 결정
+           
             EAttackMode attackMode = _controller.Data.AttackMode;
 
             // 약공 실행 시도 (Both 또는 LightOnly 모드일 때만)
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
             {
-                if (TryExecuteLightAttack(desired, distanceToPlayer, now))
+                if (TryExecuteLightAttack(desired, now))
                 {
                     return;
                 }
@@ -105,32 +115,34 @@ namespace Monster.AI.States
 
        private void DoReposition(Vector3 desired)
         {
-            if (!_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_navAgentAbility.IsActive) return;
 
             float dist = Vector3.Distance(_transform.position, desired);
 
-            // 목표 근처 도달: 멈칫 or 셔플로 전환("눈치보기" 시작)
+           
             if (dist <= _controller.Data.RepositionStopRadius)
             {
                 PickMode(Random.value < 0.55f ? EProbeMode.Hold : EProbeMode.Shuffle, 0.25f, 0.6f);
                 return;
             }
 
-            _controller.NavAgent.isStopped = false;
-            _controller.NavAgent.SetDestination(desired);
+           
+            _navAgentAbility.Resume();
+            _navAgentAbility.SetDestination(desired);
         }
 
         private void DoHold()
         {
-            _controller.NavAgent.isStopped = true;
+           
+            _navAgentAbility.Stop();
             LookAtTarget();
         }
 
         private void DoShuffle(Vector3 desired)
         {
-            if (!_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_navAgentAbility.IsActive) return;
 
-            // 목표 자리 근방에서 작은 원호 이동(“슬금슬금”)
+            // 목표 자리 근방에서 작은 원호 이동("슬금슬금")
             if (_modeTimer <= 0.01f)
             {
                 Vector3 center = desired;
@@ -144,21 +156,21 @@ namespace Monster.AI.States
                 _probeTarget.y = _transform.position.y;
             }
 
-            _controller.NavAgent.isStopped = false;
-            _controller.NavAgent.SetDestination(_probeTarget);
+            // Ability에 명령: 목표 위치로 이동
+            _navAgentAbility.Resume();
+            _navAgentAbility.SetDestination(_probeTarget);
 
             LookAtTarget();
         }
 
         private void DoFeint(Vector3 desired, bool towardPlayer)
         {
-            if (!_controller.NavAgent.isActiveAndEnabled) return;
+            if (!_navAgentAbility.IsActive) return;
 
             if (_modeTimer <= 0.01f)
             {
-                Vector3 dir = (_controller.PlayerTransform.position - _transform.position);
-                dir.y = 0f;
-                dir.Normalize();
+               
+                Vector3 dir = _playerDetectAbility.DirectionToPlayer();
 
                 if (!towardPlayer) dir = -dir;
 
@@ -166,15 +178,16 @@ namespace Monster.AI.States
                 _probeTarget.y = _transform.position.y;
             }
 
-            _controller.NavAgent.isStopped = false;
-            _controller.NavAgent.SetDestination(_probeTarget);
+            
+            _navAgentAbility.Resume();
+            _navAgentAbility.SetDestination(_probeTarget);
 
             LookAtTarget();
         }
 
         private void ChooseNextProbeMode(Vector3 desired)
         {
-            // 목표로 다시 조금 재배치할 필요가 있으면 Reposition
+            
             float distance = Vector3.Distance(_transform.position, desired);
             if (distance > _controller.Data.RepositionStopRadius * 1.25f)
             {
@@ -199,48 +212,38 @@ namespace Monster.AI.States
 
         private void LookAtTarget()
         {
-            Vector3 dir = (_controller.PlayerTransform.position - _transform.position);
-            dir.y = 0f;
-            if (dir.sqrMagnitude < 0.01f) return;
-
-            Quaternion target = Quaternion.LookRotation(dir.normalized);
-            _transform.rotation = Quaternion.RotateTowards(
-                _transform.rotation,
-                target,
-                _controller.Data.RotationSpeed * Time.deltaTime
-            );
+            
+            if (_playerDetectAbility.HasPlayer)
+            {
+                _facingAbility.FaceTo(_playerDetectAbility.PlayerPosition);
+            }
         }
-       
 
         public void Exit()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
+            
+            _navAgentAbility?.Resume();
         }
 
         private void EnableNavigation()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
+            
+            _navAgentAbility?.Resume();
         }
 
-        private void EnsureMinimumDistance(float distanceToPlayer)
+        private void EnsureMinimumDistance()
         {
-            if (distanceToPlayer < _controller.Data.PreferredMinDistance)
+            
+            if (_playerDetectAbility.IsTooClose())
             {
-                Vector3 dirAway = (_transform.position - _controller.PlayerTransform.position);
-                dirAway.y = 0f;
-                dirAway.Normalize();
+                
+                Vector3 dirAway = -_playerDetectAbility.DirectionToPlayer();
 
-                float backoffDistance = _controller.Data.PreferredMinDistance - distanceToPlayer + 0.5f;
+                float backoffDistance = _controller.Data.PreferredMinDistance - _playerDetectAbility.DistanceToPlayer + 0.5f;
                 _probeTarget = _transform.position + dirAway * backoffDistance;
                 _probeTarget.y = _transform.position.y;
 
-                // Cascading push-back 요청 (옵션이 활성화된 경우에만)
+                
                 if (_controller.Data.EnablePushback)
                 {
                     _groupCommandProvider.RequestPushback(dirAway, backoffDistance);
@@ -254,12 +257,14 @@ namespace Monster.AI.States
             }
         }
 
-        private bool TryExecuteLightAttack(Vector3 desired, float distanceToPlayer, float now)
+        private bool TryExecuteLightAttack(Vector3 desired, float now)
         {
             float distToDesired = Vector3.Distance(_transform.position, desired);
             float lightRange = _controller.Data.AttackRange + 0.35f;
 
-            if (distToDesired <= 1.0f && distanceToPlayer <= lightRange && _groupCommandProvider.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+            
+            if (distToDesired <= 1.0f && _playerDetectAbility.DistanceToPlayer <= lightRange
+                && _groupCommandProvider.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
             {
                 _groupCommandProvider.SetNextAttackHeavy(false);
                 _groupCommandProvider.ConsumeLightAttack(now, _controller.Data.AttackCooldown);

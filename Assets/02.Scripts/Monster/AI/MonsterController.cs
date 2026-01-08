@@ -1,9 +1,11 @@
 using Combat.Core;
 using Common;
 using Monster.AI.States;
+using Monster.Ability;
 using Monster.Data;
 using Monster.Group;
 using Monster.Manager;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -27,6 +29,10 @@ namespace Monster.AI
         private Combatant _combatant;
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
+
+        // Ability 시스템
+        private Dictionary<System.Type, EntityAbility> _abilities;
+        private List<EntityAbility> _abilityList;
         
         
         // 테더 시스템
@@ -64,6 +70,7 @@ namespace Monster.AI
             }
 
             InitializeMonster();
+            InitializeAbilities();
             InitializeStateMachine();
         }
         
@@ -86,6 +93,9 @@ namespace Monster.AI
             {
                 return;
             }
+
+            // Ability 업데이트
+            UpdateAbilities();
 
             _stateMachine?.Update();
 
@@ -129,6 +139,42 @@ namespace Monster.AI
 
             // 초기 상태 설정
             _stateMachine.Initialize(EMonsterState.Idle);
+        }
+
+        private void InitializeAbilities()
+        {
+            _abilities = new Dictionary<System.Type, EntityAbility>();
+            _abilityList = new List<EntityAbility>();
+
+            // Ability 생성 및 등록
+            RegisterAbility(new NavAgentAbility());
+            RegisterAbility(new PlayerDetectAbility());
+            RegisterAbility(new FacingAbility());
+        }
+
+        private void RegisterAbility(EntityAbility ability)
+        {
+            ability.Initialize(this);
+            _abilities[ability.GetType()] = ability;
+            _abilityList.Add(ability);
+        }
+
+        private void UpdateAbilities()
+        {
+            foreach (var ability in _abilityList)
+            {
+                ability.Update();
+            }
+        }
+
+        // State에서 Ability를 가져오기 위한 메서드
+        public T GetAbility<T>() where T : EntityAbility
+        {
+            if (_abilities.TryGetValue(typeof(T), out EntityAbility ability))
+            {
+                return ability as T;
+            }
+            return null;
         }
 
 

@@ -1,12 +1,16 @@
+using Monster.Ability;
 using UnityEngine;
 
 namespace Monster.AI.States
 {
-    // 몬스터의 사망 상태
+    // 몬스터의 사망 상태 (Ability 기반 리팩터링)
     public class DeadState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly Transform _transform;
+
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
 
         private const float DestroyDelay = 3f;
         private float _destroyTimer;
@@ -17,6 +21,9 @@ namespace Monster.AI.States
         {
             _controller = controller;
             _transform = controller.transform;
+
+           
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
         }
 
         public void Enter()
@@ -48,11 +55,8 @@ namespace Monster.AI.States
 
         private void DisableNavigation()
         {
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.isStopped = true;
-                _controller.NavAgent.enabled = false;
-            }
+           
+            _navAgentAbility?.Disable();
         }
     }
 }

@@ -1,10 +1,11 @@
+using Monster.Ability;
 using UnityEngine;
 using Monster.AI.Services;
 
 namespace Monster.AI.States
 {
     // 공격 상태: Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성
-    // 공격 슬롯 시스템과 연동하여 동시 공격을 제한
+    // 공격 슬롯 시스템과 연동하여 동시 공격을 제한 (선택적 Ability 기반 리팩터링)
     public class AttackState : IMonsterState
     {
         private readonly MonsterController _controller;
@@ -13,11 +14,14 @@ namespace Monster.AI.States
         private readonly ChargeService _chargeService;
         private readonly Transform _transform;
 
+        // Abilities 
+        private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly FacingAbility _facingAbility;
+
         private enum EAttackPhase { Windup, Execute }
         private EAttackPhase _currentPhase;
 
         private bool _isHeavyAttack;
-        private float _distanceToPlayer;
         private float _phaseTimer;
         private bool _damageDealt;
         private float _hitRadius;
@@ -31,6 +35,10 @@ namespace Monster.AI.States
             _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
             _chargeService = new ChargeService();
+
+            
+            _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _facingAbility = controller.GetAbility<FacingAbility>();
         }
 
         public void Enter()
@@ -63,16 +71,16 @@ namespace Monster.AI.States
                 return;
             }
 
-            _distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-
             if (_currentPhase == EAttackPhase.Windup)
             {
-                if (_distanceToPlayer > _controller.Data.AttackRange * 2f)
+               
+                if (_playerDetectAbility.DistanceToPlayer > _controller.Data.AttackRange * 2f)
                 {
                     ReturnToCombat();
                     return;
                 }
 
+                
                 LookAtPlayer();
             }
 
@@ -108,8 +116,8 @@ namespace Monster.AI.States
 
         private void UpdateExecutePhase()
         {
-            // 타격 판정
-            if (!_damageDealt && _distanceToPlayer <= _hitRadius)
+            
+            if (!_damageDealt && _playerDetectAbility.DistanceToPlayer <= _hitRadius)
             {
                 DealDamage();
                 _damageDealt = true;
@@ -126,7 +134,8 @@ namespace Monster.AI.States
         private void StartChargePhase()
         {
             ChargeParameters parameters = CreateChargeParameters();
-            _chargeService.StartCharge(_controller.PlayerTransform.position, parameters);
+           
+            _chargeService.StartCharge(_playerDetectAbility.PlayerPosition, parameters);
         }
 
         private ChargeParameters CreateChargeParameters()
@@ -182,17 +191,10 @@ namespace Monster.AI.States
 
         private void LookAtPlayer()
         {
-            Vector3 directionToPlayer = (_controller.PlayerTransform.position - _transform.position).normalized;
-            directionToPlayer.y = 0f;
-
-            if (directionToPlayer != Vector3.zero)
+            
+            if (_playerDetectAbility.HasPlayer)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
-                _transform.rotation = Quaternion.RotateTowards(
-                    _transform.rotation,
-                    targetRotation,
-                    _controller.Data.RotationSpeed * Time.deltaTime
-                );
+                _facingAbility.FaceTo(_playerDetectAbility.PlayerPosition);
             }
         }
 
@@ -200,7 +202,9 @@ namespace Monster.AI.States
         {
             Debug.Log($"{_controller.gameObject.name} 공격! 데미지: {_controller.Data.AttackDamage}");
 
-            if (_controller.PlayerTransform.TryGetComponent<IDamageable>(out var damageable))
+            
+            if (_playerDetectAbility.PlayerTransform != null &&
+                _playerDetectAbility.PlayerTransform.TryGetComponent<IDamageable>(out var damageable))
             {
                 damageable.TakeDamage(_controller.Data.AttackDamage, _transform.position);
             }
@@ -214,9 +218,8 @@ namespace Monster.AI.States
                 renderer.material.color = _controller.OriginalMaterialColor;
             }
 
-            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-
-            if (distanceToPlayer > _controller.Data.PreferredMaxDistance)
+            
+            if (_playerDetectAbility.IsTooFar())
                 _stateMachine.ChangeState(EMonsterState.Approach);
             else
                 _stateMachine.ChangeState(EMonsterState.Strafe);
@@ -224,14 +227,18 @@ namespace Monster.AI.States
 
         private bool HasDirectLineOfSightToPlayer()
         {
+           
+            if (!_playerDetectAbility.HasPlayer)
+                return false;
+
             Vector3 startPosition = _transform.position + Vector3.up * 1.0f;
-            Vector3 playerPosition = _controller.PlayerTransform.position + Vector3.up * 1.0f;
+            Vector3 playerPosition = _playerDetectAbility.PlayerPosition + Vector3.up * 1.0f;
             Vector3 directionToPlayer = playerPosition - startPosition;
             float distance = directionToPlayer.magnitude;
 
             if (Physics.Raycast(startPosition, directionToPlayer.normalized, out RaycastHit hit, distance))
             {
-                if (hit.transform != _controller.PlayerTransform)
+                if (hit.transform != _playerDetectAbility.PlayerTransform)
                 {
                     return false;
                 }

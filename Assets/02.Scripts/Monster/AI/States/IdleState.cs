@@ -1,13 +1,16 @@
-using UnityEngine;
+using Monster.Ability;
 
 namespace Monster.AI.States
 {
-    // 대기 상태
+    // 대기 상태 (Ability 기반 리팩터링)
     public class IdleState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
-        private readonly Transform _transform;
+
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
+        private readonly PlayerDetectAbility _playerDetectAbility;
 
         public EMonsterState StateType => EMonsterState.Idle;
 
@@ -15,7 +18,10 @@ namespace Monster.AI.States
         {
             _controller = controller;
             _stateMachine = stateMachine;
-            _transform = controller.transform;
+
+            
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
         }
 
         public void Enter()
@@ -25,14 +31,8 @@ namespace Monster.AI.States
 
         public void Update()
         {
-
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
-
-
-            if (distanceToPlayer <= _controller.Data.DetectionRange)
+           
+            if (_playerDetectAbility.IsInDetectionRange())
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
             }
@@ -47,18 +47,14 @@ namespace Monster.AI.States
 
         private void StopNavigation()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = true;
-            }
+           
+            _navAgentAbility?.Stop();
         }
 
         private void ResumeNavigation()
         {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
+           
+            _navAgentAbility?.Resume();
         }
     }
 }
