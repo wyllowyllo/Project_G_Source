@@ -54,8 +54,7 @@ public class PlayerHpBar : MonoBehaviour
     {
         if (_playerCombatant == null) return;
 
-        UpdateHpBarSmooth();
-        UpdateBackSlider();
+        UpdateHealthUI();
     }
 
     private void InitializeHpBar()
@@ -155,5 +154,14 @@ public class PlayerHpBar : MonoBehaviour
     private void GameOver()
     {
         GameManager.Instance.TriggerGameOver();
+    }
+
+    public void UpdateHealthUI()
+    {
+        if (_playerCombatant == null) return;
+
+        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+        UpdateHpText();
+        UpdateHpColor();
     }
 }

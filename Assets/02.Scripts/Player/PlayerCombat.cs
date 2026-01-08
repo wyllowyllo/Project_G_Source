@@ -13,7 +13,7 @@ using UnityEngine.Events;
         public UnityEvent<int> OnComboStarted;      // 콤보 시작
         public UnityEvent<int> OnComboExecuted;     // 콤보 실행(단계별)
         public UnityEvent<int, GameObject> OnEnemyHit; 
-        public UnityEvent OnComboReset;              
+        public UnityEvent OnComboReset;
 
         private Combatant _combatant;
         private MeleeAttacker _attacker;
@@ -24,6 +24,8 @@ using UnityEngine.Events;
         private PlayerVFXController _vfxController;
 
         private PlayerMovement _playerMovement;
+
+        private PlayerHpBar _playerHpBar;
 
         private ComboState _currentState = ComboState.Idle;
 
@@ -199,8 +201,10 @@ using UnityEngine.Events;
             _animationController?.PlayDamage();
             _vfxController?.SpawnHitVFX(info.HitPoint, 0);
 
-            // TODO: UI 연동
-            // UpdateHealthUI();
+        // TODO: UI 연동
+        // UpdateHealthUI();
+            _playerHpBar?.UpdateHealthUI();
+        Debug.Log("a");
         }
 
         private void HandleDeath()
