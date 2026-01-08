@@ -92,21 +92,7 @@ namespace Monster.AI
             // 디버그 정보 업데이트 (인스펙터 표시용)
             UpdateDebugInfo();
         }
-        private void OnEnable()
-        {
-            if (_combatant != null)
-            {
-                _combatant.OnDeath += HandleDeath;
-            }
-        }
-
-        private void OnDisable()
-        {
-            if (_combatant != null)
-            {
-                _combatant.OnDeath -= HandleDeath;
-            }
-        }
+       
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EMonsterState.Idle;
@@ -156,6 +142,22 @@ namespace Monster.AI
 
             // MonsterTracker에서 제거
             MonsterTracker.Instance?.UnregisterMonster(this);
+        }
+        
+        private void OnEnable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath += HandleDeath;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath -= HandleDeath;
+            }
         }
     }
 }

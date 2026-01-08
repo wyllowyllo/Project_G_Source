@@ -9,8 +9,7 @@ namespace Monster.AI.States
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
 
-        private float _slotRequestCooldown = 0.5f;
-        private float _slotRequestTimer = 0f;
+       
 
         public EMonsterState StateType => EMonsterState.Approach;
 
@@ -58,8 +57,7 @@ namespace Monster.AI.States
             {
                 _controller.NavAgent.isStopped = false;
             }
-
-            _slotRequestTimer = 0f;
+            
         }
 
         private void ApproachToTarget()
