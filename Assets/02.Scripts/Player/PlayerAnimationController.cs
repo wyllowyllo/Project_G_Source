@@ -66,6 +66,7 @@ public class PlayerAnimationController : MonoBehaviour
             return;
         }
         _animator.SetBool(_isAttackingParameters, false);
+        _animator.SetInteger(_comboStepParameters, 0);
     }
 
     public void SetAttackSpeed(float speed)

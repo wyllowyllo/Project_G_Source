@@ -160,20 +160,14 @@ using UnityEngine.Events;
         private void TryStartAttack()
         {
            
-        // MeleeAttacker를 통해 공격 시도
-        if (!_attacker.TryAttack())
+            // MeleeAttacker를 통해 공격 시도
+            if (!_attacker.TryAttack())
             {
                 return;
             }
 
-        // 버퍼 입력 소비
-        if (_currentState == ComboState.ComboWindow && _inputHandler.HasBufferedInput)
-        {
-            _inputHandler.TryConsumeBuffer();
-        }
-
-        // 타겟 회전
-        _targetController?.RotateTowardsNearestTarget();
+            // 타겟 회전
+            _targetController?.RotateTowardsNearestTarget();
 
             // 이동 제한
             if (!_canMoveWhileAttacking && _playerMovement != null)
@@ -187,7 +181,13 @@ using UnityEngine.Events;
 
             ChangeState(ComboState.Attacking);
 
-       
+        // 버퍼 입력 소비
+        if (_currentState == ComboState.ComboWindow && _inputHandler.HasBufferedInput)
+        {
+            _inputHandler.TryConsumeBuffer();
+        }
+
+
 
         // 이벤트 발생
         OnComboExecuted?.Invoke(_attacker.CurrentComboStep);
@@ -301,7 +301,6 @@ using UnityEngine.Events;
         public void OnAttackAnimationEnd()
         {
             _attacker?.OnAttackAnimationEnd();
-            _animationController?.EndAttack();
 
             if (_playerMovement != null)
             {
@@ -311,6 +310,8 @@ using UnityEngine.Events;
             // 버퍼된 입력이 없으면 Idle로 전환
             if (!_inputHandler.HasBufferedInput)
             {
+                Debug.Log("No buffered input, returning to Idle");
+            _animationController?.EndAttack();
                 ChangeState(ComboState.Idle);
             }
         }

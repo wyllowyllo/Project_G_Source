@@ -69,11 +69,13 @@ namespace Combat.Attack
 
         public void OnAttackAnimationEnd()
         {
+            Debug.Log($"Attack Animation End");
             _isAttacking = false;
         }
 
         public void ResetCombo()
         {
+            Debug.Log($"Combo Reset");
             _currentComboStep = 0;
             _isAttacking = false;
             _currentMultiplier = 1f;
