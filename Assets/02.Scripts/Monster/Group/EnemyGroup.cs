@@ -59,6 +59,7 @@ namespace Monster.Group
         private PositionAssigner _positionAssigner;
         private PositionDirector _positionDirector;
         private AttackerSelector _attackerSelector;
+        private PushbackCoordinator _pushbackCoordinator;
 
         private float _nextDirectorTickTime;
 
@@ -141,6 +142,11 @@ namespace Monster.Group
                 _scoreCalculator,
                 _lastAttackTime,
                 _minAttackReassignInterval);
+
+            _pushbackCoordinator = new PushbackCoordinator(
+                _monsters,
+                _desiredPosition,
+                HasSlot);
         }
 
         // ===== 몬스터 등록/해제 =====
@@ -245,6 +251,14 @@ namespace Monster.Group
         public Vector3 GetDesiredPosition(MonsterController monster)
         {
             return _positionDirector.GetDesiredPosition(monster);
+        }
+
+        /// <summary>
+        /// Cascading push-back 요청 (Law of Demeter 준수)
+        /// </summary>
+        public void RequestPushback(MonsterController pusher, Vector3 retreatDirection, float distance)
+        {
+            _pushbackCoordinator?.ProcessPushback(pusher, retreatDirection, distance);
         }
 
         // ===== 디버그 =====

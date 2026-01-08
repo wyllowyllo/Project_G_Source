@@ -3,11 +3,25 @@ using UnityEngine;
 namespace Monster.Data
 {
     /// <summary>
+    /// 공격 모드 (AI 테스트용)
+    /// </summary>
+    public enum EAttackMode
+    {
+        Both,       // 약공 + 강공 둘 다 사용
+        LightOnly,  // 약공만 사용 (토큰 발행 없음)
+        HeavyOnly   // 강공만 사용 (약공 없음)
+    }
+
+    /// <summary>
     /// 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject.
     /// </summary>
     [CreateAssetMenu(fileName = "MonsterData", menuName = "ProjectG/Monster/MonsterData")]
     public class MonsterData : ScriptableObject
     {
+        [Header("테스트 옵션")]
+        [Tooltip("공격 모드 (AI 테스트용)")]
+        [SerializeField] private EAttackMode _attackMode = EAttackMode.Both;
+        
         [Header("기본 정보")]
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
@@ -92,6 +106,7 @@ namespace Monster.Data
         public float RetreatDistance => _retreatDistance;
 
         // 전투 리듬
+        public EAttackMode AttackMode => _attackMode;
         public float LightAttackChance => _lightAttackChance;
         public float HeavyAttackChance => _heavyAttackChance;
         public float HeavyAttackCooldown => _heavyAttackCooldown;

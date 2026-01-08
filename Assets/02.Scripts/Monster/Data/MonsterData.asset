@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbf4f1ddd2b77e840a767c5faed332a2, type: 3}
   m_Name: MonsterData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectG.Monster.MonsterData
+  _attackMode: 0
   _monsterName: Test
   _monsterLevel: 1
   _maxHealth: 100
@@ -31,5 +32,8 @@ MonoBehaviour:
   _recoverTime: 0.5
   _chargeSpeed: 7
   _retreatDistance: 2
+  _lightAttackChance: 0.45
+  _heavyAttackChance: 0.15
+  _heavyAttackCooldown: 3
   _experienceReward: 10
   _goldReward: 5

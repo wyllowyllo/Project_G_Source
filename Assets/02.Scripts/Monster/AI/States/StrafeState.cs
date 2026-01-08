@@ -1,3 +1,4 @@
+using Monster.Data;
 using UnityEngine;
 
 namespace Monster.AI.States
@@ -59,14 +60,25 @@ namespace Monster.AI.States
 
             Vector3 desired = _controller.GetDesiredPosition();
 
-            if (TryExecuteLightAttack(desired, distanceToPlayer, now))
+            // AttackMode에 따라 공격 타입 결정
+            EAttackMode attackMode = _controller.Data.AttackMode;
+
+            // 약공 실행 시도 (Both 또는 LightOnly 모드일 때만)
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
             {
-                return;
+                if (TryExecuteLightAttack(desired, distanceToPlayer, now))
+                {
+                    return;
+                }
             }
 
-            if (TryExecuteHeavyAttack(now))
+            // 강공 실행 시도 (Both 또는 HeavyOnly 모드일 때만)
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
             {
-                return;
+                if (TryExecuteHeavyAttack(now))
+                {
+                    return;
+                }
             }
 
 
@@ -233,7 +245,10 @@ namespace Monster.AI.States
                 _probeTarget = _transform.position + dirAway * backoffDistance;
                 _probeTarget.y = _transform.position.y;
 
-                PickMode(EProbeMode.FeintOut, 0.5f, 1f);
+                // Cascading push-back 요청
+                _controller.RequestPushback(dirAway, backoffDistance);
+
+                PickMode(EProbeMode.FeintOut, 0.2f, 0.3f);
             }
             else
             {

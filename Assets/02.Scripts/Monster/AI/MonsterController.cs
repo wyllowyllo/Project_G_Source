@@ -188,7 +188,15 @@ namespace Monster
         {
             return _enemyGroup?.GetDesiredPosition(this) ?? transform.position;
         }
-        
+
+        /// <summary>
+        /// 후퇴 시 cascading push-back 요청 (EnemyGroup에 위임)
+        /// </summary>
+        public void RequestPushback(Vector3 retreatDirection, float distance)
+        {
+            _enemyGroup?.RequestPushback(this, retreatDirection, distance);
+        }
+
 
         /// <summary>
         /// 테더 리셋 (홈 복귀 완료 시 호출)
