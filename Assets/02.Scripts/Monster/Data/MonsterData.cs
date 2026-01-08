@@ -55,8 +55,10 @@ namespace Monster.Data
         [SerializeField] private float _windupTime = 0.3f;
         [Tooltip("공격 실행 시간")]
         [SerializeField] private float _executeTime = 0.2f;
-        [Tooltip("공격 후딜 시간")]
-        [SerializeField] private float _recoverTime = 0.5f;
+        [Tooltip("약공 후 회복 시간")]
+        [SerializeField] private float _lightAttackRecoverTime = 0.5f;
+        [Tooltip("강공 후 회복 시간")]
+        [SerializeField] private float _heavyAttackRecoverTime = 2f;
 
         [Header("근접 공격 - 돌진 패턴")]
         [Tooltip("돌진 속도 (기본 이동 속도보다 빠름)")]
@@ -97,7 +99,8 @@ namespace Monster.Data
         public float TetherRadius => _tetherRadius;
         public float WindupTime => _windupTime;
         public float ExecuteTime => _executeTime;
-        public float RecoverTime => _recoverTime;
+        public float LightAttackRecoverTime => _lightAttackRecoverTime;
+        public float HeavyAttackRecoverTime => _heavyAttackRecoverTime;
 
         // 근접 공격 Properties
         public float ChargeSpeed => _chargeSpeed;

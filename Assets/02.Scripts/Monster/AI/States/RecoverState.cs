@@ -11,10 +11,7 @@ namespace Monster.AI.States
         private readonly Transform _transform;
 
         private float _recoverTimer = 0f;
-        private float _recoverDuration; // 동적으로 설정 (강공/약공에 따라)
-
-        private const float HeavyAttackRecoverTime = 2f; // 강공: 2초
-        private const float LightAttackRecoverTime = 0.5f; // 약공: 0.5초
+        private float _recoverDuration;
 
         public EMonsterState StateType => EMonsterState.Recover;
 
@@ -70,8 +67,8 @@ namespace Monster.AI.States
         private void DetermineRecoverDuration()
         {
             _recoverDuration = _groupCommandProvider.CurrentAttackWasHeavy
-                ? HeavyAttackRecoverTime
-                : LightAttackRecoverTime;
+                ? _controller.Data.HeavyAttackRecoverTime
+                : _controller.Data.LightAttackRecoverTime;
         }
 
         private void StopNavigation()
