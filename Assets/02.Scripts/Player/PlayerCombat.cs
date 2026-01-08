@@ -204,7 +204,6 @@ using UnityEngine.Events;
         // TODO: UI 연동
         // UpdateHealthUI();
             _playerHpBar?.UpdateHealthUI();
-        Debug.Log("a");
         }
 
         private void HandleDeath()

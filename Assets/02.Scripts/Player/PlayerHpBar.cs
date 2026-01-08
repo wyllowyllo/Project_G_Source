@@ -12,6 +12,7 @@ public class PlayerHpBar : MonoBehaviour
     public Slider HpSlider;
     public Slider BackSlider;
     [SerializeField] private Image _hpFillImage;
+    [SerializeField] private Image _backHpFillImage;
     [SerializeField] private TextMeshProUGUI _levelText;
     [SerializeField] private TextMeshProUGUI _hpText;
 
@@ -47,6 +48,10 @@ public class PlayerHpBar : MonoBehaviour
         if (_playerCombatant != null)
         {
             InitializeHpBar();
+
+            HpSlider.value = 0.5f;
+            BackSlider.value = 0.5f;
+            Debug.Log($"HpSlider value set to: {HpSlider.value}");
         }
     }
 
@@ -54,7 +59,8 @@ public class PlayerHpBar : MonoBehaviour
     {
         if (_playerCombatant == null) return;
 
-        UpdateHealthUI();
+        UpdateHpBarSmooth();
+        UpdateBackSlider();
     }
 
     private void InitializeHpBar()
@@ -124,17 +130,26 @@ public class PlayerHpBar : MonoBehaviour
 
     private void UpdateHpColor()
     {
+        Color newColor;
+
         if (HpSlider.value > 0.5f)
         {
-            _hpFillImage.color = new Color32(0, 191, 5, 255);
+            newColor = new Color32(0, 191, 5, 255);
         }
-        else if (HpSlider.value > 0.2f)
+        else if (HpSlider.value > 0.3f)
         {
-            _hpFillImage.color = new Color(1f, 0.8f, 0f);
+            newColor = new Color(1f, 0.8f, 0f);
         }
         else
         {
-            _hpFillImage.color = new Color(1f, 0.3f, 0.3f);
+            newColor = new Color(1f, 0.3f, 0.3f);
+        }
+
+        _hpFillImage.color = newColor;
+
+        if (_backHpFillImage != null)
+        {
+            _backHpFillImage.color = newColor;
         }
     }
 
@@ -163,5 +178,6 @@ public class PlayerHpBar : MonoBehaviour
         _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
         UpdateHpText();
         UpdateHpColor();
+
     }
 }
