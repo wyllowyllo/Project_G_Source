@@ -1,3 +1,4 @@
+using Common;
 using Monster.AI;
 using Monster.AI.States;
 using Monster.Data;
@@ -54,7 +55,6 @@ namespace Monster
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
         public MonsterStateMachine StateMachine => _stateMachine;
-        public EnemyGroup EnemyGroup => _enemyGroup;
 
         // 프로퍼티
         public Vector3 HomePosition => _homePosition;
@@ -79,7 +79,15 @@ namespace Monster
 
         private void Start()
         {
-            FindPlayer();
+            // PlayerReferenceProvider로부터 플레이어 참조 가져오기
+            if (PlayerReferenceProvider.Instance != null)
+            {
+                _playerTransform = PlayerReferenceProvider.Instance.PlayerTransform;
+            }
+            else
+            {
+                Debug.LogWarning($"{gameObject.name}: PlayerReferenceProvider를 찾을 수 없습니다.");
+            }
         }
 
         private void Update()
@@ -137,19 +145,6 @@ namespace Monster
             _stateMachine.Initialize(EMonsterState.Idle);
         }
 
-        private void FindPlayer()
-        {
-            // TODO: 플레이어 태그나 싱글톤으로 찾기
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                _playerTransform = player.transform;
-            }
-            else
-            {
-                Debug.LogWarning($"{gameObject.name}: Player를 찾을 수 없습니다.");
-            }
-        }
 
         /// <summary>
         /// EnemyGroup 설정
@@ -157,6 +152,41 @@ namespace Monster
         public void SetEnemyGroup(EnemyGroup group)
         {
             _enemyGroup = group;
+        }
+
+        // ===== Wrapper 메서드: 디미터 법칙 준수 =====
+        // States가 EnemyGroup에 직접 접근하지 않도록 캡슐화
+
+        /// <summary>
+        /// 공격 슬롯 요청 (EnemyGroup에 위임)
+        /// </summary>
+        public bool RequestAttackSlot()
+        {
+            return _enemyGroup?.RequestAttackSlot(this) ?? false;
+        }
+
+        /// <summary>
+        /// 공격 슬롯 반환 (EnemyGroup에 위임)
+        /// </summary>
+        public void ReleaseAttackSlot()
+        {
+            _enemyGroup?.ReleaseAttackSlot(this);
+        }
+
+        /// <summary>
+        /// 공격 가능 여부 확인 (EnemyGroup에 위임)
+        /// </summary>
+        public bool CanAttack()
+        {
+            return _enemyGroup?.CanAttack(this) ?? false;
+        }
+
+        /// <summary>
+        /// 원하는 위치 가져오기 (EnemyGroup에 위임)
+        /// </summary>
+        public Vector3 GetDesiredPosition()
+        {
+            return _enemyGroup?.GetDesiredPosition(this) ?? transform.position;
         }
         
 

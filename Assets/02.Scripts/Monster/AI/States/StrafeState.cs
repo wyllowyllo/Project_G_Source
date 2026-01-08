@@ -64,7 +64,7 @@ namespace Monster.AI.States
             // 2) 강공: 슬롯(강공권) 있을 때만
             
             // DesiredPosition (각도 슬롯 + separation)
-            Vector3 desired = _controller.EnemyGroup.GetDesiredPosition(_controller);
+            Vector3 desired = _controller.GetDesiredPosition();
             float distToDesired = Vector3.Distance(_transform.position, desired);
             
             float lightRange = _controller.Data.AttackRange + 0.35f;
@@ -77,8 +77,8 @@ namespace Monster.AI.States
             }
 
             // 강공은 강공권이 있을 때만 시도
-            if (_controller.EnemyGroup != null && _controller.EnemyGroup.CanAttack(_controller)
-                && _controller.CanHeavyAttack(now) && Random.value < _controller.Data.HeavyAttackChance)
+            if (_controller.CanAttack() && _controller.CanHeavyAttack(now)
+                && Random.value < _controller.Data.HeavyAttackChance)
             {
                 _controller.SetNextAttackHeavy(true);
                 _controller.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);

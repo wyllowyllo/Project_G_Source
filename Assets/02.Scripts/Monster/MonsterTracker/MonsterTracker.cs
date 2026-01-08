@@ -89,11 +89,12 @@ namespace Monster.MonsterTracker
         }
 
         /// <summary>
-        /// 살아있는 몬스터 수 반환
+        /// 살아있는 몬스터 수 반환 (최적화: 불필요한 리스트 생성 제거)
         /// </summary>
         public int GetAliveMonsterCount()
         {
-            return GetAliveMonsters().Count;
+            _allMonsters.RemoveAll(m => m == null || !m.IsAlive);
+            return _allMonsters.Count;
         }
 
        

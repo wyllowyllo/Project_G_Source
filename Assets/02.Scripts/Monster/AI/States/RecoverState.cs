@@ -86,12 +86,9 @@ namespace Monster.AI.States
             
 
             // 공격 슬롯 반환
-            if (_controller.EnemyGroup != null)
+            if (_controller.CurrentAttackWasHeavy)
             {
-                if (_controller.CurrentAttackWasHeavy)
-                {
-                    _controller.EnemyGroup.ReleaseAttackSlot(_controller);
-                }
+                _controller.ReleaseAttackSlot();
             }
             
             _controller.ClearCurrentAttackHeavy();
