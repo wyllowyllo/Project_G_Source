@@ -1,11 +1,12 @@
 {
-    "name": "ProjectG",
+    "name": "ProjectG.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:86089f768cf6d441394471ff791ac4e8",
-        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+        "ProjectG"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

@@ -81,5 +81,9 @@ namespace Combat.Attack
                 DisableHitbox();
             }
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetHitMultipleTargetsForTest(bool value) => _hitMultipleTargets = value;
+#endif
     }
 }
