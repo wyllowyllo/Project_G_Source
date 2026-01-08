@@ -1,3 +1,4 @@
+using Combat.Core;
 using Common;
 using Monster.AI.States;
 using Monster.Data;
@@ -11,8 +12,8 @@ namespace Monster.AI
     /// 몬스터의 핵심 동작을 제어하는 컨트롤러.
     /// FSM을 사용하여 상태별 동작을 관리합니다.
     /// </summary>
-    [RequireComponent(typeof(NavMeshAgent))]
-    public class MonsterController : MonoBehaviour, IDamageable
+    [RequireComponent(typeof(NavMeshAgent),typeof(Combatant))]
+    public class MonsterController : MonoBehaviour
     {
 
         [SerializeField] private EMonsterState _currentState;
@@ -25,12 +26,9 @@ namespace Monster.AI
 
         // 컴포넌트
         private NavMeshAgent _navAgent;
+        private Combatant _combatant;
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
-
-        // 상태
-        private float _currentHealth;
-        private bool _isAlive = true;
         
         
         // 테더 시스템
@@ -41,12 +39,13 @@ namespace Monster.AI
         private Color _originalMaterialColor;
 
         // 프로퍼티
-        public bool IsAlive => _isAlive;
-        public float CurrentHealth => _currentHealth;
+        public bool IsAlive => _combatant != null && _combatant.IsAlive;
+        public float CurrentHealth => _combatant?.CurrentHealth ?? 0f;
         public Color OriginalMaterialColor => _originalMaterialColor;
         public MonsterData Data => _monsterData;
 
         public NavMeshAgent NavAgent => _navAgent;
+        public Combatant Combatant => _combatant;
         public Transform PlayerTransform => _playerTransform;
         public MonsterStateMachine StateMachine => _stateMachine;
         public GroupCommandProvider GroupCommandProvider => _groupCommandProvider;
@@ -59,6 +58,7 @@ namespace Monster.AI
         private void Awake()
         {
             _navAgent = GetComponent<NavMeshAgent>();
+            _combatant = GetComponent<Combatant>();
             _groupCommandProvider = new GroupCommandProvider(this);
 
             // 원래 머티리얼 색상 저장
@@ -70,6 +70,22 @@ namespace Monster.AI
 
             InitializeMonster();
             InitializeStateMachine();
+        }
+
+        private void OnEnable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath += HandleDeath;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_combatant != null)
+            {
+                _combatant.OnDeath -= HandleDeath;
+            }
         }
 
         private void Start()
@@ -87,7 +103,7 @@ namespace Monster.AI
 
         private void Update()
         {
-            if (!_isAlive)
+            if (!IsAlive)
             {
                 return;
             }
@@ -111,15 +127,11 @@ namespace Monster.AI
                 return;
             }
 
-            _currentHealth = _monsterData.MaxHealth;
-
             // NavMeshAgent 설정
             _navAgent.speed = _monsterData.MoveSpeed;
             _navAgent.angularSpeed = _monsterData.RotationSpeed;
-            
+
             _homePosition = transform.position;
-            
-           
         }
 
         private void InitializeStateMachine()
@@ -148,26 +160,8 @@ namespace Monster.AI
             _isTethered = false;
         }
 
-        public void TakeDamage(float damage, Vector3 attackerPosition)
+        private void HandleDeath()
         {
-            if (!_isAlive)
-            {
-                return;
-            }
-
-            _currentHealth -= damage;
-
-            // TODO: Hit 상태 추가 시 피격 처리
-
-            if (_currentHealth <= 0)
-            {
-                Die();
-            }
-        }
-
-        private void Die()
-        {
-            _isAlive = false;
             _stateMachine?.ChangeState(EMonsterState.Dead);
 
             // EnemyGroup에서 제거 (GroupCommandProvider에 위임)
@@ -176,7 +170,5 @@ namespace Monster.AI
             // MonsterTracker에서 제거
             MonsterTracker.MonsterTracker.Instance?.UnregisterMonster(this);
         }
-
-        
     }
 }
