@@ -21,7 +21,9 @@ namespace Monster.Data
         [Header("테스트 옵션")]
         [Tooltip("공격 모드 (AI 테스트용)")]
         [SerializeField] private EAttackMode _attackMode = EAttackMode.Both;
-        
+        [Tooltip("Cascading Push-back 활성화 (AI 테스트용)")]
+        [SerializeField] private bool _enablePushback = true;
+
         [Header("기본 정보")]
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
@@ -107,6 +109,7 @@ namespace Monster.Data
 
         // 전투 리듬
         public EAttackMode AttackMode => _attackMode;
+        public bool EnablePushback => _enablePushback;
         public float LightAttackChance => _lightAttackChance;
         public float HeavyAttackChance => _heavyAttackChance;
         public float HeavyAttackCooldown => _heavyAttackCooldown;

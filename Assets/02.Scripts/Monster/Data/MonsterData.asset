@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: MonsterData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectG.Monster.MonsterData
   _attackMode: 0
+  _enablePushback: 1
   _monsterName: Test
   _monsterLevel: 1
   _maxHealth: 100

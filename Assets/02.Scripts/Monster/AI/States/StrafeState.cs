@@ -245,8 +245,11 @@ namespace Monster.AI.States
                 _probeTarget = _transform.position + dirAway * backoffDistance;
                 _probeTarget.y = _transform.position.y;
 
-                // Cascading push-back 요청
-                _controller.RequestPushback(dirAway, backoffDistance);
+                // Cascading push-back 요청 (옵션이 활성화된 경우에만)
+                if (_controller.Data.EnablePushback)
+                {
+                    _controller.RequestPushback(dirAway, backoffDistance);
+                }
 
                 PickMode(EProbeMode.FeintOut, 0.2f, 0.3f);
             }
