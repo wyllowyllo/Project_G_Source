@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 몬스터들의 원하는 위치를 할당하는 클래스.
-    /// 거리 밴드, 각도, 분리력 등을 종합하여 최종 위치를 계산합니다.
-    /// </summary>
+    // 몬스터들의 원하는 위치를 할당 (거리 밴드, 각도, 분리력 종합)
     public class PositionAssigner
     {
         private readonly Dictionary<MonsterController, float> _desiredAngleDeg;
@@ -28,9 +25,6 @@ namespace Monster.Group
             _separationWeight = separationWeight;
         }
 
-        /// <summary>
-        /// 재배치 대상 몬스터를 선정합니다 (공격 슬롯이 없는 몬스터만).
-        /// </summary>
         public List<MonsterController> SelectRelocationCandidates(
             List<MonsterController> allMonsters,
             Func<MonsterController, bool> hasSlotPredicate)
@@ -54,9 +48,6 @@ namespace Monster.Group
             return candidates;
         }
 
-        /// <summary>
-        /// 후보를 플레이어와의 거리 순으로 정렬합니다 (가까운 순).
-        /// </summary>
         public void SortByDistanceToPlayer(List<MonsterController> candidates, Vector3 playerPos)
         {
             candidates.Sort((a, b) =>
@@ -67,9 +58,6 @@ namespace Monster.Group
             });
         }
 
-        /// <summary>
-        /// 몬스터의 3D 위치를 계산합니다 (거리 밴드, 각도, 분리력 적용).
-        /// </summary>
         public void CalculatePositions(
             List<MonsterController> allMonsters,
             Vector3 playerPos,
@@ -120,9 +108,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 거리 밴드를 적용하여 위치를 조정합니다.
-        /// </summary>
         private Vector3 ApplyDistanceBand(
             Vector3 playerPos,
             Vector3 monsterPosition,
@@ -149,9 +134,6 @@ namespace Monster.Group
             return monsterPosition;
         }
 
-        /// <summary>
-        /// 각도와 반경으로부터 3D 위치를 계산합니다.
-        /// </summary>
         private Vector3 CalculatePositionFromAngle(Vector3 playerPos, Vector3 playerForward, float angle, float radius)
         {
             Quaternion rotation = Quaternion.Euler(0f, angle, 0f);
@@ -159,9 +141,6 @@ namespace Monster.Group
             return playerPos + direction * radius;
         }
 
-        /// <summary>
-        /// 원하는 위치를 가져옵니다.
-        /// </summary>
         public Vector3 GetDesiredPosition(MonsterController monster)
         {
             if (monster == null)

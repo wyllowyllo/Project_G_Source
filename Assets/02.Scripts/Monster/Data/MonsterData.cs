@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace Monster.Data
 {
-    /// <summary>
-    /// 공격 모드 (AI 테스트용)
-    /// </summary>
+    // 공격 모드 (AI 테스트용)
     public enum EAttackMode
     {
         Both,       // 약공 + 강공 둘 다 사용
@@ -12,9 +10,7 @@ namespace Monster.Data
         HeavyOnly   // 강공만 사용 (약공 없음)
     }
 
-    /// <summary>
-    /// 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject.
-    /// </summary>
+    // 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject
     [CreateAssetMenu(fileName = "MonsterData", menuName = "ProjectG/Monster/MonsterData")]
     public class MonsterData : ScriptableObject
     {

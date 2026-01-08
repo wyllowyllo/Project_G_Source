@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// Line of Sight (시야) 체크를 담당하는 클래스.
-    /// 두 지점 사이의 시야 차단 여부를 판정합니다.
-    /// </summary>
+    // Line of Sight 체크 (두 지점 사이의 시야 차단 여부 판정)
     public class LineOfSightChecker
     {
         private readonly LayerMask _losBlockMask;
@@ -16,9 +13,6 @@ namespace Monster.Group
             _losBlockMask = losBlockMask;
         }
 
-        /// <summary>
-        /// 두 지점 사이에 시야가 확보되었는지 확인합니다.
-        /// </summary>
         public bool HasLineOfSight(Vector3 from, Vector3 to)
         {
             Vector3 startPos = from + Vector3.up * CheckHeight;

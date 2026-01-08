@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 공격자 선정을 담당하는 클래스.
-    /// 점수 기반으로 공격 슬롯을 할당합니다.
-    /// </summary>
+    // 공격자 선정을 담당 (점수 기반 공격 슬롯 할당)
     public class AttackerSelector
     {
         private readonly AttackSlotManager _slotManager;
@@ -31,9 +28,6 @@ namespace Monster.Group
             _nextAttackAssignTime = 0f;
         }
 
-        /// <summary>
-        /// 공격자를 점수 기반으로 선정하고 슬롯을 할당합니다.
-        /// </summary>
         public void AssignAttackersByScore(
             List<MonsterController> allMonsters,
             Func<MonsterController, bool> requestSlotFunc,

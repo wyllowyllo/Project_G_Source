@@ -5,9 +5,7 @@ using UnityEngine.Events;
 
 namespace Monster.MonsterTracker
 {
-    /// <summary>
-    /// 전체 몬스터를 추적하고 클리어 조건을 체크하는 매니저
-    /// </summary>
+    // 전체 몬스터를 추적하고 클리어 조건을 체크하는 매니저
     public class MonsterTracker : MonoBehaviour
     {
         public static MonsterTracker Instance { get; private set; }
@@ -42,9 +40,6 @@ namespace Monster.MonsterTracker
             }
         }
 
-        /// <summary>
-        /// 몬스터 등록 (SpawnGroup에서 호출)
-        /// </summary>
         public void RegisterMonster(MonsterController monster)
         {
             if (monster == null)
@@ -64,9 +59,6 @@ namespace Monster.MonsterTracker
             }
         }
 
-        /// <summary>
-        /// 몬스터 제거 (몬스터 사망 시 호출)
-        /// </summary>
         public void UnregisterMonster(MonsterController monster)
         {
             if (_allMonsters.Remove(monster))
@@ -80,22 +72,23 @@ namespace Monster.MonsterTracker
             }
         }
 
-        /// <summary>
-        /// 모든 살아있는 몬스터 반환
-        /// </summary>
         public List<MonsterController> GetAliveMonsters()
         {
-            _allMonsters.RemoveAll(m => m == null || !m.IsAlive);
             return new List<MonsterController>(_allMonsters);
         }
 
-        /// <summary>
-        /// 살아있는 몬스터 수 반환 (최적화: 불필요한 리스트 생성 제거)
-        /// </summary>
         public int GetAliveMonsterCount()
         {
-            _allMonsters.RemoveAll(m => m == null || !m.IsAlive);
             return _allMonsters.Count;
+        }
+
+        public void CleanupDestroyedMonsters()
+        {
+            int removed = _allMonsters.RemoveAll(m => m == null || !m.IsAlive);
+            if (removed > 0 && _showDebugInfo)
+            {
+                Debug.LogWarning($"MonsterTracker: {removed}개의 비정상 제거된 몬스터 정리");
+            }
         }
 
        
@@ -119,9 +112,6 @@ namespace Monster.MonsterTracker
             }
         }
 
-        /// <summary>
-        /// 클리어 상태 초기화 (재시작 시 호출)
-        /// </summary>
         public void ResetClearState()
         {
             _isCleared = false;

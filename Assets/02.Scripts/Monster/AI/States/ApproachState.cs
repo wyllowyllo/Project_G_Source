@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 플레이어에게 접근
-    /// </summary>
+    // 플레이어에게 접근하는 상태
     public class ApproachState : IMonsterState
     {
         private readonly MonsterController _controller;

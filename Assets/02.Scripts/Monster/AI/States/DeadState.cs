@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 몬스터의 사망 상태
-    /// </summary>
+    // 몬스터의 사망 상태
     public class DeadState : IMonsterState
     {
         private readonly MonsterController _controller;

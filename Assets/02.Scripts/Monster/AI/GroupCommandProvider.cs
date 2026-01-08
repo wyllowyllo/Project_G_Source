@@ -27,49 +27,37 @@ namespace Monster.AI
 
         // ===== EnemyGroup 상호작용 메서드 =====
 
-        /// <summary>
-        /// EnemyGroup 설정
-        /// </summary>
+        // EnemyGroup 설정
         public void SetEnemyGroup(EnemyGroup group)
         {
             _enemyGroup = group;
         }
         
-        /// <summary>
-        /// 공격 슬롯 반환 (EnemyGroup에 위임)
-        /// </summary>
+        // 공격 슬롯 반환 (EnemyGroup에 위임)
         public void ReleaseAttackSlot()
         {
             _enemyGroup?.ReleaseAttackSlot(_owner);
         }
 
-        /// <summary>
-        /// 공격 가능 여부 확인 (EnemyGroup에 위임)
-        /// </summary>
+        // 공격 가능 여부 확인 (EnemyGroup에 위임)
         public bool CanAttack()
         {
             return _enemyGroup?.CanAttack(_owner) ?? false;
         }
 
-        /// <summary>
-        /// 원하는 위치 가져오기 (EnemyGroup에 위임)
-        /// </summary>
+        // 원하는 위치 가져오기 (EnemyGroup에 위임)
         public Vector3 GetDesiredPosition()
         {
             return _enemyGroup?.GetDesiredPosition(_owner) ?? _owner.transform.position;
         }
 
-        /// <summary>
-        /// 후퇴 시 cascading push-back 요청 (EnemyGroup에 위임)
-        /// </summary>
+        // 후퇴 시 cascading push-back 요청 (EnemyGroup에 위임)
         public void RequestPushback(Vector3 retreatDirection, float distance)
         {
             _enemyGroup?.RequestPushback(_owner, retreatDirection, distance);
         }
 
-        /// <summary>
-        /// EnemyGroup에서 몬스터 등록 해제 (EnemyGroup에 위임)
-        /// </summary>
+        // EnemyGroup에서 몬스터 등록 해제 (EnemyGroup에 위임)
         public void UnregisterFromGroup()
         {
             _enemyGroup?.UnregisterMonster(_owner);

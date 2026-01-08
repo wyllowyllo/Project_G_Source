@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 회복 상태
-    /// 공격 후 그 자리에서 잠깐 멈춰서 추스른 후 다시 전투로 복귀합니다.
-    /// </summary>
+    // 회복 상태: 공격 후 그 자리에서 잠깐 멈춰서 추스른 후 다시 전투로 복귀
     public class RecoverState : IMonsterState
     {
         private readonly MonsterController _controller;

@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Monster.Data
 {
-    /// <summary>
-    /// 몬스터 스킬 패턴 데이터.
-    /// 텔레그래프 → 실행 → 후딜 구조를 정의합니다.
-    /// </summary>
+    // 몬스터 스킬 패턴 데이터 (텔레그래프 → 실행 → 후딜 구조)
     [CreateAssetMenu(fileName = "SkillData", menuName = "ProjectG/Monster/SkillData")]
     public class SkillData : ScriptableObject
     {
@@ -44,9 +41,6 @@ namespace Monster.Data
         public float Cooldown => _cooldown;
         public string AnimationTrigger => _animationTrigger;
 
-        /// <summary>
-        /// 스킬 전체 실행 시간
-        /// </summary>
         public float TotalDuration => _windupTime + _executeTime + _recoverTime;
     }
 }

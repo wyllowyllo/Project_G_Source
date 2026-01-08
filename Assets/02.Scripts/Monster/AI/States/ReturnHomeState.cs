@@ -2,10 +2,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 귀환 상태
-    /// 테더 범위를 벗어났을 때 홈 포지션으로 복귀합니다.
-    /// </summary>
+    // 귀환 상태: 테더 범위를 벗어났을 때 홈 포지션으로 복귀
     public class ReturnHomeState : IMonsterState
     {
         private readonly MonsterController _controller;

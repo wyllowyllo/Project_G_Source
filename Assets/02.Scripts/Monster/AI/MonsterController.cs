@@ -8,10 +8,7 @@ using UnityEngine.AI;
 
 namespace Monster.AI
 {
-    /// <summary>
-    /// 몬스터의 핵심 동작을 제어하는 컨트롤러.
-    /// FSM을 사용하여 상태별 동작을 관리합니다.
-    /// </summary>
+    // 몬스터의 핵심 동작을 제어 (FSM 기반 상태별 동작 관리)
     [RequireComponent(typeof(NavMeshAgent),typeof(Combatant))]
     public class MonsterController : MonoBehaviour
     {
@@ -40,17 +37,14 @@ namespace Monster.AI
 
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
-        public float CurrentHealth => _combatant?.CurrentHealth ?? 0f;
         public Color OriginalMaterialColor => _originalMaterialColor;
         public MonsterData Data => _monsterData;
 
         public NavMeshAgent NavAgent => _navAgent;
-        public Combatant Combatant => _combatant;
         public Transform PlayerTransform => _playerTransform;
-        public MonsterStateMachine StateMachine => _stateMachine;
+      
         public GroupCommandProvider GroupCommandProvider => _groupCommandProvider;
-
-        // 프로퍼티
+        
         public Vector3 HomePosition => _homePosition;
         
        

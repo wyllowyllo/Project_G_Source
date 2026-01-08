@@ -4,9 +4,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 공격 슬롯을 관리하여 동시에 공격하는 몬스터 수를 제한하는 클래스.
-    /// </summary>
+    // 공격 슬롯을 관리하여 동시에 공격하는 몬스터 수를 제한
     public class AttackSlotManager
     {
         private readonly int _maxSlots;
@@ -22,11 +20,6 @@ namespace Monster.Group
             _activeSlots = new List<MonsterController>(_maxSlots);
         }
 
-        /// <summary>
-        /// 공격 슬롯 요청
-        /// </summary>
-        /// <param name="monster">요청하는 몬스터</param>
-        /// <returns>슬롯 획득 성공 여부</returns>
         public bool RequestSlot(MonsterController monster)
         {
             if (monster == null)
@@ -53,10 +46,6 @@ namespace Monster.Group
             return true;
         }
 
-        /// <summary>
-        /// 공격 슬롯 반환
-        /// </summary>
-        /// <param name="monster">반환하는 몬스터</param>
         public void ReleaseSlot(MonsterController monster)
         {
             if (monster == null)
@@ -70,11 +59,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 특정 몬스터가 슬롯을 보유하고 있는지 확인
-        /// </summary>
-        /// <param name="monster">확인할 몬스터</param>
-        /// <returns>슬롯 보유 여부</returns>
         public bool HasSlot(MonsterController monster)
         {
             if (monster == null)
@@ -85,26 +69,17 @@ namespace Monster.Group
             return _activeSlots.Contains(monster);
         }
 
-        /// <summary>
-        /// 모든 슬롯 초기화
-        /// </summary>
         public void ClearAllSlots()
         {
             _activeSlots.Clear();
             Debug.Log("AttackSlotManager: 모든 슬롯 초기화");
         }
 
-        /// <summary>
-        /// 슬롯이 가득 찼는지 확인
-        /// </summary>
         public bool IsFull()
         {
             return _activeSlots.Count >= _maxSlots;
         }
 
-        /// <summary>
-        /// 슬롯이 비어있는지 확인
-        /// </summary>
         public bool IsEmpty()
         {
             return _activeSlots.Count == 0;

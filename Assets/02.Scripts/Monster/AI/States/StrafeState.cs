@@ -3,10 +3,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 스트레이프 상태.
-    /// 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동합니다.
-    /// </summary>
+    // 스트레이프 상태: 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동
     public class StrafeState : IMonsterState
     {
         private readonly MonsterController _controller;

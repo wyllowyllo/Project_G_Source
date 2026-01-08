@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 몬스터 그룹의 전투를 운영하는 핵심 클래스 (Facade 패턴).
-    /// 각 전문 컴포넌트를 조율하여 그룹 전술을 구현합니다.
-    /// </summary>
+    // 몬스터 그룹의 전투를 운영하는 핵심 클래스 (Facade 패턴)
     public class EnemyGroup : MonoBehaviour
     {
         [Header("그룹 설정")]
@@ -79,9 +76,6 @@ namespace Monster.Group
                 return;
             }
 
-            // 죽은 참조 정리
-            _monsters.RemoveAll(m => m == null || !m.IsAlive);
-
             float now = Time.time;
 
             // 디렉터 틱
@@ -151,9 +145,6 @@ namespace Monster.Group
 
         // ===== 몬스터 등록/해제 =====
 
-        /// <summary>
-        /// 몬스터를 그룹에 등록
-        /// </summary>
         public void RegisterMonster(MonsterController monster)
         {
             if (monster == null) return;
@@ -174,9 +165,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 몬스터를 그룹에서 제거
-        /// </summary>
         public void UnregisterMonster(MonsterController monster)
         {
             if (monster == null) return;
@@ -192,9 +180,6 @@ namespace Monster.Group
 
         // ===== 플레이어 참조 =====
 
-        /// <summary>
-        /// 플레이어 참조를 설정합니다.
-        /// </summary>
         public void FindPlayer()
         {
             if (PlayerReferenceProvider.Instance != null)
@@ -210,34 +195,22 @@ namespace Monster.Group
 
         // ===== 공격 슬롯 API =====
 
-        /// <summary>
-        /// 공격 슬롯 요청
-        /// </summary>
         public bool RequestAttackSlot(MonsterController monster)
         {
             if (_slotManager == null) return false;
             return _slotManager.RequestSlot(monster);
         }
 
-        /// <summary>
-        /// 공격 슬롯 반환
-        /// </summary>
         public void ReleaseAttackSlot(MonsterController monster)
         {
             _slotManager?.ReleaseSlot(monster);
         }
 
-        /// <summary>
-        /// 공격 가능 여부 확인
-        /// </summary>
         public bool CanAttack(MonsterController monster)
         {
             return _slotManager?.HasSlot(monster) ?? false;
         }
 
-        /// <summary>
-        /// 슬롯 보유 여부 확인 (내부용)
-        /// </summary>
         private bool HasSlot(MonsterController monster)
         {
             return _slotManager?.HasSlot(monster) ?? false;
@@ -245,17 +218,11 @@ namespace Monster.Group
 
         // ===== 위치 API =====
 
-        /// <summary>
-        /// 원하는 위치 제공
-        /// </summary>
         public Vector3 GetDesiredPosition(MonsterController monster)
         {
             return _positionDirector.GetDesiredPosition(monster);
         }
 
-        /// <summary>
-        /// Cascading push-back 요청 (Law of Demeter 준수)
-        /// </summary>
         public void RequestPushback(MonsterController pusher, Vector3 retreatDirection, float distance)
         {
             _pushbackCoordinator?.ProcessPushback(pusher, retreatDirection, distance);

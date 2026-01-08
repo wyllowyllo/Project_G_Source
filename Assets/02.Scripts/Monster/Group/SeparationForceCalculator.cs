@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 몬스터 간 분리력(Separation Force)을 계산하는 클래스.
-    /// 몬스터들이 서로 겹치지 않도록 밀어내는 힘을 계산합니다.
-    /// </summary>
+    // 몬스터 간 분리력 계산 (겹치지 않도록 밀어내는 힘)
     public class SeparationForceCalculator
     {
         private readonly float _separationRadius;
@@ -17,9 +14,6 @@ namespace Monster.Group
             _separationRadius = separationRadius;
         }
 
-        /// <summary>
-        /// 특정 몬스터에 대한 분리력을 계산합니다.
-        /// </summary>
         public Vector3 ComputeSeparation(MonsterController self, List<MonsterController> allMonsters)
         {
             if (self == null)

@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 공격자 선정을 위한 점수를 계산하는 클래스.
-    /// 거리, 각도, 공정성, 혼잡도 등을 종합하여 점수를 산출합니다.
-    /// </summary>
+    // 공격자 선정을 위한 점수 계산 (거리, 각도, 공정성, 혼잡도 종합)
     public class AttackScoreCalculator
     {
         private readonly LineOfSightChecker _losChecker;
@@ -43,17 +40,11 @@ namespace Monster.Group
             _recentAttackerPenaltySeconds = recentAttackerPenaltySeconds;
         }
 
-        /// <summary>
-        /// 플레이어 Transform 설정
-        /// </summary>
         public void SetPlayerTransform(Transform playerTransform)
         {
             _playerTransform = playerTransform;
         }
 
-        /// <summary>
-        /// 특정 몬스터의 공격 점수를 계산합니다.
-        /// </summary>
         public float CalculateScore(MonsterController monster, float currentTime)
         {
             if (monster == null || _playerTransform == null)
@@ -94,18 +85,12 @@ namespace Monster.Group
             return score;
         }
 
-        /// <summary>
-        /// 공격 범위 내에 있는지 확인
-        /// </summary>
         private bool IsWithinAttackRange(MonsterController monster, float distance)
         {
             float maxDistance = monster.Data.AttackRange + _attackRangeBuffer + 2.0f;
             return distance <= maxDistance;
         }
 
-        /// <summary>
-        /// 거리 기반 점수 계산
-        /// </summary>
         private float CalculateDistanceScore(float distance, float attackRange)
         {
             float idealDistance = attackRange + 0.25f;
@@ -113,9 +98,6 @@ namespace Monster.Group
             return distanceScore * 3.0f;
         }
 
-        /// <summary>
-        /// 각도 기반 점수 계산 (측면 공격 선호)
-        /// </summary>
         private float CalculateAngleScore(Vector3 monsterPosition, Vector3 playerPosition)
         {
             Vector3 playerForward = _playerTransform.forward;
@@ -138,9 +120,6 @@ namespace Monster.Group
             return sideScore * _sideAngleWeight;
         }
 
-        /// <summary>
-        /// 공정성 보정 값 계산 (최근 공격자는 페널티, 오래 대기한 몬스터는 보너스)
-        /// </summary>
         private float CalculateFairnessModifier(MonsterController monster, float currentTime)
         {
             float lastAttackTime = _lastAttackTimes.TryGetValue(monster, out var time) ? time : -9999f;
@@ -157,9 +136,6 @@ namespace Monster.Group
             return 1f + bonus;
         }
 
-        /// <summary>
-        /// 혼잡도 페널티 계산 (주변 몬스터가 많을수록 감점)
-        /// </summary>
         private float CalculateCrowdPenalty(MonsterController monster)
         {
             int nearbyCount = CountNearbyMonsters(monster);
@@ -170,9 +146,6 @@ namespace Monster.Group
             return 0.7f;
         }
 
-        /// <summary>
-        /// 주변 몬스터 수 계산
-        /// </summary>
         private int CountNearbyMonsters(MonsterController monster)
         {
             const float NearbyRadius = 1.2f;
@@ -201,9 +174,6 @@ namespace Monster.Group
             return count;
         }
 
-        /// <summary>
-        /// 가우시안 함수 계산 (0~1 범위)
-        /// </summary>
         private float CalculateGaussian(float x, float mean, float sigma)
         {
             float difference = x - mean;

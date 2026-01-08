@@ -3,11 +3,8 @@ using UnityEngine.AI;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 공격 상태
-    /// Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성됩니다.
-    /// 공격 슬롯 시스템과 연동하여 동시 공격을 제한합니다.
-    /// </summary>
+    // 공격 상태: Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성
+    // 공격 슬롯 시스템과 연동하여 동시 공격을 제한
     public class AttackState : IMonsterState
     {
         private readonly MonsterController _controller;
@@ -348,9 +345,7 @@ namespace Monster.AI.States
                 _stateMachine.ChangeState(EMonsterState.Strafe);
         }
 
-        /// <summary>
-        /// 플레이어까지 직접 시야가 확보되었는지 확인 (다른 몬스터에게 가로막히지 않았는지)
-        /// </summary>
+        // 플레이어까지 직접 시야가 확보되었는지 확인 (다른 몬스터에게 가로막히지 않았는지)
         private bool HasDirectLineOfSightToPlayer()
         {
             Vector3 startPosition = _transform.position + Vector3.up * 1.0f; // 몬스터 중심 높이

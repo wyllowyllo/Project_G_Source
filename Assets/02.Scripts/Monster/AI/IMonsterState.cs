@@ -2,9 +2,7 @@ using Monster.AI;
 
 namespace Monster
 {
-    /// <summary>
-    /// 몬스터 상태의 기본 인터페이스.
-    /// </summary>
+    // 몬스터 상태의 기본 인터페이스
     public interface IMonsterState
     {
        

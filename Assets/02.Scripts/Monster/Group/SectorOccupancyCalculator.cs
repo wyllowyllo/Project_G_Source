@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 플레이어 주변 섹터별 점유도를 계산하는 클래스.
-    /// 360도를 여러 섹터로 나누어 각 섹터의 밀집도를 관리합니다.
-    /// </summary>
+    // 플레이어 주변 섹터별 점유도 계산 (360도를 섹터로 나누어 밀집도 관리)
     public class SectorOccupancyCalculator
     {
         private readonly int _sectorCount;
@@ -21,9 +18,6 @@ namespace Monster.Group
             _sectorSpreadJitterDeg = sectorSpreadJitterDeg;
         }
 
-        /// <summary>
-        /// 각 섹터의 점유도를 계산합니다.
-        /// </summary>
         public float[] CalculateSectorOccupancy(List<MonsterController> monsters, Vector3 playerPos, Vector3 playerForward)
         {
             float[] occupancy = new float[_sectorCount];
@@ -57,9 +51,6 @@ namespace Monster.Group
             return occupancy;
         }
 
-        /// <summary>
-        /// 가장 점유도가 낮은 섹터를 선택합니다 (전방 편향 포함).
-        /// </summary>
         public int SelectLeastOccupiedSector(float[] occupancy, float avoidFrontBias)
         {
             int bestSector = 0;
@@ -85,17 +76,11 @@ namespace Monster.Group
             return bestSector;
         }
 
-        /// <summary>
-        /// 섹터 각도에 지터(랜덤 오프셋)를 적용합니다.
-        /// </summary>
         public float ApplyJitter(float angle)
         {
             return angle + Random.Range(-_sectorSpreadJitterDeg, _sectorSpreadJitterDeg);
         }
 
-        /// <summary>
-        /// 각도를 섹터 인덱스로 변환 ([-180, 180] → [0, sectorCount))
-        /// </summary>
         private int AngleToSector(float signedAngle)
         {
             float normalizedAngle = (signedAngle + 180f) / 360f;
@@ -103,9 +88,6 @@ namespace Monster.Group
             return Mathf.Clamp(index, 0, _sectorCount - 1);
         }
 
-        /// <summary>
-        /// 섹터 인덱스를 각도로 변환 (섹터 중심 각도 반환: [-180, 180])
-        /// </summary>
         public float SectorToAngle(int sectorIndex)
         {
             float step = 360f / _sectorCount;

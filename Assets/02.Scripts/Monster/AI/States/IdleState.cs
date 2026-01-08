@@ -2,9 +2,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    /// <summary>
-    /// 대기 상태
-    /// </summary>
+    // 대기 상태
     public class IdleState : IMonsterState
     {
         private readonly MonsterController _controller;

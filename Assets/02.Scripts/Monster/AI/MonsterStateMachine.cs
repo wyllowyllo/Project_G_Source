@@ -4,9 +4,7 @@ using UnityEngine;
 
 namespace Monster
 {
-    /// <summary>
-    /// 몬스터의 상태를 관리하는 상태 머신.
-    /// </summary>
+    // 몬스터의 상태를 관리하는 상태 머신
     public class MonsterStateMachine
     {
         private readonly MonsterController _controller;
@@ -22,9 +20,7 @@ namespace Monster
             _states = new Dictionary<EMonsterState, IMonsterState>();
         }
 
-        /// <summary>
-        /// 상태를 등록합니다.
-        /// </summary>
+        // 상태를 등록
         public void RegisterState(EMonsterState stateType, IMonsterState state)
         {
             if (!_states.ContainsKey(stateType))
@@ -33,9 +29,7 @@ namespace Monster
             }
         }
 
-        /// <summary>
-        /// 초기 상태를 설정합니다.
-        /// </summary>
+        // 초기 상태를 설정
         public void Initialize(EMonsterState initialState)
         {
             if (_states.TryGetValue(initialState, out IMonsterState state))
@@ -49,17 +43,13 @@ namespace Monster
             }
         }
 
-        /// <summary>
-        /// 매 프레임 현재 상태를 업데이트합니다.
-        /// </summary>
+        // 매 프레임 현재 상태를 업데이트
         public void Update()
         {
             _currentState?.Update();
         }
 
-        /// <summary>
-        /// 상태를 전환합니다.
-        /// </summary>
+        // 상태를 전환
         public void ChangeState(EMonsterState newStateType)
         {
             if (_currentState?.StateType == newStateType)

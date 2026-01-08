@@ -4,10 +4,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 독립적으로 몬스터 그룹을 스폰하는 컴포넌트
-    /// 씬에 배치하여 구역별로 몬스터를 관리
-    /// </summary>
+    // 독립적으로 몬스터 그룹을 스폰 (씬에 배치하여 구역별 몬스터 관리)
     public class SpawnGroup : MonoBehaviour
     {
         [System.Serializable]
@@ -121,9 +118,6 @@ namespace Monster.Group
             return _spawnedMonsters;
         }
 
-        /// <summary>
-        /// 이 그룹의 살아있는 몬스터 수 반환
-        /// </summary>
         public int GetAliveMonsterCount()
         {
             return GetAliveMonsters().Count;

@@ -6,10 +6,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 몬스터들의 위치 할당을 조율하는 디렉터 클래스.
-    /// 섹터 기반 밀집도 관리, 재배치, 최종 위치 계산을 담당합니다.
-    /// </summary>
+    // 몬스터들의 위치 할당을 조율하는 디렉터 (섹터 기반 밀집도 관리)
     public class PositionDirector
     {
         private readonly SectorOccupancyCalculator _sectorCalculator;
@@ -33,9 +30,6 @@ namespace Monster.Group
             _avoidFrontBias = avoidFrontBias;
         }
 
-        /// <summary>
-        /// 모든 몬스터의 원하는 위치를 업데이트합니다.
-        /// </summary>
         public void UpdatePositions(
             List<MonsterController> allMonsters,
             Func<MonsterController, bool> hasSlotPredicate)
@@ -63,9 +57,6 @@ namespace Monster.Group
             _positionAssigner.CalculatePositions(allMonsters, playerPos, playerForward);
         }
 
-        /// <summary>
-        /// 섹터 점유도를 기반으로 몬스터들의 원하는 각도를 업데이트합니다.
-        /// </summary>
         private void UpdateDesiredAnglesBySectorOccupancy(
             List<MonsterController> allMonsters,
             Func<MonsterController, bool> hasSlotPredicate,
@@ -105,9 +96,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 공격권 보유 몬스터의 현재 각도를 유지합니다 (전열 안정성).
-        /// </summary>
         private void PreserveAttackerAngles(
             List<MonsterController> allMonsters,
             Func<MonsterController, bool> hasSlotPredicate,
@@ -139,9 +127,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 원하는 위치를 가져옵니다 (외부 API).
-        /// </summary>
         public Vector3 GetDesiredPosition(MonsterController monster)
         {
             return _positionAssigner.GetDesiredPosition(monster);

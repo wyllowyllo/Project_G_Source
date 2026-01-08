@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Monster.Group
 {
-    /// <summary>
-    /// 몬스터가 후퇴할 때 뒤쪽 몬스터들을 cascading 방식으로 밀어내는 컴포넌트.
-    /// 단일 책임 원칙(SRP)을 준수하여 cascading push-back만 담당합니다.
-    /// </summary>
+    // Cascading push-back 처리 (후퇴 시 뒤쪽 몬스터들을 밀어냄)
     public class PushbackCoordinator
     {
         private readonly List<MonsterController> _allMonsters;
@@ -22,12 +19,6 @@ namespace Monster.Group
 
         private bool _isProcessing = false;  // 재귀 방지
 
-        /// <summary>
-        /// PushbackCoordinator 생성자.
-        /// </summary>
-        /// <param name="allMonsters">그룹 내 모든 몬스터 리스트</param>
-        /// <param name="desiredPosition">몬스터별 목표 위치 Dictionary (EnemyGroup 공유)</param>
-        /// <param name="hasSlotPredicate">공격 슬롯 보유 여부 체크 함수</param>
         public PushbackCoordinator(
             List<MonsterController> allMonsters,
             Dictionary<MonsterController, Vector3> desiredPosition,
@@ -38,12 +29,6 @@ namespace Monster.Group
             _hasSlotPredicate = hasSlotPredicate;
         }
 
-        /// <summary>
-        /// Cascading push-back을 처리합니다.
-        /// </summary>
-        /// <param name="pusher">후퇴하는 몬스터</param>
-        /// <param name="retreatDirection">후퇴 방향 (정규화 필요 없음, 내부에서 처리)</param>
-        /// <param name="retreatDistance">후퇴 거리</param>
         public void ProcessPushback(MonsterController pusher, Vector3 retreatDirection, float retreatDistance)
         {
             if (_isProcessing)
@@ -93,9 +78,6 @@ namespace Monster.Group
             }
         }
 
-        /// <summary>
-        /// 원뿔형 범위 내에서 영향받을 몬스터들을 찾습니다.
-        /// </summary>
         private List<MonsterController> FindAffectedMonsters(MonsterController pusher, Vector3 retreatDirection)
         {
             var affected = new List<MonsterController>();
@@ -140,13 +122,6 @@ namespace Monster.Group
             return affected;
         }
 
-        /// <summary>
-        /// 거리와 공격 상태에 따라 밀림 강도를 계산합니다.
-        /// </summary>
-        /// <param name="distance">pusher로부터의 거리</param>
-        /// <param name="retreatDistance">pusher의 후퇴 거리</param>
-        /// <param name="monster">밀리는 몬스터</param>
-        /// <returns>밀림 강도 (0 이상)</returns>
         private float CalculatePushAmount(float distance, float retreatDistance, MonsterController monster)
         {
             // 공격 슬롯 보유자는 밀리지 않음 (전열 안정성 유지)
