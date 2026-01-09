@@ -23,13 +23,18 @@ public class PlayerHpBar : MonoBehaviour
     [SerializeField] private float _backHpDelay = 0.3f;
     [SerializeField] private int _firstLevel = 1;
 
+    [Header("Hp Color")]
+    [SerializeField] private Color32 _highHpColor = new Color32(0, 191, 5, 255);
+    [SerializeField] private Color32 _mediumHpColor = new Color32(255, 204, 0, 255);
+    [SerializeField] private Color32 _lowHpColor = new Color32(255, 77, 77, 255);
+
     [SerializeField] private PlayerProgression _playerProgression;
 
     private bool _backHpHit = false;
     private float _targetHp;
     private float _backHpDelayTimer;
 
-    private int _maxLevel = 30;
+    private const int _maxLevel = 30;
 
     private void OnEnable()
     {
@@ -150,6 +155,10 @@ public class PlayerHpBar : MonoBehaviour
                 }
             }
         }
+        else
+        {
+            BackSlider.value = HpSlider.value;
+        }
     }
 
     private void UpdateHpText()
@@ -164,15 +173,15 @@ public class PlayerHpBar : MonoBehaviour
 
         if (HpSlider.value > 0.5f)
         {
-            newColor = new Color32(0, 191, 5, 255);
+            newColor = _highHpColor;
         }
         else if (HpSlider.value > 0.3f)
         {
-            newColor = new Color(1f, 0.8f, 0f);
+            newColor = _mediumHpColor;
         }
         else
         {
-            newColor = new Color(1f, 0.3f, 0.3f);
+            newColor = _lowHpColor;
         }
 
         _hpFillImage.color = newColor;

@@ -9,7 +9,6 @@ public class UIExp : MonoBehaviour
 {
     [SerializeField] private PlayerProgression _playerProgression;
     [SerializeField] private Slider _expbar;
-    [SerializeField] private float _expLerpSpeed = 5f;
 
     [SerializeField] private Image _imageExpComplete;
 
