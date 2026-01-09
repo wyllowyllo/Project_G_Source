@@ -6,7 +6,6 @@ using System.Collections.Generic;
 
 public class SkillSystem : MonoBehaviour
 {
-    [SerializeField] private GraphicRaycaster _graphicRaycaster;
     [SerializeField] private UISkill[] _skills;
 
     private void Update()

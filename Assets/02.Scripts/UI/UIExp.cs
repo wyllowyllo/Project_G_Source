@@ -17,6 +17,11 @@ public class UIExp : MonoBehaviour
 
     [SerializeField] private TextMeshProUGUI _expText;
 
+    private float _levelUpSequenceDelay = 2f;
+
+    [Header("Exp Complete Color")]
+    [SerializeField] private Color32 _expCompleteColor = new Color32(255, 251, 213, 255);
+
     private float _displayExp;
     private int _previousXp;
     private int _previousMaxXp;
@@ -143,7 +148,7 @@ public class UIExp : MonoBehaviour
 
         StartCoroutine(ImageExpComplete_Coroutine());
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(_levelUpSequenceDelay);
 
         _previousXp = _playerProgression.CurrentXp;
         _previousMaxXp = _playerProgression.XpToNextLevel;
@@ -161,7 +166,7 @@ public class UIExp : MonoBehaviour
 
     private IEnumerator ImageExpComplete_Coroutine()
     {
-        Color color = new Color32(255, 251, 213, 255);
+        Color color = _expCompleteColor;
         color.a = 1f;
 
         _imageExpComplete.color = color;

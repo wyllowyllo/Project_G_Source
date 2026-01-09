@@ -9,7 +9,7 @@ public class UISkill : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _textSkillData;
     [SerializeField] private TextMeshProUGUI _textCooldownTime;
     [SerializeField] private Image _imageCooldownTime;
-    [SerializeField] private Image imageCooldownComplete;
+    [SerializeField] private Image _imageCooldownComplete;
 
     private float _currentCooldownTime;
     private bool _isCooldown;
@@ -93,8 +93,8 @@ public class UISkill : MonoBehaviour
         Color color = Color.white;
         color.a = 1f;
 
-        imageCooldownComplete.color = color;
-        imageCooldownComplete.gameObject.SetActive(true);
+        _imageCooldownComplete.color = color;
+        _imageCooldownComplete.gameObject.SetActive(true);
 
         float fadeDuration = 1f;
         float elapsed = 0f;
@@ -103,13 +103,13 @@ public class UISkill : MonoBehaviour
         {
             elapsed += Time.deltaTime;
             color.a = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
-            imageCooldownComplete.color = color;
+            _imageCooldownComplete.color = color;
             yield return null;
         }
 
         color.a = 0f;
-        imageCooldownComplete.color = color;
-        imageCooldownComplete.gameObject.SetActive(false);
+        _imageCooldownComplete.color = color;
+        _imageCooldownComplete.gameObject.SetActive(false);
     }
 
     private void SetCooldownIs(bool boolean)
