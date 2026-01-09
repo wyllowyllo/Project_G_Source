@@ -74,13 +74,19 @@ namespace Monster.Data
         [Tooltip("강공 쿨다운")]
         [SerializeField] private float _heavyAttackCooldown = 3.0f;
 
-        [Header("스트레이프 서브모드")]
-        [Tooltip("목표 위치 근처 도달 판정 거리")]
-        [SerializeField] private float _repositionStopRadius = 1.3f;
-        [Tooltip("셔플 이동 반경")]
-        [SerializeField] private float _shuffleRadius = 1.2f;
-        [Tooltip("페인트 이동 거리")]
-        [SerializeField] private float _feintStep = 0.8f;
+        [Header("스트레이프 행동")]
+        [Tooltip("원호 이동 각속도 (도/초)")]
+        [SerializeField] private float _circleAngularSpeed = 30f;
+        [Tooltip("스트레이프 행동 최소 지속 시간")]
+        [SerializeField] private float _strafeMinDuration = 1.5f;
+        [Tooltip("스트레이프 행동 최대 지속 시간")]
+        [SerializeField] private float _strafeMaxDuration = 3.5f;
+        [Tooltip("정지 상태 확률")]
+        [SerializeField, Range(0f, 1f)] private float _strafePauseChance = 0.2f;
+        [Tooltip("방향 전환 확률 (Circle 모드에서)")]
+        [SerializeField, Range(0f, 1f)] private float _directionChangeChance = 0.3f;
+        [Tooltip("속도 보간 계수 (높을수록 빠르게 가감속)")]
+        [SerializeField] private float _speedLerpFactor = 3f;
         
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
@@ -121,9 +127,12 @@ namespace Monster.Data
         public float HeavyAttackChance => _heavyAttackChance;
         public float HeavyAttackCooldown => _heavyAttackCooldown;
 
-        // 스트레이프 서브모드
-        public float RepositionStopRadius => _repositionStopRadius;
-        public float ShuffleRadius => _shuffleRadius;
-        public float FeintStep => _feintStep;
+        // 스트레이프 행동
+        public float CircleAngularSpeed => _circleAngularSpeed;
+        public float StrafeMinDuration => _strafeMinDuration;
+        public float StrafeMaxDuration => _strafeMaxDuration;
+        public float StrafePauseChance => _strafePauseChance;
+        public float DirectionChangeChance => _directionChangeChance;
+        public float SpeedLerpFactor => _speedLerpFactor;
     }
 }

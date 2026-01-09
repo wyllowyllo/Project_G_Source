@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Monster.AI.States
 {
-    // 스트레이프 상태: 거리 밴드 안에서 플레이어를 압박하며 좌우로 이동 (Ability 기반 리팩터링)
+    // 스트레이프 상태: 플레이어 주변을 자연스럽게 배회하며 공격 기회를 엿봄
     public class StrafeState : IMonsterState
     {
         private readonly MonsterController _controller;
@@ -18,17 +18,28 @@ namespace Monster.AI.States
         private readonly FacingAbility _facingAbility;
         private readonly AnimatorAbility _animatorAbility;
 
-        // Probe 서브모드
-        private enum EProbeMode { Reposition, Hold, Shuffle, FeintIn, FeintOut }
+        // 행동 모드 (단순화)
+        private enum EStrafeMode
+        {
+            Circle,         // 플레이어 주변을 원호로 이동
+            AdjustDistance, // 거리 조절 (전진/후퇴)
+            Pause           // 잠시 정지하고 관찰
+        }
 
-        private EProbeMode _mode;
+        private EStrafeMode _currentMode;
         private float _modeTimer;
         private float _modeDuration;
 
-        // 셔플/페이크용
-        private Vector3 _probeTarget;
+        // 원호 이동용
+        private int _circleDirection; // 1: 시계방향, -1: 반시계방향
 
-        // 프로퍼티
+        // 부드러운 이동을 위한 보간
+        private Vector3 _currentVelocity;
+        private Vector3 _targetVelocity;
+
+        // 캐시
+        private MonsterData Data => _controller.Data;
+
         public EMonsterState StateType => EMonsterState.Strafe;
 
         public StrafeState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
@@ -46,197 +57,53 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            _navAgentAbility?.Resume();
-
-            // 애니메이션: 전투 모드
             _animatorAbility?.SetInCombat(true);
 
-            EnsureMinimumDistance();
+            _currentVelocity = Vector3.zero;
+            _targetVelocity = Vector3.zero;
+
+            // 초기 방향 랜덤 선택
+            _circleDirection = Random.value < 0.5f ? 1 : -1;
+
+            // 거리 체크 후 초기 모드 결정
+            DecideInitialMode();
         }
 
         public void Update()
         {
             float now = Time.time;
 
-           
+            // 너무 멀어지면 접근 상태로 전환
             if (_playerDetectAbility.IsTooFar())
             {
                 _stateMachine.ChangeState(EMonsterState.Approach);
                 return;
             }
 
-            Vector3 desired = _groupCommandProvider.GetDesiredPosition();
-
-           
-            EAttackMode attackMode = _controller.Data.AttackMode;
-
-            // 약공 실행 시도 (Both 또는 LightOnly 모드일 때만)
-            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
+            // 공격 시도
+            if (TryAttack(now))
             {
-                if (TryExecuteLightAttack(desired, now))
-                {
-                    return;
-                }
+                return;
             }
 
-            // 강공 실행 시도 (Both 또는 HeavyOnly 모드일 때만)
-            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
-            {
-                if (TryExecuteHeavyAttack(now))
-                {
-                    return;
-                }
-            }
+            // 항상 플레이어를 바라봄
+            LookAtPlayer();
 
-
+            // 현재 모드에 따른 행동 실행
             _modeTimer += Time.deltaTime;
+            ExecuteCurrentMode();
 
-            switch (_mode)
-            {
-                case EProbeMode.Reposition:
-                    DoReposition(desired);
-                    break;
-                case EProbeMode.Hold:
-                    DoHold();
-                    break;
-                case EProbeMode.Shuffle:
-                    DoShuffle(desired);
-                    break;
-                case EProbeMode.FeintIn:
-                    DoFeint(desired, towardPlayer: true);
-                    break;
-                case EProbeMode.FeintOut:
-                    DoFeint(desired, towardPlayer: false);
-                    break;
-            }
-
+            // 모드 지속 시간 완료 시 다음 모드 선택
             if (_modeTimer >= _modeDuration)
             {
-                ChooseNextProbeMode(desired);
+                ChooseNextMode();
             }
 
-            // 애니메이션: 이동 방향 업데이트
-            UpdateMoveAnimation();
-        }
+            // 부드러운 속도 보간 적용
+            ApplySmoothedMovement();
 
-        private void UpdateMoveAnimation()
-        {
-            if (_animatorAbility == null) return;
-
-            Vector3 velocity = _navAgentAbility?.Velocity ?? Vector3.zero;
-            Vector3 localVelocity = _transform.InverseTransformDirection(velocity);
-
-            float strafeSpeed = _controller.Data.StrafeSpeed;
-            float moveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
-            float moveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
-
-            _animatorAbility.SetMoveDirection(moveX, moveY);
-        }
-
-        private void DoReposition(Vector3 desired)
-        {
-            if (!_navAgentAbility.IsActive) return;
-
-            float dist = Vector3.Distance(_transform.position, desired);
-
-           
-            if (dist <= _controller.Data.RepositionStopRadius)
-            {
-                PickMode(Random.value < 0.55f ? EProbeMode.Hold : EProbeMode.Shuffle, 0.25f, 0.6f);
-                return;
-            }
-
-           
-            _navAgentAbility.Resume();
-            _navAgentAbility.SetDestination(desired);
-        }
-
-        private void DoHold()
-        {
-           
-            _navAgentAbility.Stop();
-            LookAtTarget();
-        }
-
-        private void DoShuffle(Vector3 desired)
-        {
-            if (!_navAgentAbility.IsActive) return;
-
-            // 목표 자리 근방에서 작은 원호 이동("슬금슬금")
-            if (_modeTimer <= 0.01f)
-            {
-                Vector3 center = desired;
-                Vector3 toSelf = (_transform.position - center);
-                toSelf.y = 0f;
-                toSelf.Normalize();
-
-                Vector3 tangent = Vector3.Cross(Vector3.up, toSelf) * (Random.value < 0.5f ? 1f : -1f);
-                float shuffleRadius = _controller.Data.ShuffleRadius;
-                _probeTarget = center + (toSelf * shuffleRadius) + (tangent * (shuffleRadius * 0.6f));
-                _probeTarget.y = _transform.position.y;
-            }
-
-            // Ability에 명령: 목표 위치로 이동
-            _navAgentAbility.Resume();
-            _navAgentAbility.SetDestination(_probeTarget);
-
-            LookAtTarget();
-        }
-
-        private void DoFeint(Vector3 desired, bool towardPlayer)
-        {
-            if (!_navAgentAbility.IsActive) return;
-
-            if (_modeTimer <= 0.01f)
-            {
-               
-                Vector3 dir = _playerDetectAbility.DirectionToPlayer();
-
-                if (!towardPlayer) dir = -dir;
-
-                _probeTarget = _transform.position + dir * _controller.Data.FeintStep;
-                _probeTarget.y = _transform.position.y;
-            }
-
-            
-            _navAgentAbility.Resume();
-            _navAgentAbility.SetDestination(_probeTarget);
-
-            LookAtTarget();
-        }
-
-        private void ChooseNextProbeMode(Vector3 desired)
-        {
-            
-            float distance = Vector3.Distance(_transform.position, desired);
-            if (distance > _controller.Data.RepositionStopRadius * 1.25f)
-            {
-                PickMode(EProbeMode.Reposition, 0.2f, 0.35f);
-                return;
-            }
-
-            // 목표 근처면 Hold/Shuffle/Feint를 섞어 "간보기" (짧게 조정)
-            float r = Random.value;
-            if (r < 0.50f) PickMode(EProbeMode.Hold, 0.15f, 0.35f);       // 단축
-            else if (r < 0.80f) PickMode(EProbeMode.Shuffle, 0.2f, 0.45f); // 단축
-            else if (r < 0.90f) PickMode(EProbeMode.FeintIn, 0.15f, 0.3f); // 단축
-            else PickMode(EProbeMode.FeintOut, 0.15f, 0.3f);               // 단축
-        }
-
-        private void PickMode(EProbeMode mode, float minDur, float maxDur)
-        {
-            _mode = mode;
-            _modeTimer = 0f;
-            _modeDuration = Random.Range(minDur, maxDur);
-        }
-
-        private void LookAtTarget()
-        {
-            
-            if (_playerDetectAbility.HasPlayer)
-            {
-                _facingAbility.FaceTo(_playerDetectAbility.PlayerPosition);
-            }
+            // 애니메이션 업데이트
+            UpdateAnimation();
         }
 
         public void Exit()
@@ -244,59 +111,255 @@ namespace Monster.AI.States
             _navAgentAbility?.Resume();
         }
 
-        private void EnsureMinimumDistance()
+        private void DecideInitialMode()
         {
-            
-            if (_playerDetectAbility.IsTooClose())
+            float dist = _playerDetectAbility.DistanceToPlayer;
+            float minDist = Data.PreferredMinDistance;
+            float maxDist = Data.PreferredMaxDistance;
+
+            if (dist < minDist)
             {
-                
-                Vector3 dirAway = -_playerDetectAbility.DirectionToPlayer();
-
-                float backoffDistance = _controller.Data.PreferredMinDistance - _playerDetectAbility.DistanceToPlayer + 0.5f;
-                _probeTarget = _transform.position + dirAway * backoffDistance;
-                _probeTarget.y = _transform.position.y;
-
-                
-                if (_controller.Data.EnablePushback)
-                {
-                    _groupCommandProvider.RequestPushback(dirAway, backoffDistance);
-                }
-
-                PickMode(EProbeMode.FeintOut, 0.2f, 0.3f);
+                // 너무 가까움 - 후퇴
+                SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
+            }
+            else if (dist > maxDist)
+            {
+                // 너무 멈 - 접근
+                SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
             }
             else
             {
-                PickMode(EProbeMode.Reposition, 0.2f, 0.3f);
+                // 적정 거리 - 원호 이동 시작
+                SetMode(EStrafeMode.Circle, Data.StrafeMinDuration, Data.StrafeMaxDuration);
             }
         }
 
-        private bool TryExecuteLightAttack(Vector3 desired, float now)
+        private void ExecuteCurrentMode()
         {
-            float distToDesired = Vector3.Distance(_transform.position, desired);
-            float lightRange = _controller.Data.AttackRange + 0.35f;
-
-            
-            if (distToDesired <= 1.0f && _playerDetectAbility.DistanceToPlayer <= lightRange
-                && _groupCommandProvider.CanLightAttack(now) && Random.value < _controller.Data.LightAttackChance)
+            switch (_currentMode)
             {
-                _groupCommandProvider.SetNextAttackHeavy(false);
-                _groupCommandProvider.ConsumeLightAttack(now, _controller.Data.AttackCooldown);
-                _stateMachine.ChangeState(EMonsterState.Attack);
-                return true;
+                case EStrafeMode.Circle:
+                    ExecuteCircle();
+                    break;
+                case EStrafeMode.AdjustDistance:
+                    ExecuteAdjustDistance();
+                    break;
+                case EStrafeMode.Pause:
+                    ExecutePause();
+                    break;
             }
-
-            return false;
         }
 
-        private bool TryExecuteHeavyAttack(float now)
+        private void ExecuteCircle()
         {
-            if (_groupCommandProvider.CanAttack() && _groupCommandProvider.CanHeavyAttack(now)
-                && Random.value < _controller.Data.HeavyAttackChance)
+            if (!_playerDetectAbility.HasPlayer) return;
+
+            Vector3 playerPos = _playerDetectAbility.PlayerPosition;
+            Vector3 toMonster = _transform.position - playerPos;
+            toMonster.y = 0f;
+
+            float currentDist = toMonster.magnitude;
+            if (currentDist < 0.1f) return;
+
+            toMonster.Normalize();
+
+            // 각속도를 라디안으로 변환
+            float angularSpeed = Data.CircleAngularSpeed * Mathf.Deg2Rad;
+            float angle = angularSpeed * Time.deltaTime * _circleDirection;
+
+            // 회전 행렬 적용
+            float cos = Mathf.Cos(angle);
+            float sin = Mathf.Sin(angle);
+            Vector3 rotatedDir = new Vector3(
+                toMonster.x * cos - toMonster.z * sin,
+                0f,
+                toMonster.x * sin + toMonster.z * cos
+            );
+
+            // 목표 거리 유지 (선호 거리의 중간값)
+            float preferredDist = (Data.PreferredMinDistance + Data.PreferredMaxDistance) * 0.5f;
+            Vector3 targetPos = playerPos + rotatedDir * preferredDist;
+            targetPos.y = _transform.position.y;
+
+            // 목표 속도 계산
+            Vector3 moveDir = (targetPos - _transform.position);
+            moveDir.y = 0f;
+            float moveDist = moveDir.magnitude;
+
+            if (moveDist > 0.01f)
             {
-                _groupCommandProvider.SetNextAttackHeavy(true);
-                _groupCommandProvider.ConsumeHeavyAttack(now, _controller.Data.HeavyAttackCooldown);
-                _stateMachine.ChangeState(EMonsterState.Attack);
-                return true;
+                moveDir.Normalize();
+                _targetVelocity = moveDir * Data.StrafeSpeed;
+            }
+            else
+            {
+                _targetVelocity = Vector3.zero;
+            }
+        }
+
+        private void ExecuteAdjustDistance()
+        {
+            if (!_playerDetectAbility.HasPlayer) return;
+
+            float dist = _playerDetectAbility.DistanceToPlayer;
+            float minDist = Data.PreferredMinDistance;
+            float maxDist = Data.PreferredMaxDistance;
+            float preferredDist = (minDist + maxDist) * 0.5f;
+
+            Vector3 dirToPlayer = _playerDetectAbility.DirectionToPlayer();
+            dirToPlayer.y = 0f;
+            dirToPlayer.Normalize();
+
+            if (dist < minDist)
+            {
+                // 후퇴
+                _targetVelocity = -dirToPlayer * Data.StrafeSpeed;
+
+                // 푸시백 요청
+                if (Data.EnablePushback)
+                {
+                    float backoffDist = minDist - dist + 0.5f;
+                    _groupCommandProvider.RequestPushback(-dirToPlayer, backoffDist);
+                }
+            }
+            else if (dist > maxDist)
+            {
+                // 접근
+                _targetVelocity = dirToPlayer * Data.StrafeSpeed * 0.8f;
+            }
+            else
+            {
+                // 적정 거리 도달 - 속도 줄임
+                _targetVelocity = Vector3.Lerp(_targetVelocity, Vector3.zero, Time.deltaTime * 2f);
+            }
+        }
+
+        private void ExecutePause()
+        {
+            // 정지 상태 - 부드럽게 감속
+            _targetVelocity = Vector3.zero;
+        }
+
+        private void ChooseNextMode()
+        {
+            float dist = _playerDetectAbility.DistanceToPlayer;
+            float minDist = Data.PreferredMinDistance;
+            float maxDist = Data.PreferredMaxDistance;
+
+            // 거리가 밴드를 벗어나면 우선 조절
+            if (dist < minDist * 0.9f || dist > maxDist * 1.1f)
+            {
+                SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
+                return;
+            }
+
+            // 적정 거리일 때 모드 선택
+            float roll = Random.value;
+
+            if (roll < Data.StrafePauseChance)
+            {
+                // 잠시 정지
+                SetMode(EStrafeMode.Pause, 0.8f, 1.5f);
+            }
+            else
+            {
+                // 원호 이동 (방향 변경 확률 적용)
+                if (Random.value < Data.DirectionChangeChance)
+                {
+                    _circleDirection *= -1;
+                }
+                SetMode(EStrafeMode.Circle, Data.StrafeMinDuration, Data.StrafeMaxDuration);
+            }
+        }
+
+        private void SetMode(EStrafeMode mode, float minDuration, float maxDuration)
+        {
+            _currentMode = mode;
+            _modeTimer = 0f;
+            _modeDuration = Random.Range(minDuration, maxDuration);
+        }
+
+        private void ApplySmoothedMovement()
+        {
+            // 부드러운 속도 보간
+            float lerpFactor = Data.SpeedLerpFactor * Time.deltaTime;
+            _currentVelocity = Vector3.Lerp(_currentVelocity, _targetVelocity, lerpFactor);
+
+            // NavAgent에 이동 적용
+            if (_navAgentAbility != null && _navAgentAbility.IsActive)
+            {
+                Vector3 targetPos = _transform.position + _currentVelocity * 0.5f;
+                _navAgentAbility.SetDestination(targetPos);
+
+                // 속도가 낮으면 정지
+                if (_currentVelocity.magnitude < 0.1f)
+                {
+                    _navAgentAbility.Stop();
+                }
+                else
+                {
+                    _navAgentAbility.Resume();
+                }
+            }
+        }
+
+        private void LookAtPlayer()
+        {
+            if (_playerDetectAbility.HasPlayer)
+            {
+                _facingAbility?.FaceTo(_playerDetectAbility.PlayerPosition);
+            }
+        }
+
+        private void UpdateAnimation()
+        {
+            if (_animatorAbility == null) return;
+
+            // 로컬 속도로 변환
+            Vector3 localVelocity = _transform.InverseTransformDirection(_currentVelocity);
+
+            float strafeSpeed = Data.StrafeSpeed;
+            float moveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
+            float moveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
+
+            _animatorAbility.SetMoveDirection(moveX, moveY);
+        }
+
+        private bool TryAttack(float now)
+        {
+            Vector3 desired = _groupCommandProvider.GetDesiredPosition();
+            EAttackMode attackMode = Data.AttackMode;
+
+            // 약공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
+            {
+                float distToDesired = Vector3.Distance(_transform.position, desired);
+                float lightRange = Data.AttackRange + 0.35f;
+
+                if (distToDesired <= 1.0f &&
+                    _playerDetectAbility.DistanceToPlayer <= lightRange &&
+                    _groupCommandProvider.CanLightAttack(now) &&
+                    Random.value < Data.LightAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(false);
+                    _groupCommandProvider.ConsumeLightAttack(now, Data.AttackCooldown);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    return true;
+                }
+            }
+
+            // 강공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
+            {
+                if (_groupCommandProvider.CanAttack() &&
+                    _groupCommandProvider.CanHeavyAttack(now) &&
+                    Random.value < Data.HeavyAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(true);
+                    _groupCommandProvider.ConsumeHeavyAttack(now, Data.HeavyAttackCooldown);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    return true;
+                }
             }
 
             return false;
