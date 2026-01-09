@@ -6,12 +6,11 @@ public class CharacterViewer : MonoBehaviour
 {
     [Header("참조")]
     [SerializeField] private GameObject _viewerPanel;
-    [SerializeField] private Transform _characterViewPosition; // 캐릭터 뷰어 위치
     [SerializeField] private Camera _viewerCamera;
     [SerializeField] private Transform _player;
-    [SerializeField] private PlayerEquipment _playerEquipment; 
+    [SerializeField] private PlayerEquipment _playerEquipment;
 
-    [Header("카메라 세팅")]
+    [Header("카메라 설정")]
     [SerializeField] private float _rotationSpeed = 100f;
     [SerializeField] private float _cameraDistance = 2.5f;
     [SerializeField] private float _cameraHeight = 1.0f;
@@ -24,20 +23,16 @@ public class CharacterViewer : MonoBehaviour
     private KeyCode _toggleKey = KeyCode.Tab;
 
     private bool _isViewerActive = false;
-    private Vector3 _originalPlayerPosition;
-    private Quaternion _originalPlayerRotation;
     private float _currentRotationAngle = 0f;
 
-    private Camera _mainCamera;
     private Animator _playerAnimator;
     private EquipmentManager _equipmentManager;
 
     private void Start()
     {
-        _mainCamera = Camera.main;
-
         if (_player != null)
         {
+            // Player의 Animator만 사용
             _playerAnimator = _player.GetComponent<Animator>();
 
             if (_playerEquipment == null)
@@ -53,9 +48,11 @@ public class CharacterViewer : MonoBehaviour
             _viewerPanel.SetActive(false);
         }
 
+        // ViewerCamera는 항상 활성화 (RenderTexture로 렌더링)
         if (_viewerCamera != null)
         {
-            _viewerCamera.gameObject.SetActive(false);
+            _viewerCamera.gameObject.SetActive(true);
+            UpdateCameraPosition();
         }
     }
 
@@ -75,7 +72,7 @@ public class CharacterViewer : MonoBehaviour
 
     private void ToggleViewer()
     {
-        _isViewerActive = !_isViewerActive; // false를 true로 변경
+        _isViewerActive = !_isViewerActive;
         if (_isViewerActive)
         {
             OpenViewer();
@@ -93,34 +90,11 @@ public class CharacterViewer : MonoBehaviour
             _viewerPanel.SetActive(true);
         }
 
-        if (_player != null)
+        // Player의 Animator를 Idle로 설정
+        if (_playerAnimator != null)
         {
-            _originalPlayerPosition = _player.position;
-            _originalPlayerRotation = _player.rotation;
-
-            // 플레이어를 뷰어 위치로 이동
-            if (_characterViewPosition != null)
-            {
-                _player.position = _characterViewPosition.position;
-                _player.rotation = _characterViewPosition.rotation;
-            }
-
-            if (_playerAnimator != null)
-            {
-                _playerAnimator.SetFloat("Speed", 0f);
-                _playerAnimator.SetBool("isMoving", false);
-            }
-        }
-
-        if (_viewerCamera != null)
-        {
-            _viewerCamera.gameObject.SetActive(true);
-            UpdateCameraPosition();
-        }
-
-        if (_mainCamera != null)
-        {
-            _mainCamera.enabled = false;
+            _playerAnimator.SetFloat("MoveSpeed", 0f);
+            _playerAnimator.SetBool("IsMoving", false);
         }
 
         // 장비 UI 업데이트
@@ -133,7 +107,7 @@ public class CharacterViewer : MonoBehaviour
         Cursor.visible = true;
 
         _currentRotationAngle = 0f;
-
+        UpdateCameraPosition();
     }
 
     private void CloseViewer()
@@ -141,23 +115,6 @@ public class CharacterViewer : MonoBehaviour
         if (_viewerPanel != null)
         {
             _viewerPanel.SetActive(false);
-        }
-
-        if (_player != null)
-        {
-            // 플레이어를 원래 위치로 복원
-            _player.position = _originalPlayerPosition;
-            _player.rotation = _originalPlayerRotation;
-        }
-
-        if (_viewerCamera != null)
-        {
-            _viewerCamera.gameObject.SetActive(false);
-        }
-
-        if (_mainCamera != null)
-        {
-            _mainCamera.enabled = true;
         }
 
         Cursor.lockState = CursorLockMode.Locked;
@@ -173,17 +130,18 @@ public class CharacterViewer : MonoBehaviour
 
         float rotationInput = 0f;
 
-        if(Input.GetMouseButton(1))
+        // 마우스 오른쪽 버튼 드래그로 회전
+        if (Input.GetMouseButton(1))
         {
             rotationInput = Input.GetAxis("Mouse X") * _rotationSpeed * Time.deltaTime;
         }
 
-        if(_autoRotate && rotationInput == 0f)
+        if (_autoRotate && rotationInput == 0f)
         {
             rotationInput = _autoRotateSpeed * Time.deltaTime;
         }
 
-        if(rotationInput != 0f)
+        if (rotationInput != 0f)
         {
             _currentRotationAngle += rotationInput;
             UpdateCameraPosition();
@@ -192,7 +150,6 @@ public class CharacterViewer : MonoBehaviour
 
     private void HandleCameraZoom()
     {
-        // 마우스 휠로 줌 인/아웃
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0f)
         {
@@ -207,16 +164,18 @@ public class CharacterViewer : MonoBehaviour
         {
             return;
         }
-        
-        // 카메라를 캐릭터 주위로 회전
+
+        // 캐릭터 주위로 카메라 회전
         float angleInRadians = _currentRotationAngle * Mathf.Deg2Rad;
 
-        // x 좌우 위치(원형이동), y 위아래 고정 높이,z 앞뒤 위치(원형이동)
-        Vector3 offset = new Vector3(Mathf.Sin(angleInRadians) * _cameraDistance, _cameraHeight, Mathf.Cos(angleInRadians) * _cameraDistance);
-
+        Vector3 offset = new Vector3(
+            Mathf.Sin(angleInRadians) * _cameraDistance,
+            _cameraHeight,
+            Mathf.Cos(angleInRadians) * _cameraDistance
+        );
 
         _viewerCamera.transform.position = _player.position + offset;
-        _viewerCamera.transform.LookAt(_player.position + Vector3.up * 1f); // 캐릭터 중심을 바라봄
+        _viewerCamera.transform.LookAt(_player.position + Vector3.up * 1f);
     }
 
     public void OpenViewerExternal()
@@ -236,5 +195,4 @@ public class CharacterViewer : MonoBehaviour
     }
 
     public bool IsViewerActive => _isViewerActive;
-
 }
