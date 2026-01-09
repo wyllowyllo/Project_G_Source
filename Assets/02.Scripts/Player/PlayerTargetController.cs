@@ -10,6 +10,10 @@ namespace Player
         [SerializeField] private float _detectionRadius = 5f;
         [SerializeField] private LayerMask _targetLayer;
 
+        [Header("Combat Rotation")]
+        [Tooltip("공격 시 회전 속도 (1 = 거의 즉시, 0.5 = 빠름, 0.2 = 보통)")]
+        [SerializeField, Range(0.1f, 1f)] private float _combatRotationSpeed = 1f;
+
         private bool _autoRotate = true;
         private bool _useCameraFallback = true;
 
@@ -52,59 +56,54 @@ namespace Player
             return nearest;
         }
     
-        // 가까운 타겟으로 방향 회전
+        // 가까운 타겟으로 방향 회전 (하이브리드: 입력 > 적 > 현재방향)
         public void RotateTowardsNearestTarget()
         {
-            if(!_autoRotate)
+            if (!_autoRotate)
             {
                 return;
             }
 
+            // 1순위: 입력 방향 (카메라 기준)
+            Vector3 inputDirection = _playerMovement != null
+                ? _playerMovement.GetCurrentInputDirection()
+                : Vector3.zero;
+
+            if (inputDirection.sqrMagnitude > 0.01f)
+            {
+                RotateTowards(inputDirection);
+                return;
+            }
+
+            // 2순위: 가장 가까운 적 방향
             Collider nearestTarget = FindNearestTarget();
-            Vector3 targetDirection;
-
-            if(nearestTarget != null)
+            if (nearestTarget != null)
             {
-                targetDirection = (nearestTarget.transform.position - transform.position).normalized;
-                targetDirection.y = 0f; // 수평 방향으로만 회전
-            }
-            else if(_useCameraFallback && Camera.main != null)
-            {
-                // 타켓이 없으면 카메라 방향
-                targetDirection = Camera.main.transform.forward;
+                Vector3 targetDirection = nearestTarget.transform.position - transform.position;
                 targetDirection.y = 0f;
-                targetDirection.Normalize();
-            }
-            else
-            {
+                RotateTowards(targetDirection.normalized);
                 return;
             }
 
-            if(targetDirection.magnitude > 0.1f)
-            {
-                transform.rotation = Quaternion.LookRotation(targetDirection);
-            }
-
-            if(_playerMovement != null)
-            {
-                _playerMovement.SetLookDirection(targetDirection);
-            }
+            // 3순위: 현재 방향 유지 (아무것도 하지 않음)
         }
 
-        // 특정 방향으로 회전
+        // 특정 방향으로 회전 (부드러운 회전)
         public void RotateTowards(Vector3 direction)
         {
             direction.y = 0f;
-            if(direction.magnitude < 0.1f)
+            if (direction.magnitude < 0.1f)
             {
                 return;
             }
 
-            transform.rotation = Quaternion.LookRotation(direction);
-
-            if(_playerMovement != null)
+            if (_playerMovement != null)
             {
-                _playerMovement.SetLookDirection(direction);
+                _playerMovement.RotateSmooth(direction, _combatRotationSpeed);
+            }
+            else
+            {
+                transform.rotation = Quaternion.LookRotation(direction);
             }
         }
 

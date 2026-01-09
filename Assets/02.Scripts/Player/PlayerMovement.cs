@@ -18,27 +18,30 @@ namespace Player
         [Header("Ground Settings")]
         [SerializeField] private float _maxStableSlopeAngle = 60f;
 
-        // Components
+        [Header("Dodge Settings")]
+        [Tooltip("회피 중 이동 입력 허용 여부")]
+        [SerializeField] private bool _canMoveWhileDodging = false;
+        
         private KinematicCharacterMotor _motor;
         private Animator _animator;
-
-        // Movement State
+        
         private Vector3 _moveInputVector;
         private Vector3 _currentVelocity;
         private Vector3 _lookDirection;
-   
-        // Animation Parameters
+
+        private Quaternion? _immediateRotation;
+        
+        private Quaternion? _smoothTargetRotation;
+        private float _smoothRotationSpeed;
+
         private readonly int _moveSpeedHash = Animator.StringToHash("MoveSpeed");
         private readonly int _isMovingHash = Animator.StringToHash("IsMoving");
-
-        // Control Flags
+        
         private bool _movementEnabled = true;
-
-        // Root Motion
+        
         private Vector3 _rootMotionPositionDelta;
-        private Quaternion _rootMotionRotationDelta;
-        private bool _applyRootMotion = true;
-        private float _animationMoveSpeed = 5f;
+        private bool _applyRootMotion = false;
+        private int _rootMotionRequestCount = 0;
 
         private void Awake()
         {
@@ -48,21 +51,22 @@ namespace Player
 
         private void Start()
         {
-            // 카메라 자동 할당
             if (_cameraTransform == null && Camera.main != null)
             {
                 _cameraTransform = Camera.main.transform;
             }
-
-            // 초기 방향 설정
+            
             _lookDirection = transform.forward;
+            
+            _movementEnabled = true;
         }
-
+        
         private void Update()
         {
+            HandleInput();
+
             if (!_movementEnabled) return;
 
-            HandleInput();
             UpdateAnimations();
         }
 
@@ -85,24 +89,19 @@ namespace Player
         private void SetupMotor()
         {
             if (_motor == null) return;
-
-            // KCC Motor에 이 스크립트를 컨트롤러로 등록
+            
             _motor.CharacterController = this;
-
-            // 기본 설정
+            
             _motor.MaxStableSlopeAngle = _maxStableSlopeAngle;
         }
 
         private void HandleInput()
         {
-            // WASD 입력 받기
             float horizontal = Input.GetAxisRaw("Horizontal");
             float vertical = Input.GetAxisRaw("Vertical");
-
-            // 입력 벡터 생성
+            
             Vector3 inputVector = new Vector3(horizontal, 0f, vertical);
-
-            // 카메라 기준으로 이동 방향 계산
+            
             if (_useCameraForward && _cameraTransform != null)
             {
                 _moveInputVector = GetCameraRelativeMovement(inputVector);
@@ -120,47 +119,82 @@ namespace Player
             {
                 return Vector3.zero;
             }
-
-            // 카메라의 forward와 right 벡터 가져오기
+            
             Vector3 cameraForward = _cameraTransform.forward;
             Vector3 cameraRight = _cameraTransform.right;
-
-            // y축 제거 (수평 이동만)
+            
             cameraForward.y = 0f;
             cameraRight.y = 0f;
 
             cameraForward.Normalize();
             cameraRight.Normalize();
-
-            // 카메라 기준 이동 방향 계산
+            
             return (cameraForward * inputVector.z + cameraRight * inputVector.x).normalized;
+        }
+
+
+        public Vector3 GetCurrentInputDirection()
+        {
+            float horizontal = Input.GetAxisRaw("Horizontal");
+            float vertical = Input.GetAxisRaw("Vertical");
+            Vector3 inputVector = new Vector3(horizontal, 0f, vertical);
+
+            if (_useCameraForward && _cameraTransform != null)
+            {
+                return GetCameraRelativeMovement(inputVector);
+            }
+
+            return inputVector.normalized;
         }
 
         private void OnAnimatorMove()
         {
             if (_animator == null) return;
 
-            // Root Motion 델타 값 저장
-            _rootMotionPositionDelta = _animator.deltaPosition * _animationMoveSpeed;
-            _rootMotionRotationDelta = _animator.deltaRotation;
+            if (_applyRootMotion)
+            {
+                _rootMotionPositionDelta += _animator.deltaPosition;
+            }
         }
 
         public void BeforeCharacterUpdate(float deltaTime)
         {
-            // 필요한 경우 여기서 추가 로직 수행
         }
 
         public void UpdateRotation(ref Quaternion currentRotation, float deltaTime)
         {
+            if (_immediateRotation.HasValue)
+            {
+                currentRotation = _immediateRotation.Value;
+                _immediateRotation = null;
+                return;
+            }
+            
+            if (_smoothTargetRotation.HasValue)
+            {
+                float rotSpeed = Mathf.Lerp(10f, 50f, _smoothRotationSpeed);
+
+                currentRotation = Quaternion.Slerp(
+                    currentRotation,
+                    _smoothTargetRotation.Value,
+                    rotSpeed * deltaTime
+                );
+
+                if (Quaternion.Angle(currentRotation, _smoothTargetRotation.Value) < 1f)
+                {
+                    _smoothTargetRotation = null;
+                }
+                return;
+            }
+
+            if (!_movementEnabled) return;
+
             if (_moveInputVector.magnitude > 0.1f)
             {
-                // 이동 방향으로 회전
                 _lookDirection = _moveInputVector;
 
-                // 목표 회전 계산
                 Quaternion targetRotation = Quaternion.LookRotation(_lookDirection, Vector3.up);
 
-                // 부드러운 회전
                 currentRotation = Quaternion.Slerp(
                     currentRotation,
                     targetRotation,
@@ -169,30 +203,47 @@ namespace Player
             }
         }
 
-        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
-        {
-            // Root Motion 위치 적용 여부 확인
-            if (_applyRootMotion && _rootMotionPositionDelta.magnitude > 0.001f)
-            {
-                // Root Motion을 속도로 변환
-                Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
 
-                // Y축 속도는 유지하고 XZ 평면만 Root Motion 적용
+        public void RotateImmediate(Vector3 direction)
+        {
+            if (direction.sqrMagnitude < 0.01f) return;
+
+            _lookDirection = direction;
+            _immediateRotation = Quaternion.LookRotation(direction, Vector3.up);
+        }
+        
+        public void RotateSmooth(Vector3 direction, float speed = 1f)
+        {
+            if (direction.sqrMagnitude < 0.01f) return;
+
+            direction.y = 0f;
+            _lookDirection = direction.normalized;
+            _smoothTargetRotation = Quaternion.LookRotation(_lookDirection, Vector3.up);
+            _smoothRotationSpeed = Mathf.Clamp01(speed);
+        }
+
+        public void ClearSmoothRotation()
+        {
+            _smoothTargetRotation = null;
+        }
+
+       public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
+        {
+            if (_applyRootMotion && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
+            {
+                Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
+                
                 currentVelocity.x = rootMotionVelocity.x;
                 currentVelocity.z = rootMotionVelocity.z;
-
-                // Root Motion 델타 초기화
+                
                 _rootMotionPositionDelta = Vector3.zero;
             }
             else
             {
-                // 일반 이동 처리
                 Vector3 targetVelocity = _moveInputVector * _moveSpeed;
-
-                // 부드러운 가속/감속
+                
                 if (_moveInputVector.magnitude > 0.1f)
                 {
-                    // 가속
                     currentVelocity = Vector3.Lerp(
                         currentVelocity,
                         targetVelocity,
@@ -201,7 +252,6 @@ namespace Player
                 }
                 else
                 {
-                    // 감속
                     currentVelocity = Vector3.Lerp(
                         currentVelocity,
                         Vector3.zero,
@@ -209,53 +259,43 @@ namespace Player
                     );
                 }
             }
-
-            // 현재 속도 저장 (다른 스크립트에서 참조 가능)
+            
             this._currentVelocity = currentVelocity;
         }
 
         public void PostGroundingUpdate(float deltaTime)
         {
-            // 지면 업데이트 후 추가 로직
         }
 
         public void AfterCharacterUpdate(float deltaTime)
         {
-            // 필요한 경우 여기서 추가 로직 수행
         }
 
         public bool IsColliderValidForCollisions(Collider coll)
         {
-            // 모든 충돌체와 충돌 허용
-            // 특정 레이어나 오브젝트를 무시하려면 여기서 필터링
             return true;
         }
 
         public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport)
         {
-            // 지면 충돌 시 추가 로직
         }
 
         public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport)
         {
-            // 이동 중 충돌 시 추가 로직
         }
 
         public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport)
         {
-            // 안정성 리포트 처리
         }
 
         public void OnDiscreteCollisionDetected(Collider hitCollider)
         {
-            // 이산 충돌 처리 (예: 트리거, 아이템 획득 등)
         }
 
         private void UpdateAnimations()
         {
             if (_animator == null) return;
-
-            // 이동 속도를 애니메이터에 전달
+            
             float moveAmount = _moveInputVector.magnitude;
             _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
             _animator.SetBool(_isMovingHash, moveAmount > 0.1f);
@@ -269,6 +309,45 @@ namespace Player
             {
                 _moveInputVector = Vector3.zero;
                 _currentVelocity = Vector3.zero;
+            }
+        }
+        
+        public void ReleaseRootMotion()
+        {
+            _rootMotionRequestCount = Mathf.Max(0, _rootMotionRequestCount - 1);
+            if (_rootMotionRequestCount == 0)
+            {
+                _applyRootMotion = false;
+                _rootMotionPositionDelta = Vector3.zero;
+            }
+        }
+        
+        public void RequestRootMotion()
+        {
+            _rootMotionRequestCount++;
+            _applyRootMotion = true;
+        }
+        
+        public void ExecuteDodgeMovement()
+        {
+            Vector3 dodgeDirection = GetCurrentInputDirection();
+            RotateImmediate(dodgeDirection);
+
+            if (!_canMoveWhileDodging)
+            {
+                SetMovementEnabled(false);
+            }
+
+            RequestRootMotion();
+        }
+
+        public void OnDodgeMovementEnd()
+        {
+            ReleaseRootMotion();
+
+            if (!_canMoveWhileDodging)
+            {
+                SetMovementEnabled(true);
             }
         }
 
@@ -303,19 +382,16 @@ namespace Player
         private void OnDrawGizmos()
         {
             if (!Application.isPlaying) return;
-
-            // 이동 방향 표시
+            
             if (_moveInputVector.magnitude > 0.1f)
             {
                 Gizmos.color = Color.blue;
                 Gizmos.DrawLine(transform.position, transform.position + _moveInputVector * 2f);
             }
-
-            // 바라보는 방향 표시
+            
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, transform.position + _lookDirection * 1.5f);
-
-            // 현재 속도 표시
+            
             if (_currentVelocity.magnitude > 0.1f)
             {
                 Gizmos.color = Color.green;

@@ -12,6 +12,7 @@ namespace Combat.Attack
         [Header("References")]
         [SerializeField] private HitboxTrigger _hitbox;
 
+        
         [Header("Settings")]
         [SerializeField] private DamageType _damageType = DamageType.Normal;
 
@@ -83,11 +84,11 @@ namespace Combat.Attack
             _hitbox.EnableHitbox(_combatant.Team);
         }
         
-        public void OnAttackHitEnd()
-        {
-            if (_hitbox == null) return;
+        
 
-            _hitbox.DisableHitbox();
+        public void ForceDisableHitbox()
+        {
+            _hitbox?.DisableHitbox();
         }
 
         public void OnComboWindowStart()
