@@ -68,7 +68,6 @@ namespace Monster.AI.States
         public void Exit()
         {
             ResumeNavigation();
-            RestoreMaterialColor();
             ReleaseAttackResources();
         }
 
@@ -81,23 +80,12 @@ namespace Monster.AI.States
 
         private void StopNavigation()
         {
-            
             _navAgentAbility?.Stop();
         }
 
         private void ResumeNavigation()
         {
-            
             _navAgentAbility?.Resume();
-        }
-
-        private void RestoreMaterialColor()
-        {
-            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
-            {
-                renderer.material.color = _controller.OriginalMaterialColor;
-            }
         }
 
         private void ReleaseAttackResources()

@@ -32,25 +32,28 @@ namespace Monster.AI
         private Combatant _combatant;
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
+        private Animator _animator;
+        private MonsterAnimationEventReceiver _animEventReceiver;
 
         // Ability 시스템
         private Dictionary<System.Type, EntityAbility> _abilities;
         private List<EntityAbility> _abilityList;
-        
-        // 공격 시각화
-        private Color _originalMaterialColor;
+
+        // 공격 애니메이션 상태
+        private System.Action _onAttackComplete;
 
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
-        public Color OriginalMaterialColor => _originalMaterialColor;
         public MonsterData Data => _monsterData;
 
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
       
         public GroupCommandProvider GroupCommandProvider => _groupCommandProvider;
-        
+
         public Vector3 HomePosition => _homePosition;
+
+        public Animator Animator => _animator;
         
        
 
@@ -60,15 +63,12 @@ namespace Monster.AI
             _combatant = GetComponent<Combatant>();
             _groupCommandProvider = new GroupCommandProvider(this);
 
-            // 원래 머티리얼 색상 저장
-            Renderer renderer = GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
-            {
-                _originalMaterialColor = renderer.material.color;
-            }
+            // Animator 찾기 (Model 하위의 프리팹에 있음)
+            _animator = GetComponentInChildren<Animator>();
 
             InitializeMonster();
             InitializeAbilities();
+            InitializeAnimationEventReceiver();
             InitializeStateMachine();
         }
         
@@ -175,8 +175,58 @@ namespace Monster.AI
             return null;
         }
 
+        private void InitializeAnimationEventReceiver()
+        {
+            if (_animator == null)
+            {
+                Debug.LogWarning($"{gameObject.name}: Animator를 찾을 수 없습니다.");
+                return;
+            }
 
-       
+            // Animator가 있는 오브젝트에 EventReceiver 추가
+            _animEventReceiver = _animator.gameObject.GetComponent<MonsterAnimationEventReceiver>();
+            if (_animEventReceiver == null)
+            {
+                _animEventReceiver = _animator.gameObject.AddComponent<MonsterAnimationEventReceiver>();
+            }
+
+            // 공격 콜라이더 찾기 (Body 하위의 AttackCollider)
+            Collider attackCollider = null;
+            Transform body = _animator.transform.Find("Body");
+            if (body != null)
+            {
+                Transform attackColliderTransform = body.Find("AttackCollider");
+                if (attackColliderTransform != null)
+                {
+                    attackCollider = attackColliderTransform.GetComponent<Collider>();
+                }
+            }
+
+            _animEventReceiver.Initialize(this, attackCollider);
+        }
+
+        // AttackState에서 호출: 공격 애니메이션 트리거
+        public void TriggerAttackAnimation(string triggerName, System.Action onComplete)
+        {
+            _onAttackComplete = onComplete;
+
+            if (_animator != null)
+            {
+                _animator.SetTrigger(triggerName);
+            }
+            else
+            {
+                // Animator가 없으면 즉시 완료 처리
+                onComplete?.Invoke();
+            }
+        }
+
+        // MonsterAnimationEventReceiver에서 호출
+        public void OnAttackAnimationComplete()
+        {
+            _onAttackComplete?.Invoke();
+            _onAttackComplete = null;
+        }
 
         private void HandleDeath()
         {

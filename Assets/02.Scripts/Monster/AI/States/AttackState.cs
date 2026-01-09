@@ -1,30 +1,32 @@
 using Monster.Ability;
 using UnityEngine;
-using Monster.AI.Services;
 
 namespace Monster.AI.States
 {
-    // 공격 상태: Windup (준비) → Execute (실행) → Recover (후딜) 3단계로 구성
-    // 공격 슬롯 시스템과 연동하여 동시 공격을 제한 (선택적 Ability 기반 리팩터링)
+    // 공격 상태: Windup (준비) → Perform (애니메이션 실행) 2단계로 구성
+    // NavMeshAgent 이동 없이 애니메이션이 Body를 이동시킴
     public class AttackState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
         private readonly GroupCommandProvider _groupCommandProvider;
-        private readonly ChargeService _chargeService;
         private readonly Transform _transform;
 
-        // Abilities 
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
         private readonly FacingAbility _facingAbility;
 
-        private enum EAttackPhase { Windup, Execute }
+        private enum EAttackPhase { Windup, Perform }
         private EAttackPhase _currentPhase;
 
         private bool _isHeavyAttack;
         private float _phaseTimer;
-        private bool _damageDealt;
-        private float _hitRadius;
+        private bool _isAttackComplete;
+
+        // 애니메이션 트리거 이름
+        private const string LightAttackTrigger = "Attack";
+        private const string HeavyAttackTrigger = "Attack_Heavy";
 
         public EMonsterState StateType => EMonsterState.Attack;
 
@@ -34,17 +36,16 @@ namespace Monster.AI.States
             _stateMachine = stateMachine;
             _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
-            _chargeService = new ChargeService();
 
-            
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
             _facingAbility = controller.GetAbility<FacingAbility>();
         }
 
         public void Enter()
         {
-            _chargeService.Initialize(_controller.NavAgent, _transform);
-            _chargeService.SaveAgentSettings();
+            // NavAgent 정지
+            _navAgentAbility?.Stop();
 
             DetermineAttackType();
 
@@ -56,32 +57,18 @@ namespace Monster.AI.States
                 return;
             }
 
-            ConfigureAttackParameters();
-            SetAttackVisualFeedback();
             InitializeAttackPhase();
 
-            Debug.Log($"{_controller.gameObject.name}: 공격 시작 (Windup)");
+            Debug.Log($"{_controller.gameObject.name}: 공격 시작 (Windup) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 
         public void Update()
         {
+            // 강공인데 슬롯 잃으면 취소
             if (_isHeavyAttack && !_groupCommandProvider.CanAttack())
             {
                 ReturnToCombat();
                 return;
-            }
-
-            if (_currentPhase == EAttackPhase.Windup)
-            {
-               
-                if (_playerDetectAbility.DistanceToPlayer > _controller.Data.AttackRange * 2f)
-                {
-                    ReturnToCombat();
-                    return;
-                }
-
-                
-                LookAtPlayer();
             }
 
             _phaseTimer += Time.deltaTime;
@@ -92,73 +79,62 @@ namespace Monster.AI.States
                     UpdateWindupPhase();
                     break;
 
-                case EAttackPhase.Execute:
-                    UpdateExecutePhase();
+                case EAttackPhase.Perform:
+                    UpdatePerformPhase();
                     break;
             }
         }
 
         public void Exit()
         {
-            _chargeService.RestoreAgentSettings();
+            // NavAgent 재개
+            _navAgentAbility?.Resume();
         }
 
         private void UpdateWindupPhase()
         {
+            // Windup 중 플레이어가 너무 멀어지면 취소
+            if (_playerDetectAbility.DistanceToPlayer > _controller.Data.AttackRange * 2f)
+            {
+                ReturnToCombat();
+                return;
+            }
+
+            // 플레이어 방향으로 회전
+            LookAtPlayer();
+
+            // Windup 시간 완료 시 공격 애니메이션 실행
             if (_phaseTimer >= _controller.Data.WindupTime)
             {
-                StartChargePhase();
-                _currentPhase = EAttackPhase.Execute;
-                _phaseTimer = 0f;
-                Debug.Log($"{_controller.gameObject.name}: 돌진 시작 (Execute)");
+                StartPerformPhase();
             }
         }
 
-        private void UpdateExecutePhase()
+        private void UpdatePerformPhase()
         {
-            
-            if (!_damageDealt && _playerDetectAbility.DistanceToPlayer <= _hitRadius)
-            {
-                DealDamage();
-                _damageDealt = true;
-            }
-
-            ChargeResult result = _chargeService.UpdateCharge(Time.deltaTime);
-
-            if (result.IsComplete)
+            // 애니메이션 완료 대기
+            if (_isAttackComplete)
             {
                 _stateMachine.ChangeState(EMonsterState.Recover);
             }
         }
 
-        private void StartChargePhase()
+        private void StartPerformPhase()
         {
-            ChargeParameters parameters = CreateChargeParameters();
-           
-            _chargeService.StartCharge(_playerDetectAbility.PlayerPosition, parameters);
+            _currentPhase = EAttackPhase.Perform;
+            _phaseTimer = 0f;
+            _isAttackComplete = false;
+
+            // 공격 애니메이션 트리거
+            string triggerName = _isHeavyAttack ? HeavyAttackTrigger : LightAttackTrigger;
+            _controller.TriggerAttackAnimation(triggerName, OnAnimationComplete);
+
+            Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Perform) - {triggerName}");
         }
 
-        private ChargeParameters CreateChargeParameters()
+        private void OnAnimationComplete()
         {
-            if (_isHeavyAttack)
-            {
-                return new ChargeParameters
-                {
-                    ChargeSpeed = _controller.Data.ChargeSpeed,
-                    MaxChargeDistance = 5f,
-                    ExecuteDuration = _controller.Data.ExecuteTime,
-                    MaxExecuteDuration = Mathf.Max(2f, _controller.Data.ExecuteTime + 0.6f)
-                };
-            }
-
-            float executeDuration = Mathf.Max(0.08f, _controller.Data.ExecuteTime * 0.6f);
-            return new ChargeParameters
-            {
-                ChargeSpeed = Mathf.Max(_controller.Data.MoveSpeed * 1.8f, _controller.Data.MoveSpeed + 2.0f),
-                MaxChargeDistance = 1.6f,
-                ExecuteDuration = executeDuration,
-                MaxExecuteDuration = Mathf.Max(0.9f, executeDuration + 0.4f)
-            };
+            _isAttackComplete = true;
         }
 
         private void DetermineAttackType()
@@ -168,57 +144,23 @@ namespace Monster.AI.States
             _groupCommandProvider.SetNextAttackHeavy(false);
         }
 
-        private void ConfigureAttackParameters()
-        {
-            _hitRadius = _isHeavyAttack ? 0.6f : 0.7f;
-        }
-
-        private void SetAttackVisualFeedback()
-        {
-            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
-            {
-                renderer.material.color = _isHeavyAttack ? Color.red : new Color(1f, 0.6f, 0f);
-            }
-        }
-
         private void InitializeAttackPhase()
         {
             _currentPhase = EAttackPhase.Windup;
             _phaseTimer = 0f;
-            _damageDealt = false;
+            _isAttackComplete = false;
         }
 
         private void LookAtPlayer()
         {
-            
             if (_playerDetectAbility.HasPlayer)
             {
                 _facingAbility.FaceTo(_playerDetectAbility.PlayerPosition);
             }
         }
 
-        private void DealDamage()
-        {
-            Debug.Log($"{_controller.gameObject.name} 공격! 데미지: {_controller.Data.AttackDamage}");
-
-            
-            if (_playerDetectAbility.PlayerTransform != null &&
-                _playerDetectAbility.PlayerTransform.TryGetComponent<IDamageable>(out var damageable))
-            {
-                damageable.TakeDamage(_controller.Data.AttackDamage, _transform.position);
-            }
-        }
-
         private void ReturnToCombat()
         {
-            Renderer renderer = _controller.GetComponentInChildren<Renderer>();
-            if (renderer != null && renderer.material != null)
-            {
-                renderer.material.color = _controller.OriginalMaterialColor;
-            }
-
-            
             if (_playerDetectAbility.IsTooFar())
                 _stateMachine.ChangeState(EMonsterState.Approach);
             else
@@ -227,7 +169,6 @@ namespace Monster.AI.States
 
         private bool HasDirectLineOfSightToPlayer()
         {
-           
             if (!_playerDetectAbility.HasPlayer)
                 return false;
 
