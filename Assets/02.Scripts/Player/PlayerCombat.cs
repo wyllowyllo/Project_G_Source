@@ -18,9 +18,6 @@ namespace Player
         [Tooltip("I-frame duration. Industry standard: ~0.2s (12-13 frames @ 60fps)")]
         [SerializeField] private float _dodgeInvincibilityDuration = 0.2f;
 
-        [Tooltip("If true, player can move during dodge animation")]
-        [SerializeField] private bool _canMoveWhileDodging = false;
-
         private bool _isDodging;
         private bool _attackCancelled;
 
@@ -193,7 +190,7 @@ namespace Player
         {
             _isDodging = true;
             
-            _playerMovement?.ExecuteDodgeMovement(_canMoveWhileDodging);
+            _playerMovement?.ExecuteDodgeMovement();
             
             _combatant?.SetInvincible(_dodgeInvincibilityDuration);
             
@@ -207,7 +204,7 @@ namespace Player
 
             _isDodging = false;
             
-            _playerMovement?.OnDodgeMovementEnd(_canMoveWhileDodging);
+            _playerMovement?.OnDodgeMovementEnd();
         }
 
         private void HandleDeath()
@@ -307,7 +304,7 @@ namespace Player
 
             _isDodging = false;
             
-            _playerMovement?.OnDodgeMovementEnd(_canMoveWhileDodging);
+            _playerMovement?.OnDodgeMovementEnd();
         }
     }
 }

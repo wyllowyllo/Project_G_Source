@@ -17,6 +17,10 @@ namespace Player
 
         [Header("Ground Settings")]
         [SerializeField] private float _maxStableSlopeAngle = 60f;
+
+        [Header("Dodge Settings")]
+        [Tooltip("회피 중 이동 입력 허용 여부")]
+        [SerializeField] private bool _canMoveWhileDodging = false;
         
         private KinematicCharacterMotor _motor;
         private Animator _animator;
@@ -332,24 +336,24 @@ namespace Player
             _applyRootMotion = true;
         }
         
-        public void ExecuteDodgeMovement(bool canMoveWhileDodging)
+        public void ExecuteDodgeMovement()
         {
             Vector3 dodgeDirection = GetCurrentInputDirection();
             RotateImmediate(dodgeDirection);
-            
-            if (!canMoveWhileDodging)
+
+            if (!_canMoveWhileDodging)
             {
                 SetMovementEnabled(false);
             }
-            
+
             RequestRootMotion();
         }
-        
-        public void OnDodgeMovementEnd(bool canMoveWhileDodging)
+
+        public void OnDodgeMovementEnd()
         {
             ReleaseRootMotion();
-            
-            if (!canMoveWhileDodging)
+
+            if (!_canMoveWhileDodging)
             {
                 SetMovementEnabled(true);
             }
