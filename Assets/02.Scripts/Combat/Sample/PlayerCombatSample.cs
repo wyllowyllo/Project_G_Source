@@ -103,7 +103,7 @@ namespace Combat.Sample
             _attacker.OnAttackHitStart();
             
             yield return new WaitForSeconds(hitDuration);
-            _attacker.OnAttackHitEnd();
+            _attacker.ForceDisableHitbox();
             
             yield return new WaitForSeconds(hitEnd);
             _attacker.OnComboWindowStart();

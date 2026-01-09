@@ -1,6 +1,7 @@
 using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
+using Drakkar.GameUtils;
 using UnityEngine;
 
 namespace Player
@@ -19,6 +20,9 @@ namespace Player
 
         [Header("VFX Settings")]
         [SerializeField] private float _vfxLifetime = 2f;
+
+        [Header("Trail Effect")]
+        [SerializeField] private DrakkarTrail _weaponTrail;
 
         private MeleeAttacker _attacker;
         private Combatant _combatant;
@@ -155,6 +159,18 @@ namespace Player
         public void SetVFXLifetime(float lifetime)
         {
             _vfxLifetime = lifetime;
+        }
+
+        public void StartTrail()
+        {
+            _weaponTrail?.Begin();
+        }
+
+        
+
+        public void StopAllEffects()
+        {
+            _weaponTrail?.End();
         }
     }
 }

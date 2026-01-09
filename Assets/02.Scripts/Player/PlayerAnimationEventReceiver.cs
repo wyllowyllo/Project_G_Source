@@ -22,27 +22,20 @@ namespace Player
                 Debug.LogError("[PlayerAnimationEventReceiver] PlayerCombat component 필요");
             }
         }
-        
-        public void OnAttackHitStart()
-        {
-            _attacker?.OnAttackHitStart();
-        }
-        
-        public void OnAttackHitEnd()
-        {
-            _attacker?.OnAttackHitEnd();
-        }
-        
+
         public void OnAttackAnimationEnd()
         {
             _attacker?.OnComboWindowStart();
 
-            // 버퍼된 입력이 있으면 다음 공격 시작
             if (_playerCombat != null && _playerCombat.TryExecuteBufferedAttack())
                 return;
 
-            // 버퍼 없으면 공격 종료 처리
             _playerCombat?.OnAttackComplete();
+        }
+
+        public void OnDodgeAnimationEnd()
+        {
+            _playerCombat?.OnDodgeAnimationEnd();
         }
     }
 }

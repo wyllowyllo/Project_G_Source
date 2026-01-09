@@ -15,6 +15,7 @@ namespace Player
         private static readonly int _deathTrigger = Animator.StringToHash("Death");
         private static readonly int _attackSpeedParameters = Animator.StringToHash("AttackSpeed");
         private static readonly int _attackEndTrigger = Animator.StringToHash("AttackEnd");
+        private static readonly int _dodgeTrigger = Animator.StringToHash("Dodge");
 
         private bool HasAnimator => _animator != null;
 
@@ -51,6 +52,13 @@ namespace Player
             if (!HasAnimator) return;
 
             _animator.SetTrigger(_deathTrigger);
+        }
+
+        public void PlayDodge()
+        {
+            if (!HasAnimator) return;
+
+            _animator.SetTrigger(_dodgeTrigger);
         }
 
         public void EndAttack()

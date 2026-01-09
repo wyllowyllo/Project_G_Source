@@ -21,6 +21,10 @@ namespace Player
 
         public event Action OnAttackInputPressed;
 
+        [Header("Dodge Input")]
+        [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
+        public event Action OnDodgeInputPressed;
+
         private void Update()
         {
             if(!_isEnabled)
@@ -39,6 +43,12 @@ namespace Player
             if (attackPressed)
             {
                 OnAttackInputPressed?.Invoke();
+            }
+
+            // 회피 입력 감지
+            if (Input.GetKeyDown(_dodgeKey))
+            {
+                OnDodgeInputPressed?.Invoke();
             }
         }
 

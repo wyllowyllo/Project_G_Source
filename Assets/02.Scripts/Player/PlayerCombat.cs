@@ -14,6 +14,19 @@ namespace Player
         public UnityEvent<int, GameObject> OnEnemyHit;
         public UnityEvent OnComboReset;
 
+        [Header("Dodge Settings")]
+        [Tooltip("I-frame duration. Industry standard: ~0.2s (12-13 frames @ 60fps)")]
+        [SerializeField] private float _dodgeInvincibilityDuration = 0.2f;
+
+        [Tooltip("If true, player can move during dodge animation")]
+        [SerializeField] private bool _canMoveWhileDodging = false;
+
+        private bool _isDodging;
+        private bool _attackCancelled;
+
+        public bool IsDodging => _isDodging;
+        public bool IsAttackCancelled => _attackCancelled;
+
         private Combatant _combatant;
         private MeleeAttacker _attacker;
 
@@ -22,6 +35,7 @@ namespace Player
         private PlayerTargetController _targetController;
 
         private PlayerMovement _playerMovement;
+        private PlayerVFXController _vfxController;
 
         private ComboState CurrentState => _attacker?.CurrentState ?? ComboState.Idle;
 
@@ -50,6 +64,7 @@ namespace Player
             _targetController = GetComponent<PlayerTargetController>();
 
             _playerMovement = GetComponent<PlayerMovement>();
+            _vfxController = GetComponent<PlayerVFXController>();
 
             ValidateComponents();
         }
@@ -77,6 +92,7 @@ namespace Player
             if (_inputHandler != null)
             {
                 _inputHandler.OnAttackInputPressed += HandleAttackInput;
+                _inputHandler.OnDodgeInputPressed += HandleDodgeInput;
             }
 
             if (_combatant != null)
@@ -98,6 +114,7 @@ namespace Player
             if (_inputHandler != null)
             {
                 _inputHandler.OnAttackInputPressed -= HandleAttackInput;
+                _inputHandler.OnDodgeInputPressed -= HandleDodgeInput;
             }
 
             if (_combatant != null)
@@ -116,7 +133,7 @@ namespace Player
 
         private void HandleAttackInput()
         {
-            if (!CanPerformAction()) return;
+            if (!CanPerformAction() || _isDodging) return;
 
             switch (CurrentState)
             {
@@ -142,6 +159,7 @@ namespace Player
         {
             if (!_attacker.TryAttack()) return;
 
+            _attackCancelled = false;
             SetMovementEnabled(false);
 
             _targetController?.RotateTowardsNearestTarget();
@@ -152,13 +170,52 @@ namespace Player
 
         private void HandleDamaged(DamageInfo info)
         {
+            if (_isDodging)
+                return;
+
             _animationController?.PlayDamage();
+        }
+
+        private void HandleDodgeInput()
+        {
+            if (!CanPerformAction() || _isDodging)
+                return;
+            
+            if (CurrentState != ComboState.Idle)
+            {
+                CancelCurrentAttack();
+            }
+
+            ExecuteDodge();
+        }
+
+        private void ExecuteDodge()
+        {
+            _isDodging = true;
+            
+            _playerMovement?.ExecuteDodgeMovement(_canMoveWhileDodging);
+            
+            _combatant?.SetInvincible(_dodgeInvincibilityDuration);
+            
+            _animationController?.PlayDodge();
+        }
+        
+        public void OnDodgeAnimationEnd()
+        {
+            if (!_isDodging)
+                return;
+
+            _isDodging = false;
+            
+            _playerMovement?.OnDodgeMovementEnd(_canMoveWhileDodging);
         }
 
         private void HandleDeath()
         {
             _animationController?.PlayDeath();
             _inputHandler?.SetEnabled(false);
+
+            CancelDodge();
 
             if (CurrentState != ComboState.Idle)
             {
@@ -215,6 +272,7 @@ namespace Player
 
             if (!combatEnabled)
             {
+                CancelDodge();
                 CancelCurrentAttack();
             }
         }
@@ -226,14 +284,30 @@ namespace Player
 
         public void ForceResetCombo()
         {
-            _attacker?.ResetCombo();  // HandleComboReset에서 이동 복구됨
+            _attacker?.ResetCombo(); 
             _inputHandler?.ClearBuffer();
         }
 
         public void CancelCurrentAttack()
         {
+            _attackCancelled = true;
+            
+            _attacker?.ForceDisableHitbox();
+            
+            _vfxController?.StopAllEffects();
+
             ForceResetCombo();
             _animationController?.EndAttack();
+        }
+
+        public void CancelDodge()
+        {
+            if (!_isDodging)
+                return;
+
+            _isDodging = false;
+            
+            _playerMovement?.OnDodgeMovementEnd(_canMoveWhileDodging);
         }
     }
 }
