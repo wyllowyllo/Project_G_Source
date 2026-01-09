@@ -146,7 +146,7 @@ public class UIExp : MonoBehaviour
                 .WaitForCompletion();
         }
 
-        StartCoroutine(ImageExpComplete_Coroutine());
+         StartCoroutine(nameof(ImageExpComplete_Coroutine));
 
         yield return new WaitForSeconds(_levelUpSequenceDelay);
 

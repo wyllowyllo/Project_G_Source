@@ -34,7 +34,7 @@ public class PlayerHpBar : MonoBehaviour
     private float _targetHp;
     private float _backHpDelayTimer;
 
-    private const int _maxLevel = 30;
+    private const int MaxLevel = 30;
 
     private void OnEnable()
     {
@@ -73,7 +73,6 @@ public class PlayerHpBar : MonoBehaviour
 
             HpSlider.value = 0.5f;
             BackSlider.value = 0.5f;
-            Debug.Log($"HpSlider value set to: {HpSlider.value}");
         }
     }
 
@@ -92,8 +91,10 @@ public class PlayerHpBar : MonoBehaviour
     {
         _level = newLevel;
 
-        if (_level > _maxLevel)
-            _level = _maxLevel;
+        if (_level > MaxLevel)
+        {
+            _level = MaxLevel;
+        }
 
         _levelText.text = $"Lv.{_level}";
     }

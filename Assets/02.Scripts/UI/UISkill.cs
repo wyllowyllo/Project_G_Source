@@ -50,7 +50,7 @@ public class UISkill : MonoBehaviour
         }
 
         SetCooldownIs(false);
-        StartCoroutine(ImageCooldownComplete());
+        StartCoroutine(nameof(ImageCooldownComplete));
     }
 
     private void SetUseSkillText()
