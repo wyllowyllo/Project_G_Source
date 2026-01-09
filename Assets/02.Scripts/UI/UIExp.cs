@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,8 @@ public class UIExp : MonoBehaviour
     private float _maxExp = 100;
     private float _curExp = 0;
 
+    private Tween _expTween;
+
     private void Start()
     {
         _expbar.value = (float)_curExp / (float)_maxExp;
@@ -29,23 +32,27 @@ public class UIExp : MonoBehaviour
         {
             _targetExp += 10;
 
+            AnimatorExpBar();
+
             if (_targetExp >= 100)
             {
                 StartCoroutine(ImageExpComplete_Coroutine());
-                StartCoroutine(ImageExpCompleteMore_Coroutine());
                 StartCoroutine(LevelUpExp_Coroutine());
             }
         }
-
-        SmoothExpUpdate();
         Handle();
     }
 
-    private void SmoothExpUpdate()
+    private void AnimatorExpBar()
     {
-        _displayExp = Mathf.Lerp(_displayExp, _targetExp, Time.deltaTime * _expLerpSpeed);
+        // 이전 트윈이 있다면 중단
+        _expTween?.Kill();
 
-        _curExp = Mathf.RoundToInt(_displayExp);
+        float duration = Mathf.Abs(_targetExp - _displayExp) / (_maxExp * _expLerpSpeed);
+        _expTween = DOTween.To(() => _displayExp, x => _displayExp = x, _targetExp, duration).SetEase(Ease.OutQuad).OnUpdate(() =>
+        {
+            _curExp = Mathf.RoundToInt(_displayExp);
+        });
     }
 
     private void Handle()
@@ -59,16 +66,18 @@ public class UIExp : MonoBehaviour
 
     private IEnumerator LevelUpExp_Coroutine()
     {
-        yield return new WaitForSeconds(4f);
+        yield return new WaitForSeconds(2f);
 
         _targetExp = 0;
         _displayExp = 0;
         _curExp = 0;
+
+        _expbar.value = 0;
     }
 
     private IEnumerator ImageExpComplete_Coroutine()
     {
-        Color color = new Color32(255, 247, 177, 255);
+        Color color = new Color32(255, 251, 213, 255);
         color.a = 1f;
 
         _imageExpComplete.color = color;
@@ -90,30 +99,9 @@ public class UIExp : MonoBehaviour
         _imageExpComplete.gameObject.SetActive(false);
     }
 
-    private IEnumerator ImageExpCompleteMore_Coroutine()
+    private void OnDestroy()
     {
-        yield return new WaitForSeconds(2f);
-        Color color = new Color32(255, 247, 177, 255);
-        color.a = 1f;
-
-        _imageExpComplete.color = color;
-        _imageExpComplete.gameObject.SetActive(true);
-
-        float fadeDuration = 1f;
-        float elapsed = 0f;
-
-        while (elapsed < fadeDuration)
-        {
-            elapsed += Time.deltaTime;
-            color.a = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
-            _imageExpComplete.color = color;
-            yield return null;
-        }
-
-        color.a = 0f;
-        _imageExpComplete.color = color;
-        _imageExpComplete.gameObject.SetActive(false);
+        _expTween?.Kill();
     }
-
-
 }
+
