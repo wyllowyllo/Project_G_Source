@@ -1,6 +1,4 @@
-using System.Collections;
 using Combat.Core;
-using Combat.Damage;
 using Progression;
 using TMPro;
 using UnityEngine;
@@ -13,40 +11,38 @@ namespace Player
 
         [SerializeField] private Combatant _playerCombatant; 
 
-    public Slider HpSlider;
-    public Slider BackSlider;
-    [SerializeField] private Image _hpFillImage;
-    [SerializeField] private Image _backHpFillImage;
-    [SerializeField] private TextMeshProUGUI _levelText;
-    [SerializeField] private TextMeshProUGUI _hpText;
+        public Slider HpSlider;
+        public Slider BackSlider;
+        [SerializeField] private Image _hpFillImage;
+        [SerializeField] private Image _backHpFillImage;
+        [SerializeField] private TextMeshProUGUI _levelText;
+        [SerializeField] private TextMeshProUGUI _hpText;
 
-    [SerializeField] private int _level = 1;
-    [SerializeField] private float _smoothSpeed = 5f;
-    [SerializeField] private float _smoothBackSpeed = 2f; 
-    [SerializeField] private float _backHpDelay = 0.3f;
-    [SerializeField] private int _firstLevel = 1;
+        [SerializeField] private int _level = 1;
+        [SerializeField] private float _smoothSpeed = 5f;
+        [SerializeField] private float _smoothBackSpeed = 2f; 
+        [SerializeField] private float _backHpDelay = 0.3f;
+        [SerializeField] private int _firstLevel = 1;
 
-    [Header("Hp Color")]
-    [SerializeField] private Color32 _highHpColor = new Color32(0, 191, 5, 255);
-    [SerializeField] private Color32 _mediumHpColor = new Color32(255, 204, 0, 255);
-    [SerializeField] private Color32 _lowHpColor = new Color32(255, 77, 77, 255);
+        [Header("Hp Color")]
+        [SerializeField] private Color32 _highHpColor = new Color32(0, 191, 5, 255);
+        [SerializeField] private Color32 _mediumHpColor = new Color32(255, 204, 0, 255);
+        [SerializeField] private Color32 _lowHpColor = new Color32(255, 77, 77, 255);
 
-    [SerializeField] private PlayerProgression _playerProgression;
+        [SerializeField] private PlayerProgression _playerProgression;
 
         private bool _backHpHit = false;
         private float _targetHp;
         private float _backHpDelayTimer;
 
-    private const int MaxLevel = 30;
+        private const int MaxLevel = 30;
 
-    private void OnEnable()
-    {
-        if(_playerProgression != null)
+        private void OnEnable()
         {
-            _playerProgression.OnLevelUp += HandleLevelUp;
-        }
-        if (_playerCombatant != null)
-        {
+            if(_playerProgression != null)
+            {
+                _playerProgression.OnLevelUp += HandleLevelUp;
+            }
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged += HandleDamaged;
@@ -54,15 +50,13 @@ namespace Player
             }
         }
 
-    private void OnDisable()
-    {
-        if (_playerProgression != null)
+        private void OnDisable()
         {
-            _playerProgression.OnLevelUp -= HandleLevelUp;
-        }
+            if (_playerProgression != null)
+            {
+                _playerProgression.OnLevelUp -= HandleLevelUp;
+            }
 
-        if (_playerCombatant != null)
-        {
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged -= HandleDamaged;
@@ -70,49 +64,50 @@ namespace Player
             }
         }
 
-    private void Start()
-    {
-        _level = _firstLevel;
-
-        if (_playerCombatant != null)
+        private void Start()
         {
-            InitializeHpBar();
+            _level = _firstLevel;
 
-            HpSlider.value = 0.5f;
-            BackSlider.value = 0.5f;
+            if (_playerCombatant != null)
+            {
+                InitializeHpBar();
+
+                HpSlider.value = 0.5f;
+                BackSlider.value = 0.5f;
+            }
         }
 
-    private void Update()
-    {
-        if (_playerCombatant == null)
+        private void Update()
         {
-            return;
-        }
+            if (_playerCombatant == null)
+            {
+                return;
+            }
 
             UpdateHpBarSmooth();
             UpdateBackSlider();
         }
 
-    private void HandleLevelUp(int previousLevel, int newLevel)
-    {
-        _level = newLevel;
-
-        if (_level > MaxLevel)
+        private void HandleLevelUp(int previousLevel, int newLevel)
         {
-            _level = MaxLevel;
+            _level = newLevel;
+
+            if (_level > MaxLevel)
+            {
+                _level = MaxLevel;
+            }
+
+            _levelText.text = $"Lv.{_level}";
         }
 
-        _levelText.text = $"Lv.{_level}";
-    }
-
-    private void InitializeHpBar()
-    {
-        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
-        HpSlider.value = _targetHp;
-        BackSlider.value = _targetHp;
-        UpdateHpText();
-        UpdateHpColor();
-    }
+        private void InitializeHpBar()
+        {
+            _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+            HpSlider.value = _targetHp;
+            BackSlider.value = _targetHp;
+            UpdateHpText();
+            UpdateHpColor();
+        }
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
@@ -162,45 +157,49 @@ namespace Player
                     }
                 }
             }
+            else
+            {
+                BackSlider.value = HpSlider.value;
+            }
         }
-        else
+
+        private void UpdateHpText()
         {
-            BackSlider.value = HpSlider.value;
+            _levelText.text = $"Lv.{_level}";
+            _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
         }
-    }
 
-    private void UpdateHpText()
-    {
-        _levelText.text = $"Lv.{_level}";
-        _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
-    }
-
-    private void UpdateHpColor()
-    {
-        Color newColor;
-
-        if (HpSlider.value > 0.5f)
+        private void UpdateHpColor()
         {
-            newColor = _highHpColor;
-        }
-        else if (HpSlider.value > 0.3f)
-        {
-            newColor = _mediumHpColor;
+            Color newColor;
+
+            if (HpSlider.value > 0.5f)
+            {
+                newColor = _highHpColor;
+            }
+            else if (HpSlider.value > 0.3f)
+            {
+                newColor = _mediumHpColor;
+            }
+            else
+            {
+                newColor = _lowHpColor;
+            }
+
+            _hpFillImage.color = newColor;
+
+            if (_backHpFillImage != null)
+            {
+                _backHpFillImage.color = newColor;
+            }
         }
 
         private void FlashCritical()
         {
-            newColor = _lowHpColor;
+            StartCoroutine(FlashCoroutine());
         }
 
-        _hpFillImage.color = newColor;
-
-        if (_backHpFillImage != null)
-        {
-            _backHpFillImage.color = newColor;
-        }
-
-        private IEnumerator FlashCoroutine()
+        private System.Collections.IEnumerator FlashCoroutine()
         {
             Color originalColor = _hpFillImage.color;
             _hpFillImage.color = Color.red;
@@ -212,15 +211,15 @@ namespace Player
         {
             GameManager.Instance.TriggerGameOver();
         }
-    }
 
-    public void UpdateHealthUI()
-    {
-        if (_playerCombatant == null) return;
+        public void UpdateHealthUI()
+        {
+            if (_playerCombatant == null) return;
 
-        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
-        UpdateHpText();
-        UpdateHpColor();
+            _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+            UpdateHpText();
+            UpdateHpColor();
 
+        }
     }
 }
