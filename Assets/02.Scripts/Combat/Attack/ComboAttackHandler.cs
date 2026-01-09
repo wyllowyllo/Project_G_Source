@@ -4,21 +4,30 @@ using UnityEngine;
 
 namespace Combat.Attack
 {
+    public enum ComboState
+    {
+        Idle,
+        Attacking,
+        ComboWindow
+    }
+
     public class ComboAttackHandler : MonoBehaviour
     {
         private const int DefaultMaxComboSteps = 3;
-        private const float DefaultComboWindow = 2f;
+        private const float DefaultComboWindow = 0.5f;
         private static readonly float[] s_defaultComboMultipliers = { 1.0f, 1.1f, 1.3f };
 
         [SerializeField] private ComboSettings _comboSettings;
 
         private int _currentComboStep;
-        private float _lastAttackTime;
-        private bool _isAttacking;
+        private ComboState _currentState = ComboState.Idle;
         private float _currentMultiplier = 1f;
 
+        private float _comboWindowTimerStart;
+        private bool _isComboWindowTimerActive;
+
         public int CurrentComboStep => _currentComboStep;
-        public bool IsAttacking => _isAttacking;
+        public ComboState CurrentState => _currentState;
         public float CurrentMultiplier => _currentMultiplier;
 
         public int MaxComboSteps => _comboSettings != null ? _comboSettings.MaxComboSteps : DefaultMaxComboSteps;
@@ -26,28 +35,42 @@ namespace Combat.Attack
 
         public event Action<int, float> OnComboAttack;
         public event Action OnComboReset;
+        public event Action<ComboState, ComboState> OnStateChanged;
 
         private void Awake()
         {
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (_comboSettings == null)
             {
                 Debug.LogWarning($"[{nameof(ComboAttackHandler)}] ComboSettings is not assigned. Using default values.");
             }
-    #endif
+#endif
+        }
+
+        public void SetState(ComboState newState)
+        {
+            if (_currentState == newState) return;
+
+            var previousState = _currentState;
+            _currentState = newState;
+            OnStateChanged?.Invoke(previousState, newState);
         }
 
         public bool TryAttack()
         {
-           
-            if (_isAttacking)
+            if (_currentState != ComboState.Idle && _currentState != ComboState.ComboWindow)
                 return false;
 
-           
-            if (IsComboWindowExpired())
+            // 콤보 윈도우 타이머 만료 체크 (Update 전에 입력이 들어온 경우)
+            if (_currentState == ComboState.ComboWindow &&
+                _isComboWindowTimerActive &&
+                Time.time - _comboWindowTimerStart > ComboWindowDuration)
             {
                 ResetCombo();
             }
+
+            // 새 공격 시작 시 타이머 비활성화 (새 애니메이션 끝에서 다시 시작됨)
+            _isComboWindowTimerActive = false;
 
             _currentComboStep++;
 
@@ -56,8 +79,7 @@ namespace Combat.Attack
                 _currentComboStep = 1;
             }
 
-            _lastAttackTime = Time.time;
-            _isAttacking = true;
+            SetState(ComboState.Attacking);
             _currentMultiplier = GetComboMultiplier(_currentComboStep);
 
             OnComboAttack?.Invoke(_currentComboStep, _currentMultiplier);
@@ -65,32 +87,30 @@ namespace Combat.Attack
             return true;
         }
 
-        public void OnAttackAnimationEnd()
+        public void StartComboWindowTimer()
         {
-            Debug.Log($"Attack Animation End");
-            _isAttacking = false;
+            _comboWindowTimerStart = Time.time;
+            _isComboWindowTimerActive = true;
         }
 
         public void ResetCombo()
         {
-            Debug.Log($"Combo Reset");
             _currentComboStep = 0;
-            _isAttacking = false;
             _currentMultiplier = 1f;
+            _isComboWindowTimerActive = false;
+            SetState(ComboState.Idle);
             OnComboReset?.Invoke();
         }
 
         private void Update()
         {
-            if (!_isAttacking && IsComboWindowExpired())
+            if (_isComboWindowTimerActive && _currentState == ComboState.ComboWindow)
             {
-                ResetCombo();
+                if (Time.time - _comboWindowTimerStart > ComboWindowDuration)
+                {
+                    ResetCombo();
+                }
             }
-        }
-
-        private bool IsComboWindowExpired()
-        {
-            return _currentComboStep > 0 && (Time.time - _lastAttackTime) > ComboWindowDuration;
         }
 
         private float GetComboMultiplier(int step)

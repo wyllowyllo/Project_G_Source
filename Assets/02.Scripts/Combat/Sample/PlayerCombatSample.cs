@@ -106,7 +106,7 @@ namespace Combat.Sample
             _attacker.OnAttackHitEnd();
             
             yield return new WaitForSeconds(hitEnd);
-            _attacker.OnAttackAnimationEnd();
+            _attacker.OnComboWindowStart();
         }
 
         private void PlayAttackAnimation()
