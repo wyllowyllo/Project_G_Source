@@ -24,6 +24,9 @@ namespace Monster.AI
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
 
+        // 몬스터 기본 위치
+        private Vector3 _homePosition;
+        
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
@@ -34,11 +37,6 @@ namespace Monster.AI
         private Dictionary<System.Type, EntityAbility> _abilities;
         private List<EntityAbility> _abilityList;
         
-        
-        // 테더 시스템
-        private Vector3 _homePosition;
-       
-
         // 공격 시각화
         private Color _originalMaterialColor;
 
