@@ -13,6 +13,7 @@ namespace Monster.AI.States
         private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
         private readonly FacingAbility _facingAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         private bool _isAlertComplete;
 
@@ -26,17 +27,17 @@ namespace Monster.AI.States
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
             _facingAbility = controller.GetAbility<FacingAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
             _isAlertComplete = false;
 
-            // 이동 정지
             _navAgentAbility?.Stop();
 
             // 경계 애니메이션 트리거
-            _controller.TriggerAlertAnimation(OnAlertComplete);
+            _animatorAbility?.TriggerAlert(OnAlertComplete);
 
             Debug.Log($"{_controller.gameObject.name}: 플레이어 감지! 경계 상태 진입");
         }

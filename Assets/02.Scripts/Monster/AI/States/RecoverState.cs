@@ -14,6 +14,7 @@ namespace Monster.AI.States
         // Abilities
         private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         private float _recoverTimer = 0f;
         private float _recoverDuration;
@@ -27,16 +28,21 @@ namespace Monster.AI.States
             _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
 
-           
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
             _recoverTimer = 0f;
             DetermineRecoverDuration();
-            StopNavigation();
+
+            _navAgentAbility?.Stop();
+
+            // 애니메이션: 전투 대기 (이동 없음)
+            _animatorAbility?.SetInCombat(true);
+            _animatorAbility?.SetMoveDirection(0f, 0f);
 
             string attackType = _groupCommandProvider.CurrentAttackWasHeavy ? "강공" : "약공";
             Debug.Log($"{_controller.gameObject.name}: {attackType} 후 추스르는 중... ({_recoverDuration}초)");
@@ -67,7 +73,7 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            ResumeNavigation();
+            _navAgentAbility?.Resume();
             ReleaseAttackResources();
         }
 
@@ -76,16 +82,6 @@ namespace Monster.AI.States
             _recoverDuration = _groupCommandProvider.CurrentAttackWasHeavy
                 ? _controller.Data.HeavyAttackRecoverTime
                 : _controller.Data.LightAttackRecoverTime;
-        }
-
-        private void StopNavigation()
-        {
-            _navAgentAbility?.Stop();
-        }
-
-        private void ResumeNavigation()
-        {
-            _navAgentAbility?.Resume();
         }
 
         private void ReleaseAttackResources()

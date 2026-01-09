@@ -2,7 +2,7 @@ using Monster.Ability;
 
 namespace Monster.AI.States
 {
-    // 대기 상태 (Ability 기반 리팩터링)
+    // 대기 상태: 비전투 대기, 플레이어 감지 시 Alert로 전이
     public class IdleState : IMonsterState
     {
         private readonly MonsterController _controller;
@@ -11,6 +11,7 @@ namespace Monster.AI.States
         // Abilities
         private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         public EMonsterState StateType => EMonsterState.Idle;
 
@@ -19,14 +20,18 @@ namespace Monster.AI.States
             _controller = controller;
             _stateMachine = stateMachine;
 
-            
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
-            StopNavigation();
+            _navAgentAbility?.Stop();
+
+            // 애니메이션: 비전투 대기
+            _animatorAbility?.SetSpeed(0f);
+            _animatorAbility?.SetInCombat(false);
         }
 
         public void Update()
@@ -40,18 +45,6 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            ResumeNavigation();
-        }
-
-        private void StopNavigation()
-        {
-           
-            _navAgentAbility?.Stop();
-        }
-
-        private void ResumeNavigation()
-        {
-           
             _navAgentAbility?.Resume();
         }
     }

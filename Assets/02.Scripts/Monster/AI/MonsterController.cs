@@ -33,15 +33,10 @@ namespace Monster.AI
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
         private Animator _animator;
-        private MonsterAnimationEventReceiver _animEventReceiver;
 
         // Ability 시스템
         private Dictionary<System.Type, EntityAbility> _abilities;
         private List<EntityAbility> _abilityList;
-
-        // 애니메이션 콜백
-        private System.Action _onAttackComplete;
-        private System.Action _onAlertComplete;
 
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
@@ -69,7 +64,6 @@ namespace Monster.AI
 
             InitializeMonster();
             InitializeAbilities();
-            InitializeAnimationEventReceiver();
             InitializeStateMachine();
         }
         
@@ -150,6 +144,7 @@ namespace Monster.AI
             RegisterAbility(new NavAgentAbility());
             RegisterAbility(new PlayerDetectAbility());
             RegisterAbility(new FacingAbility());
+            RegisterAbility(new AnimatorAbility());
         }
 
         private void RegisterAbility(EntityAbility ability)
@@ -177,80 +172,16 @@ namespace Monster.AI
             return null;
         }
 
-        private void InitializeAnimationEventReceiver()
-        {
-            if (_animator == null)
-            {
-                Debug.LogWarning($"{gameObject.name}: Animator를 찾을 수 없습니다.");
-                return;
-            }
-
-            // Animator가 있는 오브젝트에 EventReceiver 추가
-            _animEventReceiver = _animator.gameObject.GetComponent<MonsterAnimationEventReceiver>();
-            if (_animEventReceiver == null)
-            {
-                _animEventReceiver = _animator.gameObject.AddComponent<MonsterAnimationEventReceiver>();
-            }
-
-            // 공격 콜라이더 찾기 (Body 하위의 AttackCollider)
-            Collider attackCollider = null;
-            Transform body = _animator.transform.Find("Body");
-            if (body != null)
-            {
-                Transform attackColliderTransform = body.Find("AttackCollider");
-                if (attackColliderTransform != null)
-                {
-                    attackCollider = attackColliderTransform.GetComponent<Collider>();
-                }
-            }
-
-            _animEventReceiver.Initialize(this, attackCollider);
-        }
-
-        // AttackState에서 호출: 공격 애니메이션 트리거
-        public void TriggerAttackAnimation(string triggerName, System.Action onComplete)
-        {
-            _onAttackComplete = onComplete;
-
-            if (_animator != null)
-            {
-                _animator.SetTrigger(triggerName);
-            }
-            else
-            {
-                // Animator가 없으면 즉시 완료 처리
-                onComplete?.Invoke();
-            }
-        }
-
-        // MonsterAnimationEventReceiver에서 호출
+        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
         public void OnAttackAnimationComplete()
         {
-            _onAttackComplete?.Invoke();
-            _onAttackComplete = null;
+            GetAbility<AnimatorAbility>()?.OnAttackComplete();
         }
 
-        // AlertState에서 호출: 경계 애니메이션 트리거
-        public void TriggerAlertAnimation(System.Action onComplete)
-        {
-            _onAlertComplete = onComplete;
-
-            if (_animator != null)
-            {
-                _animator.SetTrigger("Alert");
-            }
-            else
-            {
-                // Animator가 없으면 즉시 완료 처리
-                onComplete?.Invoke();
-            }
-        }
-
-        // MonsterAnimationEventReceiver에서 호출
+        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
         public void OnAlertAnimationComplete()
         {
-            _onAlertComplete?.Invoke();
-            _onAlertComplete = null;
+            GetAbility<AnimatorAbility>()?.OnAlertComplete();
         }
 
         private void HandleDeath()

@@ -16,6 +16,7 @@ namespace Monster.AI.States
         private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
         private readonly FacingAbility _facingAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         private enum EAttackPhase { Windup, Perform }
         private EAttackPhase _currentPhase;
@@ -23,10 +24,6 @@ namespace Monster.AI.States
         private bool _isHeavyAttack;
         private float _phaseTimer;
         private bool _isAttackComplete;
-
-        // 애니메이션 트리거 이름
-        private const string LightAttackTrigger = "Attack";
-        private const string HeavyAttackTrigger = "Attack_Heavy";
 
         public EMonsterState StateType => EMonsterState.Attack;
 
@@ -40,6 +37,7 @@ namespace Monster.AI.States
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
             _facingAbility = controller.GetAbility<FacingAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
@@ -126,10 +124,9 @@ namespace Monster.AI.States
             _isAttackComplete = false;
 
             // 공격 애니메이션 트리거
-            string triggerName = _isHeavyAttack ? HeavyAttackTrigger : LightAttackTrigger;
-            _controller.TriggerAttackAnimation(triggerName, OnAnimationComplete);
+            _animatorAbility?.TriggerAttack(_isHeavyAttack, OnAnimationComplete);
 
-            Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Perform) - {triggerName}");
+            Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Perform) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 
         private void OnAnimationComplete()

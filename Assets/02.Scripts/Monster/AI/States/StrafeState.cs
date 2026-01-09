@@ -16,6 +16,7 @@ namespace Monster.AI.States
         private readonly NavAgentAbility _navAgentAbility;
         private readonly PlayerDetectAbility _playerDetectAbility;
         private readonly FacingAbility _facingAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         // Probe 서브모드
         private enum EProbeMode { Reposition, Hold, Shuffle, FeintIn, FeintOut }
@@ -37,17 +38,19 @@ namespace Monster.AI.States
             _groupCommandProvider = groupCommandProvider;
             _transform = controller.transform;
 
-            
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
             _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
             _facingAbility = controller.GetAbility<FacingAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
-            EnableNavigation();
+            _navAgentAbility?.Resume();
 
-           
+            // 애니메이션: 전투 모드
+            _animatorAbility?.SetInCombat(true);
+
             EnsureMinimumDistance();
         }
 
@@ -111,9 +114,26 @@ namespace Monster.AI.States
             {
                 ChooseNextProbeMode(desired);
             }
+
+            // 애니메이션: 이동 방향 업데이트
+            UpdateMoveAnimation();
         }
 
-       private void DoReposition(Vector3 desired)
+        private void UpdateMoveAnimation()
+        {
+            if (_animatorAbility == null) return;
+
+            Vector3 velocity = _navAgentAbility?.Velocity ?? Vector3.zero;
+            Vector3 localVelocity = _transform.InverseTransformDirection(velocity);
+
+            float strafeSpeed = _controller.Data.StrafeSpeed;
+            float moveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
+            float moveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
+
+            _animatorAbility.SetMoveDirection(moveX, moveY);
+        }
+
+        private void DoReposition(Vector3 desired)
         {
             if (!_navAgentAbility.IsActive) return;
 
@@ -221,13 +241,6 @@ namespace Monster.AI.States
 
         public void Exit()
         {
-            
-            _navAgentAbility?.Resume();
-        }
-
-        private void EnableNavigation()
-        {
-            
             _navAgentAbility?.Resume();
         }
 
