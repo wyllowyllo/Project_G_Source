@@ -1,7 +1,6 @@
 using System;
 using Combat.Core;
 using Combat.Damage;
-using Combat.Data;
 using UnityEngine;
 
 namespace Combat.Attack
@@ -21,14 +20,14 @@ namespace Combat.Attack
         private AttackContext _currentAttackContext;
         
         public ICombatant Combatant => _combatant;
-        public bool CanAttack => !_comboHandler.IsAttacking && _combatant.IsAlive && !_combatant.IsStunned;
-        
+        public bool CanAttack => _comboHandler.CurrentState is ComboState.Idle or ComboState.ComboWindow
+                                 && _combatant.IsAlive && !_combatant.IsStunned;
+
         public int CurrentComboStep => _comboHandler.CurrentComboStep;
-        public bool IsAttacking => _comboHandler.IsAttacking;
+        public ComboState CurrentState => _comboHandler.CurrentState;
         public float CurrentMultiplier => _comboHandler.CurrentMultiplier;
         public int MaxComboSteps => _comboHandler.MaxComboSteps;
-        public float ComboWindowDuration => _comboHandler.ComboWindowDuration;
-        
+
         public event Action<int, float> OnComboAttack;
         public event Action OnComboReset;
         public event Action<IDamageable, DamageInfo> OnHit;
@@ -50,7 +49,7 @@ namespace Combat.Attack
         {
             _comboHandler.OnComboAttack += HandleComboAttack;
             _comboHandler.OnComboReset += HandleComboReset;
-            
+
             if (_hitbox != null)
             {
                 _hitbox.OnHit += HandleHit;
@@ -61,13 +60,13 @@ namespace Combat.Attack
         {
             _comboHandler.OnComboAttack -= HandleComboAttack;
             _comboHandler.OnComboReset -= HandleComboReset;
-            
+
             if (_hitbox != null)
             {
                 _hitbox.OnHit -= HandleHit;
             }
         }
-        
+
         public bool TryAttack()
         {
             if (!CanAttack) return false;
@@ -90,12 +89,16 @@ namespace Combat.Attack
 
             _hitbox.DisableHitbox();
         }
-        
-        public void OnAttackAnimationEnd()
+
+        public void OnComboWindowStart()
         {
-            _comboHandler.OnAttackAnimationEnd();
+            if (_comboHandler.CurrentState != ComboState.Attacking)
+                return;
+
+            _comboHandler.SetState(ComboState.ComboWindow);
+            _comboHandler.StartComboWindowTimer();
         }
-        
+
         public void ResetCombo()
         {
             _comboHandler.ResetCombo();
