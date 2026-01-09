@@ -65,13 +65,11 @@ public class UIExp : MonoBehaviour
 
     private void AnimatorExpBar()
     {
-        // 이전 트윈이 있다면 중단
         _expTween?.Kill();
 
-        float duration = Mathf.Abs(_targetExp - _displayExp) / (_maxExp * _expLerpSpeed);
-        _expTween = DOTween.To(() => _displayExp, x => _displayExp = x, _targetExp, duration).SetEase(Ease.OutQuad).OnUpdate(() =>
+        _expTween = DOTween.To(() => _displayExp, x => _displayExp = x, _targetExp, 0.35f).SetEase(Ease.OutCubic).OnUpdate(() =>
         {
-            _curExp = Mathf.RoundToInt(_displayExp);
+            _curExp = _displayExp;
         });
     }
 
@@ -80,7 +78,7 @@ public class UIExp : MonoBehaviour
         _expbar.value = _displayExp / _maxExp;
         if (_expText != null)
         {
-            _expText.text = $"{Mathf.RoundToInt(_curExp)}/{Mathf.RoundToInt(_maxExp)}";
+            _expText.text = $"{Mathf.FloorToInt(_curExp)}/{_maxExp}";
         }
 
         if(_expbar.value >= _maxExp)
