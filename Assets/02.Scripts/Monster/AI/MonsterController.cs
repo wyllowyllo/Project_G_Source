@@ -39,8 +39,9 @@ namespace Monster.AI
         private Dictionary<System.Type, EntityAbility> _abilities;
         private List<EntityAbility> _abilityList;
 
-        // 공격 애니메이션 상태
+        // 애니메이션 콜백
         private System.Action _onAttackComplete;
+        private System.Action _onAlertComplete;
 
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
@@ -128,6 +129,7 @@ namespace Monster.AI
 
             // 상태 등록
             _stateMachine.RegisterState(EMonsterState.Idle, new IdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Alert, new AlertState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine, _groupCommandProvider));
             _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
@@ -226,6 +228,29 @@ namespace Monster.AI
         {
             _onAttackComplete?.Invoke();
             _onAttackComplete = null;
+        }
+
+        // AlertState에서 호출: 경계 애니메이션 트리거
+        public void TriggerAlertAnimation(System.Action onComplete)
+        {
+            _onAlertComplete = onComplete;
+
+            if (_animator != null)
+            {
+                _animator.SetTrigger("Alert");
+            }
+            else
+            {
+                // Animator가 없으면 즉시 완료 처리
+                onComplete?.Invoke();
+            }
+        }
+
+        // MonsterAnimationEventReceiver에서 호출
+        public void OnAlertAnimationComplete()
+        {
+            _onAlertComplete?.Invoke();
+            _onAlertComplete = null;
         }
 
         private void HandleDeath()

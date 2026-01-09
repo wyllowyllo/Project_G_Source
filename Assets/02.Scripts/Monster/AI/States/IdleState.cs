@@ -31,13 +31,11 @@ namespace Monster.AI.States
 
         public void Update()
         {
-           
+            // 플레이어 감지 시 Alert 상태로 전이
             if (_playerDetectAbility.IsInDetectionRange())
             {
-                _stateMachine.ChangeState(EMonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Alert);
             }
-
-            // TODO: 추후 Roam(순찰) 기능 추가 가능
         }
 
         public void Exit()

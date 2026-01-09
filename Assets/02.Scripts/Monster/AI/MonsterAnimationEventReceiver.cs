@@ -43,5 +43,11 @@ namespace Monster.AI
         {
             _controller?.OnAttackAnimationComplete();
         }
+
+        // Animation Event: 경계 애니메이션 완료
+        public void OnAlertComplete()
+        {
+            _controller?.OnAlertAnimationComplete();
+        }
     }
 }

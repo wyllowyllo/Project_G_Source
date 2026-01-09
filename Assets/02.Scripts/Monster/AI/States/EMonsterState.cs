@@ -1,15 +1,15 @@
 namespace Monster.AI.States
 {
-    
     public enum EMonsterState
     {
-        Idle,           
-        Approach,       
-        Strafe,         
-        Attack,         
-        Recover,        
-        ReturnHome,     
-        Hit,            
-        Dead            
+        Idle,
+        Alert,
+        Approach,
+        Strafe,
+        Attack,
+        Recover,
+        ReturnHome,
+        Hit,
+        Dead
     }
 }
