@@ -29,7 +29,7 @@ public class UIExp : MonoBehaviour
 
     // y키로 경험치 테스트용
     private bool _enableDebugInput = true;
-    private int _debugExpAmount = 50;
+    private int _debugExpAmount = 200;
 
     private void Start()
     {
