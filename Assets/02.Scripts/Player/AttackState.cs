@@ -34,29 +34,25 @@ namespace Player
         public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             float time = stateInfo.normalizedTime;
-
-            // Hitbox 시작
+            
             if (!_hitStarted && time >= _hitStartTime)
             {
                 _hitStarted = true;
                 _attacker?.OnAttackHitStart();
             }
-
-            // Hitbox 종료
+            
             if (!_hitEnded && time >= _hitEndTime)
             {
                 _hitEnded = true;
                 _attacker?.ForceDisableHitbox();
             }
-
-            // Trail 시작
+            
             if (!_trailStarted && time >= _trailStartTime)
             {
                 _trailStarted = true;
                 _vfxController?.StartTrail();
             }
-
-            // Trail 종료
+            
             if (!_trailEnded && time >= _trailEndTime)
             {
                 _trailEnded = true;
@@ -66,7 +62,6 @@ namespace Player
 
         public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            // 상태 퇴장 시 강제 정리
             if (!_hitEnded)
             {
                 _attacker?.ForceDisableHitbox();

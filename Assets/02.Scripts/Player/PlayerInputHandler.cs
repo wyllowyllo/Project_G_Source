@@ -11,10 +11,10 @@ namespace Player
         [SerializeField] private float _bufferDuration = 1f;
         [SerializeField] private bool _enableBuffer = true;
 
-        private bool _hasBufferedInput; // 콤보 다음 공격 예약확인 시
+        private bool _hasBufferedInput;
         public bool HasBufferedInput => _hasBufferedInput;
 
-        private float _bufferInputTime; // 다음 콤보 공격 클릭 저장 유효시간
+        private float _bufferInputTime;
 
         private bool _isEnabled = true;
         public bool IsEnabled => _isEnabled;
@@ -44,8 +44,7 @@ namespace Player
             {
                 OnAttackInputPressed?.Invoke();
             }
-
-            // 회피 입력 감지
+            
             if (Input.GetKeyDown(_dodgeKey))
             {
                 OnDodgeInputPressed?.Invoke();

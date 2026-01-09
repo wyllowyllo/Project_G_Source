@@ -30,8 +30,7 @@ namespace Player
         private Vector3 _lookDirection;
 
         private Quaternion? _immediateRotation;
-
-        // 공격 시 부드러운 회전
+        
         private Quaternion? _smoothTargetRotation;
         private float _smoothRotationSpeed;
 
@@ -164,15 +163,13 @@ namespace Player
 
         public void UpdateRotation(ref Quaternion currentRotation, float deltaTime)
         {
-            // 1순위: 즉시 회전
             if (_immediateRotation.HasValue)
             {
                 currentRotation = _immediateRotation.Value;
                 _immediateRotation = null;
                 return;
             }
-
-            // 2순위: 부드러운 회전 (공격 시)
+            
             if (_smoothTargetRotation.HasValue)
             {
                 float rotSpeed = Mathf.Lerp(10f, 50f, _smoothRotationSpeed);
@@ -214,12 +211,7 @@ namespace Player
             _lookDirection = direction;
             _immediateRotation = Quaternion.LookRotation(direction, Vector3.up);
         }
-
-        /// <summary>
-        /// 빠르지만 부드러운 회전 (공격 시 사용)
-        /// </summary>
-        /// <param name="direction">목표 방향</param>
-        /// <param name="speed">회전 속도 (1 = 거의 즉시, 0.5 = 빠름, 0.2 = 보통)</param>
+        
         public void RotateSmooth(Vector3 direction, float speed = 1f)
         {
             if (direction.sqrMagnitude < 0.01f) return;

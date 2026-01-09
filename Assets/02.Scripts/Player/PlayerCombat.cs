@@ -199,12 +199,7 @@ namespace Player
         
         public void OnDodgeAnimationEnd()
         {
-            if (!_isDodging)
-                return;
-
-            _isDodging = false;
-            
-            _playerMovement?.OnDodgeMovementEnd();
+            EndDodge();
         }
 
         private void HandleDeath()
@@ -212,7 +207,7 @@ namespace Player
             _animationController?.PlayDeath();
             _inputHandler?.SetEnabled(false);
 
-            CancelDodge();
+            EndDodge();
 
             if (CurrentState != ComboState.Idle)
             {
@@ -269,7 +264,7 @@ namespace Player
 
             if (!combatEnabled)
             {
-                CancelDodge();
+                EndDodge();
                 CancelCurrentAttack();
             }
         }
@@ -297,7 +292,7 @@ namespace Player
             _animationController?.EndAttack();
         }
 
-        public void CancelDodge()
+        private void EndDodge()
         {
             if (!_isDodging)
                 return;
