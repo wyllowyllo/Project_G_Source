@@ -19,7 +19,11 @@ public class UIExp : MonoBehaviour
     private float _maxExp = 100;
     private float _curExp = 0;
 
+    private bool _isLevelingUp = false;
+
     private Tween _expTween;
+
+    public System.Action OnLevelUp;
 
     private void Start()
     {
@@ -28,14 +32,30 @@ public class UIExp : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Y))
+        if (Input.GetKeyDown(KeyCode.Y))
         {
+            if (_isLevelingUp)
+            {
+                return;
+            }
+
+            if (_targetExp > _maxExp)
+            {
+                return;
+            }
+
             _targetExp += 10;
+
+            if (_targetExp > _maxExp)
+            { 
+                _targetExp = _maxExp;
+            }
 
             AnimatorExpBar();
 
-            if (_targetExp >= 100)
+            if (_targetExp >= _maxExp)
             {
+                _isLevelingUp = true;
                 StartCoroutine(ImageExpComplete_Coroutine());
                 StartCoroutine(LevelUpExp_Coroutine());
             }
@@ -62,17 +82,25 @@ public class UIExp : MonoBehaviour
         {
             _expText.text = $"{Mathf.RoundToInt(_curExp)}/{Mathf.RoundToInt(_maxExp)}";
         }
+
+        if(_expbar.value >= _maxExp)
+        {
+            _expbar.value = _maxExp;
+        }
     }
 
     private IEnumerator LevelUpExp_Coroutine()
     {
         yield return new WaitForSeconds(2f);
 
+        OnLevelUp?.Invoke();
         _targetExp = 0;
         _displayExp = 0;
         _curExp = 0;
 
         _expbar.value = 0;
+
+        _isLevelingUp = false;
     }
 
     private IEnumerator ImageExpComplete_Coroutine()

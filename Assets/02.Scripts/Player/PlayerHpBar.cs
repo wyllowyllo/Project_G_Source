@@ -16,17 +16,26 @@ public class PlayerHpBar : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _levelText;
     [SerializeField] private TextMeshProUGUI _hpText;
 
-    [SerializeField] private int _level = 30;
+    [SerializeField] private int _level = 1;
     [SerializeField] private float _smoothSpeed = 5f;
     [SerializeField] private float _smoothBackSpeed = 2f; 
     [SerializeField] private float _backHpDelay = 0.3f;
+    [SerializeField] private int _firstLevel = 1;
+
+    [SerializeField] private UIExp _uiExp;
 
     private bool _backHpHit = false;
     private float _targetHp;
     private float _backHpDelayTimer;
 
+    private int _maxLevel = 30;
+
     private void OnEnable()
     {
+        if(_uiExp != null)
+        {
+            _uiExp.OnLevelUp += HandleLevelUp;
+        }
         if (_playerCombatant != null)
         {
             _playerCombatant.OnDamaged += HandleDamaged;
@@ -36,6 +45,11 @@ public class PlayerHpBar : MonoBehaviour
 
     private void OnDisable()
     {
+        if(_uiExp != null)
+        {
+            _uiExp.OnLevelUp -= HandleLevelUp;
+        }
+
         if (_playerCombatant != null)
         {
             _playerCombatant.OnDamaged -= HandleDamaged;
@@ -45,6 +59,8 @@ public class PlayerHpBar : MonoBehaviour
 
     private void Start()
     {
+        _level = _firstLevel;
+
         if (_playerCombatant != null)
         {
             InitializeHpBar();
@@ -57,10 +73,24 @@ public class PlayerHpBar : MonoBehaviour
 
     private void Update()
     {
-        if (_playerCombatant == null) return;
+        if (_playerCombatant == null)
+        {
+            return;
+        }
 
         UpdateHpBarSmooth();
         UpdateBackSlider();
+    }
+
+    private void HandleLevelUp()
+    {
+        _level++;
+        _levelText.text = $"Lv.{_level}";
+
+        if(_level > _maxLevel)
+        {
+            _level = _maxLevel;
+        }
     }
 
     private void InitializeHpBar()
