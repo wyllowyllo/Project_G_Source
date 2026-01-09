@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbf4f1ddd2b77e840a767c5faed332a2, type: 3}
   m_Name: MonsterData
   m_EditorClassIdentifier: Assembly-CSharp::ProjectG.Monster.MonsterData
-  _attackMode: 1
+  _attackMode: 0
   _enablePushback: 0
   _monsterName: Test
   _monsterLevel: 1
@@ -30,11 +30,18 @@ MonoBehaviour:
   _tetherRadius: 20
   _windupTime: 0.3
   _executeTime: 0.2
-  _recoverTime: 0.5
+  _lightAttackRecoverTime: 0.5
+  _heavyAttackRecoverTime: 2
   _chargeSpeed: 7
   _retreatDistance: 2
   _lightAttackChance: 0.45
   _heavyAttackChance: 0.15
   _heavyAttackCooldown: 3
+  _circleAngularSpeed: 30
+  _strafeMinDuration: 1.5
+  _strafeMaxDuration: 3.5
+  _strafePauseChance: 0.2
+  _directionChangeChance: 0.3
+  _speedLerpFactor: 3
   _experienceReward: 10
   _goldReward: 5
