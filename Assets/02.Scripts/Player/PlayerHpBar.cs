@@ -1,5 +1,7 @@
 using System.Collections;
 using Combat.Core;
+using Combat.Damage;
+using Progression;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,22 +13,39 @@ namespace Player
 
         [SerializeField] private Combatant _playerCombatant; 
 
-        public Slider HpSlider;
-        public Slider BackSlider;
-        [SerializeField] private Image _hpFillImage;
-        [SerializeField] private TextMeshProUGUI _levelText;
-        [SerializeField] private TextMeshProUGUI _hpText;
+    public Slider HpSlider;
+    public Slider BackSlider;
+    [SerializeField] private Image _hpFillImage;
+    [SerializeField] private Image _backHpFillImage;
+    [SerializeField] private TextMeshProUGUI _levelText;
+    [SerializeField] private TextMeshProUGUI _hpText;
 
-        [SerializeField] private int _level = 30;
-        [SerializeField] private float _smoothSpeed = 5f;
-        [SerializeField] private float _smoothBackSpeed = 2f; 
-        [SerializeField] private float _backHpDelay = 0.3f;
+    [SerializeField] private int _level = 1;
+    [SerializeField] private float _smoothSpeed = 5f;
+    [SerializeField] private float _smoothBackSpeed = 2f; 
+    [SerializeField] private float _backHpDelay = 0.3f;
+    [SerializeField] private int _firstLevel = 1;
+
+    [Header("Hp Color")]
+    [SerializeField] private Color32 _highHpColor = new Color32(0, 191, 5, 255);
+    [SerializeField] private Color32 _mediumHpColor = new Color32(255, 204, 0, 255);
+    [SerializeField] private Color32 _lowHpColor = new Color32(255, 77, 77, 255);
+
+    [SerializeField] private PlayerProgression _playerProgression;
 
         private bool _backHpHit = false;
         private float _targetHp;
         private float _backHpDelayTimer;
 
-        private void OnEnable()
+    private const int MaxLevel = 30;
+
+    private void OnEnable()
+    {
+        if(_playerProgression != null)
+        {
+            _playerProgression.OnLevelUp += HandleLevelUp;
+        }
+        if (_playerCombatant != null)
         {
             if (_playerCombatant != null)
             {
@@ -35,7 +54,14 @@ namespace Player
             }
         }
 
-        private void OnDisable()
+    private void OnDisable()
+    {
+        if (_playerProgression != null)
+        {
+            _playerProgression.OnLevelUp -= HandleLevelUp;
+        }
+
+        if (_playerCombatant != null)
         {
             if (_playerCombatant != null)
             {
@@ -44,30 +70,49 @@ namespace Player
             }
         }
 
-        private void Start()
+    private void Start()
+    {
+        _level = _firstLevel;
+
+        if (_playerCombatant != null)
         {
-            if (_playerCombatant != null)
-            {
-                InitializeHpBar();
-            }
+            InitializeHpBar();
+
+            HpSlider.value = 0.5f;
+            BackSlider.value = 0.5f;
         }
 
-        private void Update()
+    private void Update()
+    {
+        if (_playerCombatant == null)
         {
-            if (_playerCombatant == null) return;
+            return;
+        }
 
             UpdateHpBarSmooth();
             UpdateBackSlider();
         }
 
-        private void InitializeHpBar()
+    private void HandleLevelUp(int previousLevel, int newLevel)
+    {
+        _level = newLevel;
+
+        if (_level > MaxLevel)
         {
-            _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
-            HpSlider.value = _targetHp;
-            BackSlider.value = _targetHp;
-            UpdateHpText();
-            UpdateHpColor();
+            _level = MaxLevel;
         }
+
+        _levelText.text = $"Lv.{_level}";
+    }
+
+    private void InitializeHpBar()
+    {
+        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+        HpSlider.value = _targetHp;
+        BackSlider.value = _targetHp;
+        UpdateHpText();
+        UpdateHpColor();
+    }
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
@@ -118,32 +163,41 @@ namespace Player
                 }
             }
         }
-
-        private void UpdateHpText()
+        else
         {
-            _levelText.text = $"Lv.{_level}";
-            _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
+            BackSlider.value = HpSlider.value;
         }
+    }
 
-        private void UpdateHpColor()
+    private void UpdateHpText()
+    {
+        _levelText.text = $"Lv.{_level}";
+        _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
+    }
+
+    private void UpdateHpColor()
+    {
+        Color newColor;
+
+        if (HpSlider.value > 0.5f)
         {
-            if (HpSlider.value > 0.5f)
-            {
-                _hpFillImage.color = new Color32(0, 191, 5, 255);
-            }
-            else if (HpSlider.value > 0.2f)
-            {
-                _hpFillImage.color = new Color(1f, 0.8f, 0f);
-            }
-            else
-            {
-                _hpFillImage.color = new Color(1f, 0.3f, 0.3f);
-            }
+            newColor = _highHpColor;
+        }
+        else if (HpSlider.value > 0.3f)
+        {
+            newColor = _mediumHpColor;
         }
 
         private void FlashCritical()
         {
-            StartCoroutine(FlashCoroutine());
+            newColor = _lowHpColor;
+        }
+
+        _hpFillImage.color = newColor;
+
+        if (_backHpFillImage != null)
+        {
+            _backHpFillImage.color = newColor;
         }
 
         private IEnumerator FlashCoroutine()
@@ -158,5 +212,15 @@ namespace Player
         {
             GameManager.Instance.TriggerGameOver();
         }
+    }
+
+    public void UpdateHealthUI()
+    {
+        if (_playerCombatant == null) return;
+
+        _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+        UpdateHpText();
+        UpdateHpColor();
+
     }
 }
