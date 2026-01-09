@@ -1,3 +1,4 @@
+using Common;
 using UnityEngine;
 
 namespace Player
@@ -84,10 +85,6 @@ namespace Player
                     target = player.transform;
                 }
             }
-
-            // 커서 잠금
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
         }
 
         private void HandleInput()
@@ -98,28 +95,6 @@ namespace Player
 
             // 줌 입력
             scrollInput = Input.GetAxis("Mouse ScrollWheel");
-
-            // ESC로 커서 해제
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                if (Cursor.lockState == CursorLockMode.Locked)
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-                else
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                }
-            }
-
-            // 마우스 클릭으로 다시 잠금
-            if (Input.GetMouseButtonDown(1) && Cursor.lockState == CursorLockMode.None)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
         }
 
         private void UpdateCameraRotation()

@@ -17,13 +17,19 @@ namespace Player
         [Range(0f, 1f)]
         [SerializeField] private float _trailEndTime = 0.65f;
 
+        [Header("Animation End Timing (Normalized)")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _animEndTime = 1f;
+
         private MeleeAttacker _attacker;
         private PlayerVFXController _vfxController;
+        private PlayerAnimationEventReceiver _eventReceiver;
 
         private bool _hitStarted;
         private bool _hitEnded;
         private bool _trailStarted;
         private bool _trailEnded;
+        private bool _animEnded;
 
         public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
@@ -58,6 +64,12 @@ namespace Player
                 _trailEnded = true;
                 _vfxController?.StopAllEffects();
             }
+
+            if (!_animEnded && time >= _animEndTime)
+            {
+                _animEnded = true;
+                _eventReceiver?.OnAttackAnimationEnd();
+            }
         }
 
         public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
@@ -70,6 +82,11 @@ namespace Player
             if (!_trailEnded)
             {
                 _vfxController?.StopAllEffects();
+            }
+
+            if (!_animEnded)
+            {
+                _eventReceiver?.OnAttackAnimationEnd();
             }
         }
 
@@ -84,6 +101,11 @@ namespace Player
             {
                 _vfxController = animator.GetComponent<PlayerVFXController>();
             }
+
+            if (_eventReceiver == null)
+            {
+                _eventReceiver = animator.GetComponent<PlayerAnimationEventReceiver>();
+            }
         }
 
         private void ResetFlags()
@@ -92,6 +114,7 @@ namespace Player
             _hitEnded = false;
             _trailStarted = false;
             _trailEnded = false;
+            _animEnded = false;
         }
     }
 }
