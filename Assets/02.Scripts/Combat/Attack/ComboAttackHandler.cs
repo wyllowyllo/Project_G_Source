@@ -62,12 +62,7 @@ namespace Combat.Attack
                 return false;
 
             // 콤보 윈도우 타이머 만료 체크 (Update 전에 입력이 들어온 경우)
-            if (_currentState == ComboState.ComboWindow &&
-                _isComboWindowTimerActive &&
-                Time.time - _comboWindowTimerStart > ComboWindowDuration)
-            {
-                ResetCombo();
-            }
+            CheckAndResetExpiredComboWindow();
 
             // 새 공격 시작 시 타이머 비활성화 (새 애니메이션 끝에서 다시 시작됨)
             _isComboWindowTimerActive = false;
@@ -104,13 +99,7 @@ namespace Combat.Attack
 
         private void Update()
         {
-            if (_isComboWindowTimerActive && _currentState == ComboState.ComboWindow)
-            {
-                if (Time.time - _comboWindowTimerStart > ComboWindowDuration)
-                {
-                    ResetCombo();
-                }
-            }
+            CheckAndResetExpiredComboWindow();
         }
 
         private float GetComboMultiplier(int step)
@@ -122,6 +111,14 @@ namespace Combat.Attack
                 return 1f;
 
             return s_defaultComboMultipliers[step - 1];
+        }
+
+        private void CheckAndResetExpiredComboWindow()
+        {
+            if (_isComboWindowTimerActive && _currentState == ComboState.ComboWindow && Time.time - _comboWindowTimerStart > ComboWindowDuration)
+            {
+                ResetCombo();
+            }
         }
 
 #if UNITY_INCLUDE_TESTS

@@ -67,11 +67,6 @@ namespace Combat.Attack
             }
         }
 
-        public void SetState(ComboState state)
-        {
-            _comboHandler.SetState(state);
-        }
-
         public bool TryAttack()
         {
             if (!CanAttack) return false;

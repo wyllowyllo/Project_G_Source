@@ -17,6 +17,10 @@ namespace Player
             {
                 Debug.LogError("[PlayerAnimationEventReceiver] MeleeAttacker component 필요");
             }
+            if (_playerCombat == null)
+            {
+                Debug.LogError("[PlayerAnimationEventReceiver] PlayerCombat component 필요");
+            }
         }
         
         public void OnAttackHitStart()

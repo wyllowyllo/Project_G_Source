@@ -1,3 +1,4 @@
+using System.Collections;
 using Combat.Core;
 using TMPro;
 using UnityEngine;
@@ -145,7 +146,7 @@ namespace Player
             StartCoroutine(FlashCoroutine());
         }
 
-        private System.Collections.IEnumerator FlashCoroutine()
+        private IEnumerator FlashCoroutine()
         {
             Color originalColor = _hpFillImage.color;
             _hpFillImage.color = Color.red;
