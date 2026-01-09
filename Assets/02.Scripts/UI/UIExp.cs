@@ -3,100 +3,159 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Progression;
 
 public class UIExp : MonoBehaviour
 {
+    [SerializeField] private PlayerProgression _playerProgression;
     [SerializeField] private Slider _expbar;
     [SerializeField] private float _expLerpSpeed = 5f;
 
     [SerializeField] private Image _imageExpComplete;
 
+    [SerializeField] private float _expAnimationDuration = 0.35f;
+    [SerializeField] private Ease _expAnimationEase = Ease.OutCubic;
+
     [SerializeField] private TextMeshProUGUI _expText;
 
     private float _displayExp;
-    private float _targetExp;
-
-    private float _maxExp = 100;
-    private float _curExp = 0;
+    private int _previousXp;
+    private int _previousMaxXp;
+    private int _displayMaxXp;
 
     private bool _isLevelingUp = false;
 
     private Tween _expTween;
 
-    public System.Action OnLevelUp;
+    // y키로 경험치 테스트용
+    private bool _enableDebugInput = true;
+    private int _debugExpAmount = 50;
 
     private void Start()
     {
-        _expbar.value = (float)_curExp / (float)_maxExp;
+        if(_playerProgression == null)
+        {
+            _playerProgression = FindObjectOfType<PlayerProgression>();
+            if(_playerProgression == null)
+            {
+                Debug.Log("PlayerProgression not found!");
+                enabled = false;
+                return;
+            }
+        }
+
+        _playerProgression.OnLevelUp += OnPlayerLevelUp;
+
+        _previousXp = _playerProgression.CurrentXp;
+        _previousMaxXp = _playerProgression.XpToNextLevel;
+        _displayExp = _previousXp;
+
+        _displayMaxXp = _previousMaxXp;
+
+        UpdateUI();
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Y))
+        if (_enableDebugInput && Input.GetKeyDown(KeyCode.Y))
         {
-            if (_isLevelingUp)
-            {
-                return;
-            }
-
-            if (_targetExp > _maxExp)
-            {
-                return;
-            }
-
-            _targetExp += 10;
-
-            if (_targetExp > _maxExp)
-            { 
-                _targetExp = _maxExp;
-            }
-
-            AnimatorExpBar();
-
-            if (_targetExp >= _maxExp)
-            {
-                _isLevelingUp = true;
-                StartCoroutine(ImageExpComplete_Coroutine());
-                StartCoroutine(LevelUpExp_Coroutine());
-            }
+            _playerProgression.AddExperience(_debugExpAmount);
         }
-        Handle();
+
+        CheckExpChange();
+
+        UpdateUI();
     }
 
-    private void AnimatorExpBar()
+    private void CheckExpChange()
+    {
+        if (_isLevelingUp)
+        {
+            return;
+        }
+
+        int currentXp = _playerProgression.CurrentXp;
+        int currentMaxXp = _playerProgression.XpToNextLevel;
+
+        if (currentXp != _previousXp || currentMaxXp != _previousMaxXp)
+        {
+            _displayMaxXp = currentMaxXp;
+
+            AnimateExpBar(currentXp);
+
+            _previousXp = currentXp;
+            _previousMaxXp = currentMaxXp;
+        }
+    }
+    private void AnimateExpBar(int targetXp)
     {
         _expTween?.Kill();
 
-        _expTween = DOTween.To(() => _displayExp, x => _displayExp = x, _targetExp, 0.35f).SetEase(Ease.OutCubic).OnUpdate(() =>
-        {
-            _curExp = _displayExp;
-        });
+        _expTween = DOTween.To(() => _displayExp, x => _displayExp = x, targetXp, _expAnimationDuration)
+            .SetEase(_expAnimationEase);
     }
 
-    private void Handle()
+    private void UpdateUI()
     {
-        _expbar.value = _displayExp / _maxExp;
+        int maxXp = _displayMaxXp;
+
+        if (maxXp > 0)
+        {
+            _expbar.value = _displayExp / maxXp;
+        }
+        else
+        {
+            // 최대 레벨일 경우
+            _expbar.value = 1f;
+        }
+
         if (_expText != null)
         {
-            _expText.text = $"{Mathf.FloorToInt(_curExp)}/{_maxExp}";
-        }
-
-        if(_expbar.value >= _maxExp)
-        {
-            _expbar.value = _maxExp;
+            if (_playerProgression.IsMaxLevel)
+            {
+                _expText.text = "MAX";
+            }
+            else
+            {
+                _expText.text = $"{Mathf.FloorToInt(_displayExp)}/{maxXp}";
+            }
         }
     }
 
-    private IEnumerator LevelUpExp_Coroutine()
+    private void OnPlayerLevelUp(int previousLevel, int newLevel)
     {
+        if (_isLevelingUp) return;
+
+        _isLevelingUp = true;
+        StartCoroutine(LevelUpSequence());
+    }
+
+    private IEnumerator LevelUpSequence()
+    {
+        _displayMaxXp = _previousMaxXp;
+        int maxXp = _previousMaxXp;
+        if (maxXp > 0)
+        {
+            _expTween?.Kill();
+            yield return DOTween.To(() => _displayExp, x => _displayExp = x, maxXp, _expAnimationDuration)
+                .SetEase(_expAnimationEase)
+                .WaitForCompletion();
+        }
+
+        StartCoroutine(ImageExpComplete_Coroutine());
+
         yield return new WaitForSeconds(2f);
 
-        OnLevelUp?.Invoke();
-        _targetExp = 0;
-        _displayExp = 0;
-        _curExp = 0;
+        _previousXp = _playerProgression.CurrentXp;
+        _previousMaxXp = _playerProgression.XpToNextLevel;
 
-        _expbar.value = 0;
+        _displayExp = 0;
+        _displayMaxXp = _previousMaxXp;
+
+        if (_previousXp > 0)
+        {
+            AnimateExpBar(_previousXp);
+        }
 
         _isLevelingUp = false;
     }
@@ -128,6 +187,11 @@ public class UIExp : MonoBehaviour
     private void OnDestroy()
     {
         _expTween?.Kill();
+
+        if (_playerProgression != null)
+        {
+            _playerProgression.OnLevelUp -= OnPlayerLevelUp;
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 using Combat.Core;
 using Combat.Damage;
+using Progression;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,7 +23,7 @@ public class PlayerHpBar : MonoBehaviour
     [SerializeField] private float _backHpDelay = 0.3f;
     [SerializeField] private int _firstLevel = 1;
 
-    [SerializeField] private UIExp _uiExp;
+    [SerializeField] private PlayerProgression _playerProgression;
 
     private bool _backHpHit = false;
     private float _targetHp;
@@ -32,9 +33,9 @@ public class PlayerHpBar : MonoBehaviour
 
     private void OnEnable()
     {
-        if(_uiExp != null)
+        if(_playerProgression != null)
         {
-            _uiExp.OnLevelUp += HandleLevelUp;
+            _playerProgression.OnLevelUp += HandleLevelUp;
         }
         if (_playerCombatant != null)
         {
@@ -45,9 +46,9 @@ public class PlayerHpBar : MonoBehaviour
 
     private void OnDisable()
     {
-        if(_uiExp != null)
+        if (_playerProgression != null)
         {
-            _uiExp.OnLevelUp -= HandleLevelUp;
+            _playerProgression.OnLevelUp -= HandleLevelUp;
         }
 
         if (_playerCombatant != null)
@@ -82,15 +83,14 @@ public class PlayerHpBar : MonoBehaviour
         UpdateBackSlider();
     }
 
-    private void HandleLevelUp()
+    private void HandleLevelUp(int previousLevel, int newLevel)
     {
-        _level++;
-        _levelText.text = $"Lv.{_level}";
+        _level = newLevel;
 
-        if(_level > _maxLevel)
-        {
+        if (_level > _maxLevel)
             _level = _maxLevel;
-        }
+
+        _levelText.text = $"Lv.{_level}";
     }
 
     private void InitializeHpBar()
