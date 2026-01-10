@@ -5,6 +5,9 @@ namespace Player
 {
     public class CinemachineCameraController : MonoBehaviour
     {
+        private const float NORMALIZED_MID_POINT = 0.5f;
+        private const float HALF_RANGE_NORMALIZER = 2f;
+
         [Header("References")]
         [SerializeField] private CinemachineCamera _cinemachineCamera;
         [SerializeField] private CinemachineOrbitalFollow _orbitalFollow;
@@ -187,14 +190,14 @@ namespace Player
 
             float t = NormalizedZoom;
 
-            if (t > 0.5f)
+            if (t > NORMALIZED_MID_POINT)
             {
-                float localT = (t - 0.5f) * 2f;
+                float localT = (t - NORMALIZED_MID_POINT) * HALF_RANGE_NORMALIZER;
                 _targetFocusHeight = Mathf.Lerp(_midFocusHeight, _closeUpFocusHeight, localT);
             }
             else
             {
-                float localT = t * 2f;
+                float localT = t * HALF_RANGE_NORMALIZER;
                 _targetFocusHeight = Mathf.Lerp(_farFocusHeight, _midFocusHeight, localT);
             }
 
@@ -218,14 +221,14 @@ namespace Player
 
             float t = NormalizedZoom;
 
-            if (t > 0.5f)
+            if (t > NORMALIZED_MID_POINT)
             {
-                float localT = (t - 0.5f) * 2f;
+                float localT = (t - NORMALIZED_MID_POINT) * HALF_RANGE_NORMALIZER;
                 _targetVerticalRestriction = Mathf.Lerp(_midVerticalRestriction, _closeUpVerticalRestriction, localT);
             }
             else
             {
-                float localT = t * 2f;
+                float localT = t * HALF_RANGE_NORMALIZER;
                 _targetVerticalRestriction = Mathf.Lerp(_farVerticalRestriction, _midVerticalRestriction, localT);
             }
 
@@ -269,13 +272,13 @@ namespace Player
                 );
 
                 float targetY;
-                if (normalizedVertical < 0.5f)
+                if (normalizedVertical < NORMALIZED_MID_POINT)
                 {
-                    targetY = Mathf.Lerp(_screenYAtBottom, _screenYAtMiddle, normalizedVertical * 2f);
+                    targetY = Mathf.Lerp(_screenYAtBottom, _screenYAtMiddle, normalizedVertical * HALF_RANGE_NORMALIZER);
                 }
                 else
                 {
-                    targetY = Mathf.Lerp(_screenYAtMiddle, _screenYAtTop, (normalizedVertical - 0.5f) * 2f);
+                    targetY = Mathf.Lerp(_screenYAtMiddle, _screenYAtTop, (normalizedVertical - NORMALIZED_MID_POINT) * HALF_RANGE_NORMALIZER);
                 }
 
                 _targetScreenPosition.y = targetY;
