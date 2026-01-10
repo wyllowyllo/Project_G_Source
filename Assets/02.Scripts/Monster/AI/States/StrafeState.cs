@@ -120,17 +120,17 @@ namespace Monster.AI.States
 
             if (dist < minDist)
             {
-                // 너무 가까움 - 후퇴
+                
                 SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
             }
             else if (dist > maxDist)
             {
-                // 너무 멈 - 접근
+                
                 SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
             }
             else
             {
-                // 적정 거리 - 원호 이동 시작
+               
                 SetMode(EStrafeMode.Circle, Data.StrafeMinDuration, Data.StrafeMaxDuration);
             }
         }
@@ -383,10 +383,11 @@ namespace Monster.AI.States
                 }
             }
 
-            // 강공 시도
+            // 강공 시도 (공격 범위 내에서만)
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
             {
-                if (_groupCommandProvider.CanAttack() &&
+                if (_playerDetectAbility.DistanceToPlayer <= Data.AttackRange &&
+                    _groupCommandProvider.CanAttack() &&
                     _groupCommandProvider.CanHeavyAttack(now) &&
                     Random.value < Data.HeavyAttackChance)
                 {
