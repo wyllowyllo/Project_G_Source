@@ -40,7 +40,7 @@ namespace Monster.Data
 
         [Header("거리 밴드 시스템")]
         [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
-        [SerializeField] private float _preferredMinDistance = 2.0f;
+        [SerializeField] private float _preferredMinDistance = 1.0f;
         [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
         [SerializeField] private float _preferredMaxDistance = 4.0f;
         [Tooltip("스트레이프(좌우 이동) 속도")]

@@ -18,12 +18,13 @@ namespace Monster.AI.States
         private readonly FacingAbility _facingAbility;
         private readonly AnimatorAbility _animatorAbility;
 
-        // 행동 모드 (단순화)
+        // 행동 모드
         private enum EStrafeMode
         {
-            Circle,         // 플레이어 주변을 원호로 이동
-            AdjustDistance, // 거리 조절 (전진/후퇴)
-            Pause           // 잠시 정지하고 관찰
+            Circle,           // 플레이어 주변을 원호로 이동 (서성이기)
+            AdjustDistance,   // 거리 조절 (전진/후퇴)
+            Pause,            // 잠시 정지하고 관찰
+            ApproachForAttack // 일반공격을 위해 밀착 거리까지 접근
         }
 
         private EStrafeMode _currentMode;
@@ -147,6 +148,9 @@ namespace Monster.AI.States
                 case EStrafeMode.Pause:
                     ExecutePause();
                     break;
+                case EStrafeMode.ApproachForAttack:
+                    ExecuteApproachForAttack();
+                    break;
             }
         }
 
@@ -176,7 +180,7 @@ namespace Monster.AI.States
                 toMonster.x * sin + toMonster.z * cos
             );
 
-            // 목표 거리 유지 (선호 거리의 중간값)
+            // 목표 거리 유지 (선호 거리의 중간값) - 서성이기
             float preferredDist = (Data.PreferredMinDistance + Data.PreferredMaxDistance) * 0.5f;
             Vector3 targetPos = playerPos + rotatedDir * preferredDist;
             targetPos.y = _transform.position.y;
@@ -240,6 +244,28 @@ namespace Monster.AI.States
             _targetVelocity = Vector3.zero;
         }
 
+        private void ExecuteApproachForAttack()
+        {
+            if (!_playerDetectAbility.HasPlayer) return;
+
+            float lightAttackRange = Data.AttackRange * 0.6f;
+            float dist = _playerDetectAbility.DistanceToPlayer;
+
+            // 밀착 거리 도달 시 모드 종료 (TryAttack에서 공격 처리)
+            if (dist <= lightAttackRange)
+            {
+                _targetVelocity = Vector3.zero;
+                return;
+            }
+
+            // 플레이어 방향으로 접근
+            Vector3 dirToPlayer = _playerDetectAbility.DirectionToPlayer();
+            dirToPlayer.y = 0f;
+            dirToPlayer.Normalize();
+
+            _targetVelocity = dirToPlayer * Data.StrafeSpeed * 1.2f; // 약간 빠르게 접근
+        }
+
         private void ChooseNextMode()
         {
             float dist = _playerDetectAbility.DistanceToPlayer;
@@ -250,6 +276,17 @@ namespace Monster.AI.States
             if (dist < minDist * 0.9f || dist > maxDist * 1.1f)
             {
                 SetMode(EStrafeMode.AdjustDistance, 1.0f, 2.0f);
+                return;
+            }
+
+            // 일반공격 쿨다운 준비 시 접근 시도 (확률 기반)
+            bool canLightAttack = _groupCommandProvider.CanLightAttack(Time.time);
+            bool lightAttackEnabled = Data.AttackMode == EAttackMode.Both || Data.AttackMode == EAttackMode.LightOnly;
+
+            if (canLightAttack && lightAttackEnabled && Random.value < Data.LightAttackChance)
+            {
+                // 일반공격을 위해 밀착 거리로 접근
+                SetMode(EStrafeMode.ApproachForAttack, 1.5f, 3.0f);
                 return;
             }
 
@@ -327,17 +364,15 @@ namespace Monster.AI.States
 
         private bool TryAttack(float now)
         {
-            Vector3 desired = _groupCommandProvider.GetDesiredPosition();
             EAttackMode attackMode = Data.AttackMode;
 
-            // 약공 시도
+            // 약공 시도 (제자리 공격 - 밀착 거리 필요)
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
             {
-                float distToDesired = Vector3.Distance(_transform.position, desired);
-                float lightRange = Data.AttackRange + 0.35f;
+                // 제자리 공격이므로 실제 히트 가능 거리로 설정 (AttackRange의 60%)
+                float lightRange = Data.AttackRange * 0.6f;
 
-                if (distToDesired <= 1.0f &&
-                    _playerDetectAbility.DistanceToPlayer <= lightRange &&
+                if (_playerDetectAbility.DistanceToPlayer <= lightRange &&
                     _groupCommandProvider.CanLightAttack(now) &&
                     Random.value < Data.LightAttackChance)
                 {
