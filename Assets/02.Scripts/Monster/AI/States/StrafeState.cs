@@ -60,6 +60,9 @@ namespace Monster.AI.States
         {
             _animatorAbility?.SetInCombat(true);
 
+            // NavAgent 자동 회전 비활성화 (FacingAbility로 직접 제어)
+            _navAgentAbility?.SetUpdateRotation(false);
+
             _currentVelocity = Vector3.zero;
             _targetVelocity = Vector3.zero;
 
@@ -109,6 +112,8 @@ namespace Monster.AI.States
 
         public void Exit()
         {
+            // NavAgent 자동 회전 복원
+            _navAgentAbility?.SetUpdateRotation(true);
             _navAgentAbility?.Resume();
         }
 

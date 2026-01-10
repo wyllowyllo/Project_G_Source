@@ -91,5 +91,14 @@ namespace Monster.Ability
                 _navAgent.enabled = false;
             }
         }
+
+        // NavAgent 자동 회전 설정 (FacingAbility와 충돌 방지용)
+        public void SetUpdateRotation(bool enabled)
+        {
+            if (_navAgent != null)
+            {
+                _navAgent.updateRotation = enabled;
+            }
+        }
     }
 }
