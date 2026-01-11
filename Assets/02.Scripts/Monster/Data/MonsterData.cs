@@ -24,9 +24,7 @@ namespace Monster.Data
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
 
-        [Header("전투 스탯")]
-        [SerializeField] private float _maxHealth = 100f;
-        [SerializeField] private float _attackDamage = 10f;
+        [Header("공격 행동")]
         [SerializeField] private float _attackRange = 2f;
         [SerializeField] private float _attackCooldown = 1.5f;
 
@@ -95,8 +93,6 @@ namespace Monster.Data
         // Properties
         public string MonsterName => _monsterName;
         public int MonsterLevel => _monsterLevel;
-        public float MaxHealth => _maxHealth;
-        public float AttackDamage => _attackDamage;
         public float AttackRange => _attackRange;
         public float AttackCooldown => _attackCooldown;
         public float MoveSpeed => _moveSpeed;

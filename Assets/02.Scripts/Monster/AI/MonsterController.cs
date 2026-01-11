@@ -73,10 +73,7 @@ namespace Monster.AI
 
         private void InitializeMonsterAttacker()
         {
-            if (_monsterAttacker != null && _monsterData != null)
-            {
-                _monsterAttacker.Initialize(_monsterData);
-            }
+            _monsterAttacker?.Initialize();
         }
         
         private void Start()
