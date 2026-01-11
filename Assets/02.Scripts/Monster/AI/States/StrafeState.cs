@@ -64,6 +64,9 @@ namespace Monster.AI.States
             // NavAgent 자동 회전 비활성화 (FacingAbility로 직접 제어)
             _navAgentAbility?.SetUpdateRotation(false);
 
+            // NavAgent 속도를 StrafeSpeed로 설정
+            _navAgentAbility?.SetSpeed(Data.StrafeSpeed);
+
             _currentVelocity = Vector3.zero;
             _targetVelocity = Vector3.zero;
 
@@ -116,6 +119,9 @@ namespace Monster.AI.States
             // NavAgent 자동 회전 복원
             _navAgentAbility?.SetUpdateRotation(true);
             _navAgentAbility?.Resume();
+
+            // NavAgent 속도를 원래 MoveSpeed로 복원
+            _navAgentAbility?.SetSpeed(Data.MoveSpeed);
         }
 
         private void DecideInitialMode()
