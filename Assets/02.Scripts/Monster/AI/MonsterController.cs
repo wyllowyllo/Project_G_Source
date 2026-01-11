@@ -201,6 +201,12 @@ namespace Monster.AI
             GetAbility<AnimatorAbility>()?.OnHitComplete();
         }
 
+        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+        public void OnDeathAnimationComplete()
+        {
+            GetAbility<AnimatorAbility>()?.OnDeathComplete();
+        }
+
         private void HandleDeath()
         {
             _stateMachine?.ChangeState(EMonsterState.Dead);
