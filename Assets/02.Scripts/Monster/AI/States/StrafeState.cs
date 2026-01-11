@@ -225,7 +225,7 @@ namespace Monster.AI.States
 
             if (dist < minDist)
             {
-                /*// 후퇴
+                // 후퇴
                 _targetVelocity = -dirToPlayer * Data.StrafeSpeed;
 
                 // 푸시백 요청
@@ -233,7 +233,7 @@ namespace Monster.AI.States
                 {
                     float backoffDist = minDist - dist + 0.5f;
                     _groupCommandProvider.RequestPushback(-dirToPlayer, backoffDist);
-                }*/
+                }
             }
             else if (dist > maxDist)
             {

@@ -46,7 +46,7 @@ namespace Monster.Data
         [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
         [SerializeField] private float _preferredMaxDistance = 4.0f;
         [Tooltip("스트레이프(좌우 이동) 속도")]
-        [SerializeField] private float _strafeSpeed = 2.5f;
+        [SerializeField] private float _strafeSpeed = 1.5f;
 
         [Header("테더 시스템")]
         [Tooltip("홈 포지션으로부터 최대 이탈 거리")]
@@ -78,7 +78,7 @@ namespace Monster.Data
 
         [Header("스트레이프 행동")]
         [Tooltip("원호 이동 각속도 (도/초)")]
-        [SerializeField] private float _circleAngularSpeed = 30f;
+        [SerializeField] private float _circleAngularSpeed = 15f;
         [Tooltip("스트레이프 행동 최소 지속 시간")]
         [SerializeField] private float _strafeMinDuration = 1.5f;
         [Tooltip("스트레이프 행동 최대 지속 시간")]
