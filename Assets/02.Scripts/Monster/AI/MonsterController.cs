@@ -213,12 +213,7 @@ namespace Monster.AI
                 _combatant.OnDeath += HandleDeath;
                 _combatant.OnHitStunStart += HandleHitStunStart;
                 _combatant.OnHitStunEnd += HandleHitStunEnd;
-
-                // 넉백 적용
-                if (_monsterData != null && _navAgent != null)
-                {
-                    _combatant.ApplyKnockbackOnDamage(_navAgent, _monsterData.KnockbackForce);
-                }
+                // 넉백은 MonsterFeedback에서 처리
             }
         }
 
