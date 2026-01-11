@@ -8,7 +8,6 @@ namespace Player
         [Header("References")]
         [SerializeField] private CinemachineCamera _cinemachineCamera;
         [SerializeField] private CinemachineOrbitalFollow _orbitalFollow;
-        [SerializeField] private CinemachineRotationComposer _rotationComposer;
 
         [Header("Zoom Settings")]
         [SerializeField] private float _minScale = 0.5f;
@@ -22,22 +21,10 @@ namespace Player
         [SerializeField] private float _lockOnFOV = 45f;
         [SerializeField] private float _fovSmoothTime = 0.3f;
 
-        [Header("Lock-On Settings")]
-        [SerializeField] private float _lockOnScreenY = 0.4f;
-
         // Zoom state
         private float _targetScale = 1f;
         private float _currentScale = 1f;
         private float _zoomVelocity;
-
-        // Focus height state
-        private float _targetFocusHeight;
-        private float _currentFocusHeight;
-        private float _focusHeightVelocity;
-
-        // Screen position state
-        private Vector2 _currentScreenPosition;
-        private Vector2 _screenPositionVelocity;
 
         // FOV state
         private float _currentFOV;
@@ -66,8 +53,6 @@ namespace Player
                 _cinemachineCamera = GetComponent<CinemachineCamera>();
             if (_orbitalFollow == null)
                 _orbitalFollow = GetComponent<CinemachineOrbitalFollow>();
-            if (_rotationComposer == null)
-                _rotationComposer = GetComponent<CinemachineRotationComposer>();
         }
 
         private void Start()
@@ -120,15 +105,12 @@ namespace Player
 
             var orbits = _orbitalFollow.Orbits;
 
-            orbits.Top = new Cinemachine3OrbitRig.Orbit();
             orbits.Top.Height = _initialTopOrbit.Height * _currentScale;
             orbits.Top.Radius = _initialTopOrbit.Radius * _currentScale;
 
-            orbits.Center = new Cinemachine3OrbitRig.Orbit();
             orbits.Center.Height = _initialCenterOrbit.Height * _currentScale;
             orbits.Center.Radius = _initialCenterOrbit.Radius * _currentScale;
 
-            orbits.Bottom = new Cinemachine3OrbitRig.Orbit();
             orbits.Bottom.Height = _initialBottomOrbit.Height * _currentScale;
             orbits.Bottom.Radius = _initialBottomOrbit.Radius * _currentScale;
 
