@@ -1,4 +1,5 @@
 using Monster.AI;
+using Monster.Combat;
 using UnityEngine;
 
 namespace Monster.Ability
@@ -46,19 +47,10 @@ namespace Monster.Ability
                 _eventReceiver = _animator.gameObject.AddComponent<MonsterAnimationEventReceiver>();
             }
 
-            // 공격 콜라이더 찾기 (Body 하위의 AttackCollider)
-            Collider attackCollider = null;
-            Transform body = _animator.transform.Find("Body");
-            if (body != null)
-            {
-                Transform attackColliderTransform = body.Find("AttackCollider");
-                if (attackColliderTransform != null)
-                {
-                    attackCollider = attackColliderTransform.GetComponent<Collider>();
-                }
-            }
+            // MonsterAttacker 찾기 (MonsterController와 같은 오브젝트에 있음)
+            MonsterAttacker monsterAttacker = _controller.GetComponent<MonsterAttacker>();
 
-            _eventReceiver.Initialize(_controller, attackCollider);
+            _eventReceiver.Initialize(_controller, monsterAttacker);
         }
 
         // ===== Float 파라미터 =====

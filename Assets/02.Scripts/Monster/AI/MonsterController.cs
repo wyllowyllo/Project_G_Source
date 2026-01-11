@@ -2,6 +2,7 @@ using Combat.Core;
 using Common;
 using Monster.AI.States;
 using Monster.Ability;
+using Monster.Combat;
 using Monster.Data;
 using Monster.Group;
 using Monster.Manager;
@@ -30,6 +31,7 @@ namespace Monster.AI
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
+        private MonsterAttacker _monsterAttacker;
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
         private Animator _animator;
@@ -57,14 +59,24 @@ namespace Monster.AI
         {
             _navAgent = GetComponent<NavMeshAgent>();
             _combatant = GetComponent<Combatant>();
+            _monsterAttacker = GetComponent<MonsterAttacker>();
             _groupCommandProvider = new GroupCommandProvider(this);
 
             // Animator 찾기 (Model 하위의 프리팹에 있음)
             _animator = GetComponentInChildren<Animator>();
 
             InitializeMonster();
+            InitializeMonsterAttacker();
             InitializeAbilities();
             InitializeStateMachine();
+        }
+
+        private void InitializeMonsterAttacker()
+        {
+            if (_monsterAttacker != null && _monsterData != null)
+            {
+                _monsterAttacker.Initialize(_monsterData);
+            }
         }
         
         private void Start()
@@ -200,6 +212,8 @@ namespace Monster.AI
             if (_combatant != null)
             {
                 _combatant.OnDeath += HandleDeath;
+                _combatant.OnHitStunStart += HandleHitStunStart;
+                _combatant.OnHitStunEnd += HandleHitStunEnd;
             }
         }
 
@@ -208,7 +222,23 @@ namespace Monster.AI
             if (_combatant != null)
             {
                 _combatant.OnDeath -= HandleDeath;
+                _combatant.OnHitStunStart -= HandleHitStunStart;
+                _combatant.OnHitStunEnd -= HandleHitStunEnd;
             }
+        }
+
+        private void HandleHitStunStart()
+        {
+            // 경직 시작 - 현재 공격 중이면 히트박스 비활성화
+            _monsterAttacker?.DisableHitbox();
+
+            // Hit 애니메이션 트리거
+            GetAbility<AnimatorAbility>()?.TriggerHit();
+        }
+
+        private void HandleHitStunEnd()
+        {
+            // 경직 종료 - 필요시 추가 로직
         }
     }
 }

@@ -1,3 +1,4 @@
+using Monster.Combat;
 using UnityEngine;
 
 namespace Monster.AI
@@ -7,35 +8,28 @@ namespace Monster.AI
     public class MonsterAnimationEventReceiver : MonoBehaviour
     {
         private MonsterController _controller;
-        private Collider _attackCollider;
+        private MonsterAttacker _monsterAttacker;
 
-        public void Initialize(MonsterController controller, Collider attackCollider)
+        public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker)
         {
             _controller = controller;
-            _attackCollider = attackCollider;
-
-            if (_attackCollider != null)
-            {
-                _attackCollider.enabled = false;
-            }
+            _monsterAttacker = monsterAttacker;
         }
 
         // Animation Event: 공격 콜라이더 활성화
         public void EnableHitbox()
         {
-            if (_attackCollider != null)
+            if (_monsterAttacker != null && _controller != null)
             {
-                _attackCollider.enabled = true;
+                bool isHeavy = _controller.GroupCommandProvider.CurrentAttackWasHeavy;
+                _monsterAttacker.EnableHitbox(isHeavy);
             }
         }
 
         // Animation Event: 공격 콜라이더 비활성화
         public void DisableHitbox()
         {
-            if (_attackCollider != null)
-            {
-                _attackCollider.enabled = false;
-            }
+            _monsterAttacker?.DisableHitbox();
         }
 
         // Animation Event: 공격 애니메이션 완료
