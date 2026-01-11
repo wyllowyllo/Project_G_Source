@@ -1,96 +1,108 @@
-using UnityEngine;
 using System;
+using UnityEngine;
 
-public class PlayerInputHandler : MonoBehaviour
+namespace Player
 {
-    private bool _useMouseButton = true;
-
-    [Header("Input Buffer")]
-    [SerializeField] private float _bufferDuration = 0.3f;
-    [SerializeField] private bool _enableBuffer = true;
-
-    private bool _hasBufferedInput; // 콤보 다음 공격 예약확인 시
-    public bool HasBufferedInput => _hasBufferedInput;
-
-    private float _bufferInputTime; // 다음 콤보 공격 클릭 저장 유효시간
-
-    private bool _isEnabled = true;
-    public bool IsEnabled => _isEnabled;
-
-    public event Action OnAttackInputPressed;
-
-    private void Update()
+    public class PlayerInputHandler : MonoBehaviour
     {
-        if(!_isEnabled)
+        private bool _useMouseButton = true;
+
+        [Header("Input Buffer")]
+        [SerializeField] private float _bufferDuration = 1f;
+        [SerializeField] private bool _enableBuffer = true;
+
+        private bool _hasBufferedInput;
+        public bool HasBufferedInput => _hasBufferedInput;
+
+        private float _bufferInputTime;
+
+        private bool _isEnabled = true;
+        public bool IsEnabled => _isEnabled;
+
+        public event Action OnAttackInputPressed;
+
+        [Header("Dodge Input")]
+        [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
+        public event Action OnDodgeInputPressed;
+
+        private void Update()
         {
-            return;
+            if(!_isEnabled)
+            {
+                return;
+            }
+
+            ProcessInput();
+            UpdateBuffer();
         }
 
-        ProcessInput();
-        UpdateBuffer();
-    }
-
-    private void ProcessInput()
-    {
-        bool attackPressed = _useMouseButton ? Input.GetMouseButtonDown(0) : Input.GetKeyDown(KeyCode.Mouse0);
-
-        if (attackPressed)
+        private void ProcessInput()
         {
-            OnAttackInputPressed?.Invoke();
-        }
-    }
+            bool attackPressed = _useMouseButton ? Input.GetMouseButtonDown(0) : Input.GetKeyDown(KeyCode.Mouse0);
 
-    private void UpdateBuffer()
-    {
-        if (!_hasBufferedInput || !_enableBuffer)
-        {
-            return;
+            if (attackPressed)
+            {
+                OnAttackInputPressed?.Invoke();
+            }
+            
+            if (Input.GetKeyDown(_dodgeKey))
+            {
+                OnDodgeInputPressed?.Invoke();
+            }
         }
 
-        _bufferInputTime -= Time.deltaTime;
-
-        if(_bufferInputTime <= 0f)
+        private void UpdateBuffer()
         {
-            ClearBuffer();
-        }
-    }
+            if (!_hasBufferedInput || !_enableBuffer)
+            {
+                return;
+            }
 
-    public void BufferInput()
-    {
-        if(!_enableBuffer)
+            _bufferInputTime -= Time.deltaTime;
+
+            if(_bufferInputTime <= 0f)
+            {
+                ClearBuffer();
+            }
+        }
+
+        public void BufferInput()
         {
-            return;
+            if(!_enableBuffer)
+            {
+                return;
+            }
+
+            _hasBufferedInput = true;
+            _bufferInputTime = _bufferDuration;
         }
 
-        _hasBufferedInput = true;
-        _bufferInputTime = _bufferDuration;
-    }
-
-    public bool TryConsumeBuffer()
-    {
-        if(!_hasBufferedInput)
+        public bool TryConsumeBuffer()
         {
-            return false;
-        }
+            if(!_hasBufferedInput)
+            {
+                return false;
+            }
         
-        ClearBuffer();
-
-        return true;
-    }
-
-    public void ClearBuffer()
-    {
-        _hasBufferedInput = false;
-        _bufferInputTime = 0f;
-    }
-
-    public void SetEnabled(bool enabled)
-    {
-        _isEnabled = enabled;
-
-        if(!enabled)
-        {
             ClearBuffer();
+
+            return true;
+        }
+
+        public void ClearBuffer()
+        {
+            _hasBufferedInput = false;
+            _bufferInputTime = 0f;
+        }
+
+        public void SetEnabled(bool enabled)
+        {
+            _isEnabled = enabled;
+
+            if(!enabled)
+            {
+                ClearBuffer();
+            }
         }
     }
 }
