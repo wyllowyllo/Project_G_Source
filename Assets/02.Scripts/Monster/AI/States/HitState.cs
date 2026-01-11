@@ -33,8 +33,8 @@ namespace Monster.AI.States
             // 이동 정지
             _navAgentAbility?.Stop();
 
-            // Hit 애니메이션 트리거
-            _animatorAbility?.TriggerHit();
+            // Hit 애니메이션 트리거 (애니메이션 완료 시 콜백으로 전환)
+            _animatorAbility?.TriggerHit(TransitionToCombat);
 
             // 공격 중이었다면 히트박스 비활성화
             var monsterAttacker = _controller.GetComponent<MonsterAttacker>();
@@ -43,17 +43,22 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            // 경직이 끝나면 전투 상태로 복귀
-            if (!_controller.Combatant.IsStunned)
-            {
-                TransitionToCombat();
-            }
+            // 애니메이션 콜백으로 전환하므로 Update에서는 처리하지 않음
         }
 
         public void Exit()
         {
             // 이동 재개
             _navAgentAbility?.Resume();
+        }
+
+        /// <summary>
+        /// 이미 Hit 상태에서 다시 피격 시 호출
+        /// 애니메이션을 재시작하고 콜백을 새로 등록
+        /// </summary>
+        public void ReEnter()
+        {
+            _animatorAbility?.TriggerHit(TransitionToCombat);
         }
 
         private void TransitionToCombat()

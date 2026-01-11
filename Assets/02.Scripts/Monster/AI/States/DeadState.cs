@@ -11,6 +11,7 @@ namespace Monster.AI.States
 
         // Abilities
         private readonly NavAgentAbility _navAgentAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         private const float DestroyDelay = 3f;
         private float _destroyTimer;
@@ -22,15 +23,17 @@ namespace Monster.AI.States
             _controller = controller;
             _transform = controller.transform;
 
-           
             _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
             DisableNavigation();
 
-            // TODO: 사망 애니메이션 재생
+            // 사망 애니메이션 재생
+            _animatorAbility?.TriggerDeath();
+
             // TODO: 보상 드롭 (경험치, 골드, 아이템)
 
             Debug.Log($"{_controller.gameObject.name} 사망! 경험치: {_controller.Data.ExperienceReward}, 골드: {_controller.Data.GoldReward}");

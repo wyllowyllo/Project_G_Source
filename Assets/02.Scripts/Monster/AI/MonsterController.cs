@@ -195,6 +195,12 @@ namespace Monster.AI
             GetAbility<AnimatorAbility>()?.OnAlertComplete();
         }
 
+        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+        public void OnHitAnimationComplete()
+        {
+            GetAbility<AnimatorAbility>()?.OnHitComplete();
+        }
+
         private void HandleDeath()
         {
             _stateMachine?.ChangeState(EMonsterState.Dead);
@@ -232,6 +238,13 @@ namespace Monster.AI
             // Dead 상태에서는 피격 상태 전환하지 않음
             if (_stateMachine.CurrentStateType == EMonsterState.Dead)
             {
+                return;
+            }
+
+            // 이미 Hit 상태면 ReEnter로 애니메이션 재시작
+            if (_stateMachine.CurrentStateType == EMonsterState.Hit)
+            {
+                (_stateMachine.CurrentState as States.HitState)?.ReEnter();
                 return;
             }
 

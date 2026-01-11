@@ -25,6 +25,7 @@ namespace Monster.Ability
         // 콜백
         private System.Action _onAlertComplete;
         private System.Action _onAttackComplete;
+        private System.Action _onHitComplete;
 
         // 프로퍼티
         public bool IsActive => _animator != null && _animator.isActiveAndEnabled;
@@ -112,11 +113,17 @@ namespace Monster.Ability
             }
         }
 
-        public void TriggerHit()
+        public void TriggerHit(System.Action onComplete = null)
         {
+            _onHitComplete = onComplete;
+
             if (IsActive)
             {
                 _animator.SetTrigger(HitHash);
+            }
+            else
+            {
+                onComplete?.Invoke();
             }
         }
 
@@ -140,6 +147,12 @@ namespace Monster.Ability
         {
             _onAttackComplete?.Invoke();
             _onAttackComplete = null;
+        }
+
+        public void OnHitComplete()
+        {
+            _onHitComplete?.Invoke();
+            _onHitComplete = null;
         }
 
         // ===== 유틸리티 =====
