@@ -98,7 +98,7 @@ namespace Combat.Core
         public void TakeDamage(DamageInfo damageInfo)
         {
             if (!CanTakeDamage) return;
-
+            
             _health.TakeDamage(damageInfo.Amount);
             OnDamaged?.Invoke(damageInfo);
 

@@ -43,6 +43,7 @@ namespace Monster.AI
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
         public MonsterData Data => _monsterData;
+        public Combatant Combatant => _combatant;
 
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
@@ -138,6 +139,7 @@ namespace Monster.AI
             _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
             _stateMachine.RegisterState(EMonsterState.Recover, new RecoverState(this, _stateMachine, _groupCommandProvider));
             _stateMachine.RegisterState(EMonsterState.ReturnHome, new ReturnHomeState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Hit, new HitState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Dead, new DeadState(this));
 
             // 초기 상태 설정
@@ -211,6 +213,12 @@ namespace Monster.AI
                 _combatant.OnDeath += HandleDeath;
                 _combatant.OnHitStunStart += HandleHitStunStart;
                 _combatant.OnHitStunEnd += HandleHitStunEnd;
+
+                // 넉백 적용
+                if (_monsterData != null && _navAgent != null)
+                {
+                    _combatant.ApplyKnockbackOnDamage(_navAgent, _monsterData.KnockbackForce);
+                }
             }
         }
 
@@ -226,11 +234,14 @@ namespace Monster.AI
 
         private void HandleHitStunStart()
         {
-            // 경직 시작 - 현재 공격 중이면 히트박스 비활성화
-            _monsterAttacker?.DisableHitbox();
+            // Dead 상태에서는 피격 상태 전환하지 않음
+            if (_stateMachine.CurrentStateType == EMonsterState.Dead)
+            {
+                return;
+            }
 
-            // Hit 애니메이션 트리거
-            GetAbility<AnimatorAbility>()?.TriggerHit();
+            // Hit 상태로 전환 (HitState.Enter에서 히트박스 비활성화 및 애니메이션 처리)
+            _stateMachine.ChangeState(EMonsterState.Hit);
         }
 
         private void HandleHitStunEnd()

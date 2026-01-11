@@ -90,6 +90,10 @@ namespace Monster.Data
         [Tooltip("속도 보간 계수 (높을수록 빠르게 가감속)")]
         [SerializeField] private float _speedLerpFactor = 3f;
         
+        [Header("피격 반응")]
+        [Tooltip("넉백 강도")]
+        [SerializeField] private float _knockbackForce = 2f;
+
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
         [SerializeField] private int _goldReward = 5;
@@ -136,5 +140,8 @@ namespace Monster.Data
         public float StrafePauseChance => _strafePauseChance;
         public float DirectionChangeChance => _directionChangeChance;
         public float SpeedLerpFactor => _speedLerpFactor;
+
+        // 피격 반응
+        public float KnockbackForce => _knockbackForce;
     }
 }
