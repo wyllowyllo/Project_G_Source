@@ -1,3 +1,4 @@
+using System.Collections;
 using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
@@ -26,6 +27,8 @@ namespace Player
 
         private MeleeAttacker _attacker;
         private Combatant _combatant;
+        private AttackSession _currentTrailSession;
+        private bool _trailActive;
 
         private void Awake()
         {
@@ -161,16 +164,54 @@ namespace Player
             _vfxLifetime = lifetime;
         }
 
-        public void StartTrail()
+        public void StartTrail(AttackSession session)
         {
-            _weaponTrail?.Begin();
+            _currentTrailSession = session;
+
+            if (_weaponTrail == null)
+                return;
+
+            // 이전 트레일이 dying 상태면 정리 후 다음 프레임에서 시작
+            StopAllCoroutines();
+            StartCoroutine(StartTrailNextFrame());
         }
 
-        
+        private IEnumerator StartTrailNextFrame()
+        {
+            if (_trailActive)
+            {
+                _weaponTrail.Clear();
+                _trailActive = false;
+                yield return null;
+            }
+
+            _weaponTrail.Begin();
+            _trailActive = true;
+        }
+
+        public void StopTrail(AttackSession session)
+        {
+            if (session != _currentTrailSession)
+                return;
+
+            if (_trailActive)
+            {
+                _weaponTrail?.End();
+                _trailActive = false;
+            }
+            _currentTrailSession = null;
+        }
 
         public void StopAllEffects()
         {
-            _weaponTrail?.End();
+            StopAllCoroutines();
+            _currentTrailSession = null;
+
+            if (_trailActive)
+            {
+                _weaponTrail?.Clear();
+                _trailActive = false;
+            }
         }
     }
 }

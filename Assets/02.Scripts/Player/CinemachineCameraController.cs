@@ -20,28 +20,23 @@ namespace Player
         [SerializeField] private float _sprintFOV = 55f;
         [SerializeField] private float _lockOnFOV = 45f;
         [SerializeField] private float _fovSmoothTime = 0.3f;
-
-        // Zoom state
+        
         private float _targetScale = 1f;
         private float _currentScale = 1f;
         private float _zoomVelocity;
-
-        // FOV state
+        
         private float _currentFOV;
         private float _targetFOV;
         private float _fovVelocity;
-
-        // Mode state
+        
         private bool _isSprinting;
         private bool _isLockedOn;
         private Transform _lockOnTarget;
-
-        // Initial orbits
+        
         private Cinemachine3OrbitRig.Orbit _initialTopOrbit;
         private Cinemachine3OrbitRig.Orbit _initialCenterOrbit;
         private Cinemachine3OrbitRig.Orbit _initialBottomOrbit;
-
-        // Public properties
+        
         public float CurrentScale => _currentScale;
         public float NormalizedZoom => Mathf.InverseLerp(_maxScale, _minScale, _currentScale);
         public bool IsLockedOn => _isLockedOn;
@@ -195,6 +190,22 @@ namespace Player
         public void ResetFOV()
         {
             _targetFOV = _normalFOV;
+        }
+        
+        public Vector3 GetTargetForward()
+        {
+            if (_orbitalFollow == null) return Vector3.forward;
+            
+            float yawAngle = _orbitalFollow.HorizontalAxis.Value;
+            return Quaternion.Euler(0f, yawAngle, 0f) * Vector3.forward;
+        }
+        
+        public Vector3 GetTargetRight()
+        {
+            if (_orbitalFollow == null) return Vector3.right;
+            
+            float yawAngle = _orbitalFollow.HorizontalAxis.Value;
+            return Quaternion.Euler(0f, yawAngle, 0f) * Vector3.right;
         }
 
         #endregion

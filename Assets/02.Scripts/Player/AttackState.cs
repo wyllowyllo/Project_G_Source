@@ -25,6 +25,7 @@ namespace Player
         private PlayerVFXController _vfxController;
         private PlayerAnimationEventReceiver _eventReceiver;
 
+        private AttackSession _session;
         private bool _hitStarted;
         private bool _hitEnded;
         private bool _trailStarted;
@@ -35,60 +36,54 @@ namespace Player
         {
             CacheComponents(animator);
             ResetFlags();
+
+            int comboStep = _attacker?.CurrentComboStep ?? 0;
+            _session = _attacker?.StartNewSession(comboStep);
         }
 
         public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
+            if (_session == null || !_session.IsActive)
+                return;
+
             float time = stateInfo.normalizedTime;
-            
+
+            // Hitbox
             if (!_hitStarted && time >= _hitStartTime)
             {
                 _hitStarted = true;
-                _attacker?.OnAttackHitStart();
+                _attacker?.OnAttackHitStart(_session);
             }
-            
-            if (!_hitEnded && time >= _hitEndTime)
+
+            if (!_hitEnded && _hitStarted && time >= _hitEndTime)
             {
                 _hitEnded = true;
-                _attacker?.ForceDisableHitbox();
+                _attacker?.OnAttackHitEnd(_session);
             }
-            
+
+            // Trail
             if (!_trailStarted && time >= _trailStartTime)
             {
                 _trailStarted = true;
-                _vfxController?.StartTrail();
-            }
-            
-            if (!_trailEnded && time >= _trailEndTime)
-            {
-                _trailEnded = true;
-                _vfxController?.StopAllEffects();
+                _vfxController?.StartTrail(_session);
             }
 
+            if (!_trailEnded && _trailStarted && time >= _trailEndTime)
+            {
+                _trailEnded = true;
+                _vfxController?.StopTrail(_session);
+            }
+
+            // AnimationEnd
             if (!_animEnded && time >= _animEndTime)
             {
                 _animEnded = true;
-                _eventReceiver?.OnAttackAnimationEnd();
+                _eventReceiver?.OnAttackAnimationEnd(_session);
             }
         }
 
-        public override void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
-        {
-            if (!_hitEnded)
-            {
-                _attacker?.ForceDisableHitbox();
-            }
-
-            if (!_trailEnded)
-            {
-                _vfxController?.StopAllEffects();
-            }
-
-            if (!_animEnded)
-            {
-                _eventReceiver?.OnAttackAnimationEnd();
-            }
-        }
+        // OnStateExit에서는 아무것도 하지 않음
+        // 정리는 다음 상태의 OnStateEnter 또는 콤보 종료 시 수행
 
         private void CacheComponents(Animator animator)
         {

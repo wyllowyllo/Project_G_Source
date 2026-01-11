@@ -13,6 +13,7 @@ namespace Player
 
         [Header("Camera Settings")]
         [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private CinemachineCameraController _cinemachineCameraController;
         [SerializeField] private bool _useCameraForward = true;
 
         [Header("Ground Settings")]
@@ -56,6 +57,11 @@ namespace Player
                 _cameraTransform = Camera.main.transform;
             }
             
+            if (_cinemachineCameraController == null)
+            {
+                _cinemachineCameraController = FindAnyObjectByType<CinemachineCameraController>();
+            }
+            
             _lookDirection = transform.forward;
             
             _movementEnabled = true;
@@ -64,9 +70,6 @@ namespace Player
         private void Update()
         {
             HandleInput();
-
-            if (!_movementEnabled) return;
-
             UpdateAnimations();
         }
 
@@ -119,16 +122,26 @@ namespace Player
             {
                 return Vector3.zero;
             }
-            
-            Vector3 cameraForward = _cameraTransform.forward;
-            Vector3 cameraRight = _cameraTransform.right;
-            
-            cameraForward.y = 0f;
-            cameraRight.y = 0f;
 
-            cameraForward.Normalize();
-            cameraRight.Normalize();
+            Vector3 cameraForward;
+            Vector3 cameraRight;
             
+            if (_cinemachineCameraController != null)
+            {
+                cameraForward = _cinemachineCameraController.GetTargetForward();
+                cameraRight = _cinemachineCameraController.GetTargetRight();
+            }
+            else
+            {
+                cameraForward = _cameraTransform.forward;
+                cameraRight = _cameraTransform.right;
+                
+                cameraForward.y = 0f;
+                cameraRight.y = 0f;
+                cameraForward.Normalize();
+                cameraRight.Normalize();
+            }
+
             return (cameraForward * inputVector.z + cameraRight * inputVector.x).normalized;
         }
 
@@ -295,10 +308,10 @@ namespace Player
         private void UpdateAnimations()
         {
             if (_animator == null) return;
-            
-            float moveAmount = _moveInputVector.magnitude;
+
+            float moveAmount = _movementEnabled ? _moveInputVector.magnitude : 0f;
             _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
-            _animator.SetBool(_isMovingHash, moveAmount > 0.1f);
+            _animator.SetBool(_isMovingHash, _movementEnabled && moveAmount > 0.1f);
         }
 
         public void SetMovementEnabled(bool movementEnabled)

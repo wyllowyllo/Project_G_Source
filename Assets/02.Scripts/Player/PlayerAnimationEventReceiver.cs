@@ -23,8 +23,11 @@ namespace Player
             }
         }
 
-        public void OnAttackAnimationEnd()
+        public void OnAttackAnimationEnd(AttackSession session)
         {
+            if (_attacker != null && _attacker.CurrentSession != session)
+                return;
+
             _attacker?.OnComboWindowStart();
 
             if (_playerCombat != null && _playerCombat.TryExecuteBufferedAttack())
