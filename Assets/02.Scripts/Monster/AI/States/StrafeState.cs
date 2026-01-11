@@ -253,7 +253,7 @@ namespace Monster.AI.States
         {
             if (!_playerDetectAbility.HasPlayer) return;
 
-            float lightAttackRange = Data.AttackRange * 0.6f;
+            float lightAttackRange = Data.LightAttackRange;
             float dist = _playerDetectAbility.DistanceToPlayer;
 
             // 밀착 거리 도달 시 모드 종료 (TryAttack에서 공격 처리)
@@ -374,8 +374,8 @@ namespace Monster.AI.States
             // 약공 시도 (제자리 공격 - 밀착 거리 필요)
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
             {
-                // 제자리 공격이므로 실제 히트 가능 거리로 설정 (AttackRange의 60%)
-                float lightRange = Data.AttackRange * 0.6f;
+                // 제자리 공격이므로 실제 히트 가능 거리로 설정
+                float lightRange = Data.LightAttackRange;
 
                 if (_playerDetectAbility.DistanceToPlayer <= lightRange &&
                     _groupCommandProvider.CanLightAttack(now) &&
@@ -388,10 +388,10 @@ namespace Monster.AI.States
                 }
             }
 
-            // 강공 시도 (공격 범위 내에서만)
+            // 강공 시도 (강공 범위 내에서만)
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
             {
-                if (_playerDetectAbility.DistanceToPlayer <= Data.AttackRange &&
+                if (_playerDetectAbility.DistanceToPlayer <= Data.HeavyAttackRange &&
                     _groupCommandProvider.CanAttack() &&
                     _groupCommandProvider.CanHeavyAttack(now) &&
                     Random.value < Data.HeavyAttackChance)

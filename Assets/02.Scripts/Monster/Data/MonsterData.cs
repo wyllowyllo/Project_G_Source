@@ -26,6 +26,10 @@ namespace Monster.Data
 
         [Header("공격 행동")]
         [SerializeField] private float _attackRange = 2f;
+        [Tooltip("약공 사정거리 (제자리 공격)")]
+        [SerializeField] private float _lightAttackRange = 1.5f;
+        [Tooltip("강공 사정거리 (돌진 공격)")]
+        [SerializeField] private float _heavyAttackRange = 2.5f;
         [SerializeField] private float _attackCooldown = 1.5f;
 
         [Header("이동 스탯")]
@@ -94,6 +98,8 @@ namespace Monster.Data
         public string MonsterName => _monsterName;
         public int MonsterLevel => _monsterLevel;
         public float AttackRange => _attackRange;
+        public float LightAttackRange => _lightAttackRange;
+        public float HeavyAttackRange => _heavyAttackRange;
         public float AttackCooldown => _attackCooldown;
         public float MoveSpeed => _moveSpeed;
         public float RotationSpeed => _rotationSpeed;

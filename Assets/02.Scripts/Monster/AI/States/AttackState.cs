@@ -92,7 +92,8 @@ namespace Monster.AI.States
         private void UpdateWindupPhase()
         {
             // Windup 중 플레이어가 너무 멀어지면 취소
-            if (_playerDetectAbility.DistanceToPlayer > _controller.Data.AttackRange * 2f)
+            float attackRange = _isHeavyAttack ? _controller.Data.HeavyAttackRange : _controller.Data.LightAttackRange;
+            if (_playerDetectAbility.DistanceToPlayer > attackRange * 2f)
             {
                 ReturnToCombat();
                 return;
