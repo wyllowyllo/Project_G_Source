@@ -21,10 +21,11 @@ namespace Monster.AI.States
         // 행동 모드
         private enum EStrafeMode
         {
-            Circle,           // 플레이어 주변을 원호로 이동 (서성이기)
-            AdjustDistance,   // 거리 조절 (전진/후퇴)
-            Pause,            // 잠시 정지하고 관찰
-            ApproachForAttack // 일반공격을 위해 밀착 거리까지 접근
+            Circle,              // 플레이어 주변을 원호로 이동 (서성이기)
+            AdjustDistance,      // 거리 조절 (전진/후퇴)
+            Pause,               // 잠시 정지하고 관찰
+            ApproachForAttack,   // 약공을 위해 밀착 거리까지 접근
+            ApproachForHeavyAttack // 강공을 위해 강공 범위까지 접근
         }
 
         private EStrafeMode _currentMode;
@@ -156,6 +157,9 @@ namespace Monster.AI.States
                 case EStrafeMode.ApproachForAttack:
                     ExecuteApproachForAttack();
                     break;
+                case EStrafeMode.ApproachForHeavyAttack:
+                    ExecuteApproachForHeavyAttack();
+                    break;
             }
         }
 
@@ -271,6 +275,28 @@ namespace Monster.AI.States
             _targetVelocity = dirToPlayer * Data.StrafeSpeed * 1.2f; // 약간 빠르게 접근
         }
 
+        private void ExecuteApproachForHeavyAttack()
+        {
+            if (!_playerDetectAbility.HasPlayer) return;
+
+            float heavyAttackRange = Data.HeavyAttackRange;
+            float dist = _playerDetectAbility.DistanceToPlayer;
+
+            // 강공 범위 도달 시 모드 종료 (TryAttack에서 공격 처리)
+            if (dist <= heavyAttackRange)
+            {
+                _targetVelocity = Vector3.zero;
+                return;
+            }
+
+            // 플레이어 방향으로 접근
+            Vector3 dirToPlayer = _playerDetectAbility.DirectionToPlayer();
+            dirToPlayer.y = 0f;
+            dirToPlayer.Normalize();
+
+            _targetVelocity = dirToPlayer * Data.StrafeSpeed * 1.0f;
+        }
+
         private void ChooseNextMode()
         {
             float dist = _playerDetectAbility.DistanceToPlayer;
@@ -284,14 +310,25 @@ namespace Monster.AI.States
                 return;
             }
 
-            // 일반공격 쿨다운 준비 시 접근 시도 (확률 기반)
+            // 약공 쿨다운 준비 시 접근 시도 (확률 기반)
             bool canLightAttack = _groupCommandProvider.CanLightAttack(Time.time);
             bool lightAttackEnabled = Data.AttackMode == EAttackMode.Both || Data.AttackMode == EAttackMode.LightOnly;
 
             if (canLightAttack && lightAttackEnabled && Random.value < Data.LightAttackChance)
             {
-                // 일반공격을 위해 밀착 거리로 접근
+                // 약공을 위해 밀착 거리로 접근
                 SetMode(EStrafeMode.ApproachForAttack, 1.5f, 3.0f);
+                return;
+            }
+
+            // 강공 쿨다운 준비 시 접근 시도 (확률 기반)
+            bool canHeavyAttack = _groupCommandProvider.CanAttack() && _groupCommandProvider.CanHeavyAttack(Time.time);
+            bool heavyAttackEnabled = Data.AttackMode == EAttackMode.Both || Data.AttackMode == EAttackMode.HeavyOnly;
+
+            if (canHeavyAttack && heavyAttackEnabled && Random.value < Data.HeavyAttackChance)
+            {
+                // 강공을 위해 강공 범위로 접근
+                SetMode(EStrafeMode.ApproachForHeavyAttack, 1.5f, 3.0f);
                 return;
             }
 
