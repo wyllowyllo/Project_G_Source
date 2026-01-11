@@ -1,13 +1,20 @@
-using Monster.AI;
+using Combat.Core;
 using UnityEngine;
+using CombatDamageable = Combat.Damage.IDamageable;
+using MonsterDamageable = Monster.AI.IDamageable;
 
 namespace Test.TestPlayer
 {
     /// <summary>
     /// 플레이어의 체력을 관리하는 컴포넌트.
-    /// 테스트용: 몬스터가 플레이어를 공격할 수 있도록 IDamageable 구현.
+    /// Combat 시스템과 Monster 시스템 모두와 호환됩니다.
+    ///
+    /// 테스트 키:
+    /// - K: 자가 피해 (10 데미지)
+    /// - I: 무적 모드 토글
+    /// - H: 체력 전체 회복
     /// </summary>
-    public class PlayerHealth : MonoBehaviour, IDamageable
+    public class PlayerHealth : MonoBehaviour, CombatDamageable, MonsterDamageable
     {
         [Header("체력 설정")]
         [SerializeField] private float _maxHealth = 100f;
@@ -19,6 +26,9 @@ namespace Test.TestPlayer
         public bool IsAlive => _isAlive;
         public float CurrentHealth => _currentHealth;
         public float MaxHealth => _maxHealth;
+
+        // Combat.Damage.IDamageable 구현
+        public bool CanTakeDamage => _isAlive && !_isInvincible;
 
         private void Awake()
         {
@@ -44,16 +54,32 @@ namespace Test.TestPlayer
             }
         }
 
+        /// <summary>
+        /// Monster.AI.IDamageable 구현 - 기존 호환성 유지
+        /// </summary>
         public void TakeDamage(float damage, Vector3 attackerPosition)
         {
-            if (!_isAlive || _isInvincible)
-            {
-                return;
-            }
+            if (!CanTakeDamage) return;
 
+            ApplyDamage(damage, false);
+        }
+
+        /// <summary>
+        /// Combat.Damage.IDamageable 구현 - Combat 시스템 통합용
+        /// </summary>
+        public void TakeDamage(DamageInfo damageInfo)
+        {
+            if (!CanTakeDamage) return;
+
+            ApplyDamage(damageInfo.Amount, damageInfo.IsCritical);
+        }
+
+        private void ApplyDamage(float damage, bool isCritical)
+        {
             _currentHealth -= damage;
 
-            Debug.Log($"플레이어 피격! 데미지: {damage}, 남은 체력: {_currentHealth}/{_maxHealth}");
+            string critText = isCritical ? " (크리티컬!)" : "";
+            Debug.Log($"플레이어 피격! 데미지: {damage:F1}{critText}, 남은 체력: {_currentHealth:F1}/{_maxHealth}");
 
             if (_currentHealth <= 0)
             {
