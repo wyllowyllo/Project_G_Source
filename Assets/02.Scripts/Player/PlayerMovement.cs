@@ -251,14 +251,46 @@ namespace Player
         {
             if (_motor.GroundingStatus.IsStableOnGround)
             {
-                // 경사면에 맞게 속도 재조정
-                currentVelocity = _motor.GetDirectionTangentToSurface(currentVelocity, _motor.GroundingStatus.GroundNormal) * currentVelocity.magnitude;
+                Vector3 horizontalVelocity = Vector3.ProjectOnPlane(currentVelocity, _motor.CharacterUp);
+                float horizontalSpeed = horizontalVelocity.magnitude;
+
+                if (horizontalSpeed > 0.01f)
+                {
+                    currentVelocity = _motor.GetDirectionTangentToSurface(
+                        horizontalVelocity.normalized,
+                        _motor.GroundingStatus.GroundNormal
+                    ) * horizontalSpeed;
+                    
+                    if (currentVelocity.y > 0f)
+                    {
+                        currentVelocity.y = 0f;
+                    }
+                }
+                else
+                {
+                    currentVelocity = Vector3.zero;
+                }
 
                 if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
                 {
                     Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
-                    currentVelocity.x = rootMotionVelocity.x;
-                    currentVelocity.z = rootMotionVelocity.z;
+                    
+                    Vector3 rootMotionHorizontal = Vector3.ProjectOnPlane(rootMotionVelocity, _motor.CharacterUp);
+                    float rootMotionSpeed = rootMotionHorizontal.magnitude;
+
+                    if (rootMotionSpeed > 0.01f)
+                    {
+                        currentVelocity = _motor.GetDirectionTangentToSurface(
+                            rootMotionHorizontal.normalized,
+                            _motor.GroundingStatus.GroundNormal
+                        ) * rootMotionSpeed;
+                        
+                        if (currentVelocity.y > 0f)
+                        {
+                            currentVelocity.y = 0f;
+                        }
+                    }
+
                     _rootMotionPositionDelta = Vector3.zero;
                 }
                 else
@@ -285,12 +317,10 @@ namespace Player
             }
             else
             {
-                // 공중 이동
                 if (_moveInputVector.sqrMagnitude > 0f)
                 {
                     Vector3 targetMovementVelocity = _moveInputVector * _maxAirMoveSpeed;
-
-                    // 불안정한 경사면에서 기어오르기 방지
+                    
                     if (_motor.GroundingStatus.FoundAnyGround)
                     {
                         Vector3 perpenticularObstructionNormal = Vector3.Cross(
@@ -303,11 +333,9 @@ namespace Player
                     Vector3 velocityDiff = Vector3.ProjectOnPlane(targetMovementVelocity - currentVelocity, _gravity);
                     currentVelocity += velocityDiff * _airAccelerationSpeed * deltaTime;
                 }
-
-                // 중력
+                
                 currentVelocity += _gravity * deltaTime;
-
-                // 드래그
+                
                 currentVelocity *= (1f / (1f + (_drag * deltaTime)));
             }
 
@@ -316,6 +344,10 @@ namespace Player
 
         public void PostGroundingUpdate(float deltaTime)
         {
+            if (!_motor.LastGroundingStatus.IsStableOnGround && _motor.GroundingStatus.IsStableOnGround)
+            {
+                _currentVelocity = Vector3.ProjectOnPlane(_currentVelocity, _motor.CharacterUp);
+            }
         }
 
         public void AfterCharacterUpdate(float deltaTime)
