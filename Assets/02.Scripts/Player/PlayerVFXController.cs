@@ -28,6 +28,7 @@ namespace Player
         private MeleeAttacker _attacker;
         private Combatant _combatant;
         private AttackSession _currentTrailSession;
+        private Coroutine _trailCoroutine;
         private bool _trailActive;
 
         private void Awake()
@@ -172,8 +173,11 @@ namespace Player
                 return;
 
             // 이전 트레일이 dying 상태면 정리 후 다음 프레임에서 시작
-            StopAllCoroutines();
-            StartCoroutine(StartTrailNextFrame());
+            if (_trailCoroutine != null)
+            {
+                StopCoroutine(_trailCoroutine);
+            }
+            _trailCoroutine = StartCoroutine(StartTrailNextFrame());
         }
 
         private IEnumerator StartTrailNextFrame()
@@ -204,7 +208,11 @@ namespace Player
 
         public void StopAllEffects()
         {
-            StopAllCoroutines();
+            if (_trailCoroutine != null)
+            {
+                StopCoroutine(_trailCoroutine);
+                _trailCoroutine = null;
+            }
             _currentTrailSession = null;
 
             if (_trailActive)
