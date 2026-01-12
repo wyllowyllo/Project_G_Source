@@ -260,62 +260,64 @@ private void Start()
     {
         if (_characterClone == null) return;
 
-        var hpBar = _characterClone.GetComponent<Player.PlayerHpBar>();
-        if (hpBar != null)
+        var disableableComponents = _characterClone.GetComponentsInChildren<ICloneDisableable>(true);
+        foreach (var component in disableableComponents)
         {
-            hpBar.enabled = false;
+            if (component is MonoBehaviour mb)
+            {
+                component.OnCloneDisable(); // 정리 작업 수행
+                mb.enabled = false;
+                Debug.Log($"[Clone] ICloneDisableable 컴포넌트 비활성화: {mb.GetType().Name}");
+            }
         }
 
-        var combatant = _characterClone.GetComponent<Combat.Core.Combatant>();
-        if (combatant != null)
+        if (_characterClone.TryGetComponent<CharacterController>(out var characterController))
         {
-            combatant.enabled = false;
+            characterController.enabled = false;
+            Debug.Log("[Clone] CharacterController 비활성화");
         }
 
-        // 이동 관련 컴포넌트 비활성화
-        var movement = _characterClone.GetComponent<Player.PlayerMovement>();
-        if (movement != null)
-        {
-            movement.enabled = false;
-        }
-
-        var controller = _characterClone.GetComponent<CharacterController>();
-        if (controller != null)
-        {
-            controller.enabled = false;
-        }
-
-        // 카메라 컨트롤러 비활성화
-        var typesToDisable = new System.Type[]
+        DisableComponentsByType(new System.Type[]
         {
             typeof(Player.PlayerCameraController),
             typeof(CharacterViewerInput),
             typeof(ViewerCameraController)
-        };
+        });
 
-        foreach (var type in typesToDisable)
+        if (_characterClone.TryGetComponent<Rigidbody>(out var rb))
         {
-            var components = _characterClone.GetComponentsInChildren(type, true);
-            foreach(var component in components)
-            {
-                if(component is MonoBehaviour mb) // MonoBehaviour 타입인 경우에만 비활성화
-                {
-                   mb.enabled = false;
-                }
-            }
+            rb.isKinematic = true;
         }
 
-        var rigidbody = _characterClone.GetComponent<Rigidbody>();
-        if (rigidbody != null)
-        {
-            rigidbody.isKinematic = true;
-        }
-
-        // Collider 비활성화
         var colliders = _characterClone.GetComponentsInChildren<Collider>();
         foreach (var collider in colliders)
         {
             collider.enabled = false;
+        }
+    }
+
+    private void TryDisableComponent<T>() where T : MonoBehaviour
+    {
+        if (_characterClone.TryGetComponent<T>(out var component))
+        {
+            component.enabled = false;
+            Debug.Log($"[Clone] 컴포넌트 비활성화: {typeof(T).Name}");
+        }
+    }
+
+    private void DisableComponentsByType(System.Type[] types)
+    {
+        foreach (var type in types)
+        {
+            var components = _characterClone.GetComponentsInChildren(type, true);
+            foreach (var component in components)
+            {
+                if (component is MonoBehaviour mb)
+                {
+                    mb.enabled = false;
+                    Debug.Log($"[Clone] 타입 기반 비활성화: {type.Name}");
+                }
+            }
         }
     }
 
