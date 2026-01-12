@@ -20,6 +20,12 @@ namespace Player
         [Header("Ground Settings")]
         [SerializeField] private float _maxStableSlopeAngle = 60f;
 
+        [Header("Gravity & Air Movement")]
+        [SerializeField] private Vector3 _gravity = new Vector3(0, -10f, 0);
+        [SerializeField] private float _maxAirMoveSpeed = 10f;
+        [SerializeField] private float _airAccelerationSpeed = 5f;
+        [SerializeField] private float _drag = 0.1f;
+
         [Header("Dodge Settings")]
         [Tooltip("회피 중 이동 입력 허용 여부")]
         [SerializeField] private bool _canMoveWhileDodging = false;
@@ -243,37 +249,68 @@ namespace Player
 
        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
-            if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
+            if (_motor.GroundingStatus.IsStableOnGround)
             {
-                Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
-                
-                currentVelocity.x = rootMotionVelocity.x;
-                currentVelocity.z = rootMotionVelocity.z;
-                
-                _rootMotionPositionDelta = Vector3.zero;
-            }
-            else
-            {
-                Vector3 targetVelocity = _moveInputVector * _moveSpeed;
-                
-                if (_moveInputVector.magnitude > 0.1f)
+                // 경사면에 맞게 속도 재조정
+                currentVelocity = _motor.GetDirectionTangentToSurface(currentVelocity, _motor.GroundingStatus.GroundNormal) * currentVelocity.magnitude;
+
+                if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
                 {
-                    currentVelocity = Vector3.Lerp(
-                        currentVelocity,
-                        targetVelocity,
-                        _acceleration * deltaTime
-                    );
+                    Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
+                    currentVelocity.x = rootMotionVelocity.x;
+                    currentVelocity.z = rootMotionVelocity.z;
+                    _rootMotionPositionDelta = Vector3.zero;
                 }
                 else
                 {
-                    currentVelocity = Vector3.Lerp(
-                        currentVelocity,
-                        Vector3.zero,
-                        _deceleration * deltaTime
-                    );
+                    Vector3 targetVelocity = _moveInputVector * _moveSpeed;
+
+                    if (_moveInputVector.magnitude > 0.1f)
+                    {
+                        currentVelocity = Vector3.Lerp(
+                            currentVelocity,
+                            targetVelocity,
+                            _acceleration * deltaTime
+                        );
+                    }
+                    else
+                    {
+                        currentVelocity = Vector3.Lerp(
+                            currentVelocity,
+                            Vector3.zero,
+                            _deceleration * deltaTime
+                        );
+                    }
                 }
             }
-            
+            else
+            {
+                // 공중 이동
+                if (_moveInputVector.sqrMagnitude > 0f)
+                {
+                    Vector3 targetMovementVelocity = _moveInputVector * _maxAirMoveSpeed;
+
+                    // 불안정한 경사면에서 기어오르기 방지
+                    if (_motor.GroundingStatus.FoundAnyGround)
+                    {
+                        Vector3 perpenticularObstructionNormal = Vector3.Cross(
+                            Vector3.Cross(_motor.CharacterUp, _motor.GroundingStatus.GroundNormal), 
+                            _motor.CharacterUp
+                        ).normalized;
+                        targetMovementVelocity = Vector3.ProjectOnPlane(targetMovementVelocity, perpenticularObstructionNormal);
+                    }
+
+                    Vector3 velocityDiff = Vector3.ProjectOnPlane(targetMovementVelocity - currentVelocity, _gravity);
+                    currentVelocity += velocityDiff * _airAccelerationSpeed * deltaTime;
+                }
+
+                // 중력
+                currentVelocity += _gravity * deltaTime;
+
+                // 드래그
+                currentVelocity *= (1f / (1f + (_drag * deltaTime)));
+            }
+
             this._currentVelocity = currentVelocity;
         }
 
@@ -310,7 +347,7 @@ namespace Player
         {
             if (_animator == null) return;
 
-            float moveAmount = _movementEnabled ? _moveInputVector.magnitude : 0f;
+            float moveAmount = _movementEnabled ? _currentVelocity.magnitude / _moveSpeed : 0f;
             _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
             _animator.SetBool(_isMovingHash, _movementEnabled && moveAmount > 0.1f);
         }

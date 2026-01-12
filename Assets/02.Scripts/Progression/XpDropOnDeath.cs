@@ -1,4 +1,5 @@
 using Combat.Core;
+using Common;
 using UnityEngine;
 
 namespace Progression
@@ -9,14 +10,17 @@ namespace Progression
         [Header("XP Reward")]
         [SerializeField] private int _xpReward = 50;
 
-        [Header("Player (Spawner assigns)")]
-        [SerializeField] private PlayerProgression _player;
-
+        private PlayerProgression _player;
         private Health _health;
 
         private void Awake()
         {
             _health = GetComponent<Health>();
+        }
+
+        private void Start()
+        {
+            FindPlayerProgression();
         }
 
         private void OnEnable()
@@ -29,24 +33,47 @@ namespace Progression
             _health.OnDeath -= HandleDeath;
         }
 
+        private void FindPlayerProgression()
+        {
+            if (PlayerReferenceProvider.Instance == null)
+            {
+                Debug.LogWarning($"[XpDropOnDeath] PlayerReferenceProvider not found");
+                return;
+            }
+
+            Transform playerTransform = PlayerReferenceProvider.Instance.PlayerTransform;
+            if (playerTransform == null)
+            {
+                Debug.LogWarning($"[XpDropOnDeath] Player transform not found");
+                return;
+            }
+
+            _player = playerTransform.GetComponent<PlayerProgression>();
+            if (_player == null)
+            {
+                Debug.LogWarning($"[XpDropOnDeath] PlayerProgression component not found on player");
+            }
+        }
+
         private void HandleDeath()
         {
             if (_player == null)
             {
-                Debug.LogWarning($"[XpDropOnDeath] Player not assigned on {gameObject.name}");
+                FindPlayerProgression();
+            }
+
+            if (_player == null)
+            {
+                Debug.LogWarning($"[XpDropOnDeath] Player not found on {gameObject.name}");
                 return;
             }
 
             _player.AddExperience(_xpReward);
         }
 
-        public void Initialize(PlayerProgression player)
-        {
-            _player = player;
-        }
-
 #if UNITY_INCLUDE_TESTS
         public void SetXpRewardForTest(int xpReward) => _xpReward = xpReward;
+        public void SetPlayerForTest(PlayerProgression player) => _player = player;
 #endif
     }
 }
