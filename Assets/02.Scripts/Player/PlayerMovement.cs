@@ -1,9 +1,10 @@
+using System.Collections.Generic;
 using KinematicCharacterController;
 using UnityEngine;
 
 namespace Player
 {
-    public class PlayerMovement : MonoBehaviour, ICharacterController
+    public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester
     {
         [Header("Movement Settings")]
         [SerializeField] private float _moveSpeed = 5f;
@@ -41,8 +42,7 @@ namespace Player
         private bool _movementEnabled = true;
         
         private Vector3 _rootMotionPositionDelta;
-        private bool _applyRootMotion = false;
-        private int _rootMotionRequestCount = 0;
+        private readonly Dictionary<IRootMotionRequester, float> _rootMotionRequesters = new();
         private float _rootMotionMultiplier = 1f;
 
         private void Awake()
@@ -165,7 +165,7 @@ namespace Player
         {
             if (_animator == null) return;
 
-            if (_applyRootMotion)
+            if (_rootMotionRequesters.Count > 0)
             {
                 _rootMotionPositionDelta += _animator.deltaPosition * _rootMotionMultiplier;
             }
@@ -243,7 +243,7 @@ namespace Player
 
        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
-            if (_applyRootMotion && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
+            if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
             {
                 Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
                 
@@ -326,26 +326,34 @@ namespace Player
             }
         }
         
-        public void ReleaseRootMotion()
+        public void ReleaseRootMotion(IRootMotionRequester requester)
         {
-            _rootMotionRequestCount = Mathf.Max(0, _rootMotionRequestCount - 1);
-            if (_rootMotionRequestCount == 0)
+            if (!_rootMotionRequesters.Remove(requester)) return;
+
+            if (_rootMotionRequesters.Count == 0)
             {
-                _applyRootMotion = false;
                 _rootMotionPositionDelta = Vector3.zero;
                 _rootMotionMultiplier = 1f;
             }
-        }
-        
-        public void RequestRootMotion()
-        {
-            _rootMotionRequestCount++;
-            _applyRootMotion = true;
+            else
+            {
+                RecalculateMultiplier();
+            }
         }
 
-        public void SetRootMotionMultiplier(float multiplier)
+        public void RequestRootMotion(IRootMotionRequester requester, float multiplier = 1f)
         {
-            _rootMotionMultiplier = multiplier;
+            _rootMotionRequesters[requester] = multiplier;
+            RecalculateMultiplier();
+        }
+
+        private void RecalculateMultiplier()
+        {
+            _rootMotionMultiplier = 1f;
+            foreach (var mult in _rootMotionRequesters.Values)
+            {
+                _rootMotionMultiplier *= mult;
+            }
         }
         
         public void ExecuteDodgeMovement()
@@ -358,12 +366,12 @@ namespace Player
                 SetMovementEnabled(false);
             }
 
-            RequestRootMotion();
+            RequestRootMotion(this);
         }
 
         public void OnDodgeMovementEnd()
         {
-            ReleaseRootMotion();
+            ReleaseRootMotion(this);
 
             if (!_canMoveWhileDodging)
             {

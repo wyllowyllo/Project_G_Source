@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Player
 {
-    public class RootMotionState : StateMachineBehaviour
+    public class RootMotionState : StateMachineBehaviour, IRootMotionRequester
     {
         [Range(0.5f, 1f)]
         [SerializeField] private float _releaseThreshold = 0.85f;
@@ -16,8 +16,7 @@ namespace Player
         public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             _movement ??= animator.GetComponent<PlayerMovement>();
-            _movement?.RequestRootMotion();
-            _movement?.SetRootMotionMultiplier(_positionMultiplier);
+            _movement?.RequestRootMotion(this, _positionMultiplier);
             _released = false;
         }
 
@@ -25,7 +24,7 @@ namespace Player
         {
             if (!_released && stateInfo.normalizedTime >= _releaseThreshold)
             {
-                _movement?.ReleaseRootMotion();
+                _movement?.ReleaseRootMotion(this);
                 _released = true;
             }
         }
@@ -34,7 +33,7 @@ namespace Player
         {
             if (!_released)
             {
-                _movement?.ReleaseRootMotion();
+                _movement?.ReleaseRootMotion(this);
             }
         }
     }
