@@ -22,7 +22,6 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private Color _backgroundColor = new Color(0, 0, 0, 0);
 
     [Header("Layer 설정")]
-    [Header("Layer 설정")]
     [SerializeField] private string _characterViewerLayer = "CharacterViewer";
 
     [Header("복사본 위치 설정")]
@@ -287,14 +286,22 @@ private void Start()
         }
 
         // 카메라 컨트롤러 비활성화
-        var cameraControllers = _characterClone.GetComponentsInChildren<MonoBehaviour>();
-        foreach (var comp in cameraControllers)
+        var typesToDisable = new System.Type[]
         {
-            if (comp.GetType().Name.Contains("Camera") || 
-                comp.GetType().Name.Contains("Input") ||
-                comp.GetType().Name.Contains("Controller"))
+            typeof(Player.PlayerCameraController),
+            typeof(CharacterViewerInput),
+            typeof(ViewerCameraController)
+        };
+
+        foreach (var type in typesToDisable)
+        {
+            var components = _characterClone.GetComponentsInChildren(type, true);
+            foreach(var component in components)
             {
-                comp.enabled = false;
+                if(component is MonoBehaviour mb) // MonoBehaviour 타입인 경우에만 비활성화
+                {
+                   mb.enabled = false;
+                }
             }
         }
 
