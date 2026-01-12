@@ -78,6 +78,12 @@ public class ViewerCameraController : MonoBehaviour
     {
         // 플레이어 바라보게 설정
         _target = target;
+        
+        if (target != null)
+        {
+            Debug.Log($"[ViewerCameraController] 타겟 설정: {target.name}, 위치: {target.position}");
+        }
+        
         if (_isEnabled)
         {
             UpdateCameraPosition();
@@ -86,7 +92,32 @@ public class ViewerCameraController : MonoBehaviour
 
     public void ResetRotation()
     {
+        // ✅ 수정: null 체크 추가
+        if (_target == null)
+        {
+            Debug.LogWarning("[ViewerCameraController] 타겟이 없어 회전을 리셋할 수 없습니다.");
+            _currentRotationAngle = 0f; // 기본값 0으로 설정
+            return;
+        }
+        
         _currentRotationAngle = _target.eulerAngles.y; // 항상 정면보이도록
+        Debug.Log($"[ViewerCameraController] 회전 리셋: {_currentRotationAngle}도");
+    }
+
+    /// <summary>
+    /// ✅ 추가: 카메라 위치를 즉시 강제 업데이트
+    /// </summary>
+    public void ForceUpdateCamera()
+    {
+        if (_target == null)
+        {
+            Debug.LogWarning("[ViewerCameraController] 타겟이 없어 카메라를 업데이트할 수 없습니다.");
+            return;
+        }
+        
+        ResetRotation();
+        UpdateCameraPosition();
+        Debug.Log($"[ViewerCameraController] 카메라 강제 업데이트 완료");
     }
 
     public void HandleRotation(float rotationInput)
@@ -136,7 +167,11 @@ public class ViewerCameraController : MonoBehaviour
         float angleInRadians = _currentRotationAngle * Mathf.Deg2Rad;
 
         // 타겟 주위로 원형 궤도 계산
-        Vector3 offset = new Vector3(Mathf.Sin(angleInRadians) * _cameraDistance, _cameraHeight,Mathf.Cos(angleInRadians) * _cameraDistance);
+        Vector3 offset = new Vector3(
+            Mathf.Sin(angleInRadians) * _cameraDistance, 
+            _cameraHeight,
+            Mathf.Cos(angleInRadians) * _cameraDistance
+        );
 
         // 카메라 위치 설정
         _viewerCamera.transform.position = _target.position + offset;

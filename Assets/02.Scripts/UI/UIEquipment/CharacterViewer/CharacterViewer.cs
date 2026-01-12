@@ -22,10 +22,11 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private Color _backgroundColor = new Color(0, 0, 0, 0);
 
     [Header("Layer 설정")]
+    [Header("Layer 설정")]
     [SerializeField] private string _characterViewerLayer = "CharacterViewer";
 
     [Header("복사본 위치 설정")]
-    [SerializeField] private Vector3 _clonePositionOffset = new Vector3(20100f, 0f, 0f); // 멀리 배치
+    [SerializeField] private Vector3 _cloneWorldPosition = new Vector3(10000f, 0f, 0f); // 절대 좌표로 멀리 배치
     [SerializeField] private string _idleAnimationState = "Idle_Standing"; // 서있는 포즈 애니메이션
 
     private bool _isViewerActive = false;
@@ -61,12 +62,13 @@ public class CharacterViewer : MonoBehaviour
         }
     }
 
-    private void Start()
+private void Start()
     {
         InitializePlayer();
         InitializeRenderTexture();
         InitializeCamera();
         SetupInputEvents();
+        ConfigureMainCamera(); // 메인 카메라 설정
 
         _equipmentManager = FindObjectOfType<EquipmentManager>();
 
@@ -131,6 +133,35 @@ public class CharacterViewer : MonoBehaviour
 
         _cameraController.SetEnabled(false);
     }
+
+/// <summary>
+    /// 메인 카메라가 CharacterViewer 레이어를 렌더링하지 않도록 설정
+    /// </summary>
+    private void ConfigureMainCamera()
+    {
+        // Main Camera 찾기
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null)
+        {
+            Debug.LogWarning("[CharacterViewer] Main Camera를 찾을 수 없습니다!");
+            return;
+        }
+
+        // CharacterViewer 레이어 번호 가져오기
+        int characterViewerLayer = LayerMask.NameToLayer(_characterViewerLayer);
+        if (characterViewerLayer == -1)
+        {
+            Debug.LogError($"[CharacterViewer] '{_characterViewerLayer}' 레이어를 찾을 수 없습니다. Project Settings > Tags and Layers에서 레이어를 추가해주세요.");
+            return;
+        }
+
+        // Main Camera의 Culling Mask에서 CharacterViewer 레이어 제외
+        int layerMask = 1 << characterViewerLayer;
+        mainCamera.cullingMask &= ~layerMask;
+
+        Debug.Log($"[CharacterViewer] Main Camera에서 '{_characterViewerLayer}' 레이어를 제외했습니다. (복사본이 게임 화면에 안 보임)");
+    }
+
 
     private void SetupInputEvents()
     {
@@ -220,9 +251,11 @@ public class CharacterViewer : MonoBehaviour
         _characterClone.name = "CharacterClone_Viewer";
         _cloneTransform = _characterClone.transform;
 
-        // 복사본을 멀리 배치 (메인 카메라에 안 보이게)
-        _cloneTransform.position = _player.position + _clonePositionOffset;
-        _cloneTransform.rotation = _player.rotation;
+        // ✅ 수정: 복사본을 절대 좌표의 먼 곳에 배치 (메인 카메라에 안 보이게)
+        _cloneTransform.position = _cloneWorldPosition;
+        _cloneTransform.rotation = Quaternion.identity; // 정면을 바라보도록
+
+        Debug.Log($"[CharacterViewer] 복사본 위치: {_cloneTransform.position}");
 
         // 복사본의 레이어를 CharacterViewer로 변경
         _layerManager.SetLayerRecursively(_cloneTransform);
@@ -234,21 +267,24 @@ public class CharacterViewer : MonoBehaviour
         // 복사본에서 불필요한 컴포넌트 비활성화
         DisableCloneComponents();
 
-        // 카메라가 복사본을 바라보도록 설정
-        if (_cameraController != null)
-        {
-            _cameraController.SetTarget(_cloneTransform);
-        }
-
         Debug.Log("[CharacterViewer] 캐릭터 복사본 생성 완료");
     }
 
-    /// <summary>
-    /// 복사본의 불필요한 컴포넌트 비활성화
-    /// </summary>
     private void DisableCloneComponents()
     {
         if (_characterClone == null) return;
+
+        var hpBar = _characterClone.GetComponent<Player.PlayerHpBar>();
+        if (hpBar != null)
+        {
+            hpBar.enabled = false;
+        }
+
+        var combatant = _characterClone.GetComponent<Combat.Core.Combatant>();
+        if (combatant != null)
+        {
+            combatant.enabled = false;
+        }
 
         // 이동 관련 컴포넌트 비활성화
         var movement = _characterClone.GetComponent<Player.PlayerMovement>();
@@ -257,7 +293,6 @@ public class CharacterViewer : MonoBehaviour
             movement.enabled = false;
         }
 
-        // 컨트롤러 관련 컴포넌트 비활성화
         var controller = _characterClone.GetComponent<CharacterController>();
         if (controller != null)
         {
@@ -276,7 +311,6 @@ public class CharacterViewer : MonoBehaviour
             }
         }
 
-        // Rigidbody가 있다면 Kinematic으로
         var rigidbody = _characterClone.GetComponent<Rigidbody>();
         if (rigidbody != null)
         {
@@ -291,9 +325,7 @@ public class CharacterViewer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 실제 플레이어의 상태를 복사본에 동기화
-    /// </summary>
+    // 실제 플레이어의 상태를 복사본에 동기화
     private void SyncCharacterClone()
     {
         if (_characterClone == null || _player == null) return;
@@ -304,32 +336,19 @@ public class CharacterViewer : MonoBehaviour
         // 애니메이션 동기화 (서있는 포즈로 고정)
         SyncAnimation();
 
-        // 위치 동기화 (회전은 카메라가 처리)
-        _cloneTransform.position = _player.position + _clonePositionOffset;
     }
 
-    /// <summary>
-    /// 장비 동기화
-    /// </summary>
+    // 장비 동기화
     private void SyncEquipment()
     {
         if (_playerEquipment == null || _cloneEquipment == null) return;
 
         // 플레이어의 모든 장비를 복사본에 복사
-        // 이 부분은 PlayerEquipment의 구조에 따라 수정이 필요할 수 있습니다
         
         // 예시: 무기 동기화
         // _cloneEquipment.EquipWeapon(_playerEquipment.CurrentWeapon);
-        
-        // 예시: 방어구 동기화
-        // _cloneEquipment.EquipArmor(_playerEquipment.CurrentArmor);
-
-        Debug.Log("[CharacterViewer] 장비 동기화 완료");
     }
 
-    /// <summary>
-    /// 애니메이션 동기화 (서있는 포즈로 고정)
-    /// </summary>
     private void SyncAnimation()
     {
         if (_cloneAnimator == null) return;
@@ -338,7 +357,7 @@ public class CharacterViewer : MonoBehaviour
         _cloneAnimator.SetFloat("MoveSpeed", 0f);
         _cloneAnimator.SetBool("IsMoving", false);
 
-        // 특정 Idle 애니메이션 재생 (옵션)
+        // 특정 Idle 애니메이션 재생
         if (!string.IsNullOrEmpty(_idleAnimationState))
         {
             _cloneAnimator.Play(_idleAnimationState);
@@ -352,20 +371,12 @@ public class CharacterViewer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 플레이어가 무기를 들고 있는지 확인
-    /// </summary>
     private bool CheckPlayerHasWeapon()
     {
-        // PlayerEquipment 구조에 따라 수정 필요
-        // 예시:
-        // return _playerEquipment.CurrentWeapon != null;
-        return false; // 임시
+        return false;
     }
 
-    /// <summary>
-    /// 복사본 삭제
-    /// </summary>
+    //복사본 삭제
     private void DestroyCharacterClone()
     {
         if (_characterClone != null)
@@ -375,14 +386,12 @@ public class CharacterViewer : MonoBehaviour
             _cloneTransform = null;
             _cloneAnimator = null;
             _cloneEquipment = null;
-
-            Debug.Log("[CharacterViewer] 캐릭터 복사본 삭제 완료");
         }
     }
 
     #endregion
 
-    private void OpenViewer()
+private void OpenViewer()
     {
         if (_viewerPanel != null)
         {
@@ -397,28 +406,48 @@ public class CharacterViewer : MonoBehaviour
         // 플레이어 이동 비활성화
         SetPlayerMovementEnabled(false);
 
-        // 배그 방식: 복사본 생성 및 동기화
-        CreateCharacterClone();
-        SyncCharacterClone();
+        // 코루틴으로 복사본 생성 및 카메라 설정
+        StartCoroutine(InitializeViewerCoroutine());
 
-        // 장비 UI 업데이트
-        UpdateEquipmentUI();
-
-        // 카메라 활성화
-        if (_cameraController != null)
-        {
-            _cameraController.SetEnabled(true);
-        }
-
-        // 입력 활성화
         if (_inputHandler != null)
         {
             _inputHandler.SetActive(true);
         }
-
-        // 커서 표시
         SetCursorState(true);
     }
+
+    private System.Collections.IEnumerator InitializeViewerCoroutine()
+    {
+        // 1. 복사본 생성 및 동기화
+        CreateCharacterClone();
+        SyncCharacterClone();
+
+        yield return null;
+
+        // 3. 카메라 타겟 설정 (복사본 위치가 확정된 후)
+        if (_cameraController != null && _cloneTransform != null)
+        {
+            _cameraController.SetTarget(_cloneTransform);
+        }
+
+        // 4. 장비 UI 업데이트
+        UpdateEquipmentUI();
+
+        // 5. 카메라 활성화 및 강제 업데이트
+        if (_cameraController != null)
+        {
+            _cameraController.SetEnabled(true);
+            _cameraController.ForceUpdateCamera();
+        }
+
+        yield return null;
+        
+        if (_cameraController != null)
+        {
+            _cameraController.ForceUpdateCamera();
+        }
+    }
+
 
     private void CloseViewer()
     {
@@ -432,28 +461,22 @@ public class CharacterViewer : MonoBehaviour
             _characterArea.SetActive(false);
         }
 
-        // 배그 방식: 복사본 삭제
         DestroyCharacterClone();
 
-        // 레이어 정리
         _layerManager.Clear();
 
-        // 카메라 비활성화
         if (_cameraController != null)
         {
             _cameraController.SetEnabled(false);
         }
 
-        // 입력 비활성화
         if (_inputHandler != null)
         {
             _inputHandler.SetActive(false);
         }
 
-        // 플레이어 이동 활성화
         SetPlayerMovementEnabled(true);
 
-        // 커서 숨김
         SetCursorState(false);
     }
 
@@ -479,7 +502,7 @@ public class CharacterViewer : MonoBehaviour
         Cursor.lockState = visible ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
-    // Update에서 실시간 동기화 (옵션)
+    // Update에서 실시간 동기화
     private void Update()
     {
         // 뷰어가 활성화된 상태에서 실시간으로 장비 변경을 감지하고 싶다면
@@ -489,8 +512,6 @@ public class CharacterViewer : MonoBehaviour
             // SyncEquipment();
         }
     }
-
-    #region Public Methods
 
     public void OpenViewerExternal()
     {
@@ -510,9 +531,6 @@ public class CharacterViewer : MonoBehaviour
 
     public bool IsViewerActive => _isViewerActive;
 
-    /// <summary>
-    /// 복사본을 수동으로 동기화
-    /// </summary>
     public void RefreshCharacterClone()
     {
         if (_isViewerActive)
@@ -520,8 +538,6 @@ public class CharacterViewer : MonoBehaviour
             SyncCharacterClone();
         }
     }
-
-    #endregion
 
     private void OnValidate()
     {
