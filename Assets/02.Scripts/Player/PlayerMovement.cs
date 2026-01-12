@@ -6,6 +6,10 @@ namespace Player
 {
     public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester
     {
+        private const float MinVelocityThreshold = 0.01f;
+        private const float MinRootMotionThreshold = 0.000001f;
+        private const float MinInputThreshold = 0.1f;
+
         [Header("Movement Settings")]
         [SerializeField] private float _moveSpeed = 5f;
         [SerializeField] private float _rotationSpeed = 15f;
@@ -125,7 +129,7 @@ namespace Player
 
         private Vector3 GetCameraRelativeMovement(Vector3 inputVector)
         {
-            if (inputVector.magnitude < 0.01f)
+            if (inputVector.magnitude < MinVelocityThreshold)
             {
                 return Vector3.zero;
             }
@@ -209,7 +213,7 @@ namespace Player
 
             if (!_movementEnabled) return;
 
-            if (_moveInputVector.magnitude > 0.1f)
+            if (_moveInputVector.magnitude > MinInputThreshold)
             {
                 _lookDirection = _moveInputVector;
 
@@ -226,7 +230,7 @@ namespace Player
 
         public void RotateImmediate(Vector3 direction)
         {
-            if (direction.sqrMagnitude < 0.01f) return;
+            if (direction.sqrMagnitude < MinVelocityThreshold) return;
 
             _lookDirection = direction;
             _immediateRotation = Quaternion.LookRotation(direction, Vector3.up);
@@ -234,7 +238,7 @@ namespace Player
         
         public void RotateSmooth(Vector3 direction, float speed = 1f)
         {
-            if (direction.sqrMagnitude < 0.01f) return;
+            if (direction.sqrMagnitude < MinVelocityThreshold) return;
 
             direction.y = 0f;
             _lookDirection = direction.normalized;
@@ -247,25 +251,46 @@ namespace Player
             _smoothTargetRotation = null;
         }
 
+        private Vector3 ProjectVelocityOnSlope(Vector3 velocity)
+        {
+            Vector3 horizontalVelocity = Vector3.ProjectOnPlane(velocity, _motor.CharacterUp);
+            float horizontalSpeed = horizontalVelocity.magnitude;
+
+            if (horizontalSpeed <= MinVelocityThreshold)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 projectedVelocity = _motor.GetDirectionTangentToSurface(
+                horizontalVelocity.normalized,
+                _motor.GroundingStatus.GroundNormal
+            ) * horizontalSpeed;
+
+            if (projectedVelocity.y > 0f)
+            {
+                projectedVelocity.y = 0f;
+            }
+
+            return projectedVelocity;
+        }
+
        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
             if (_motor.GroundingStatus.IsStableOnGround)
             {
-                // 경사면에 맞게 속도 재조정
-                currentVelocity = _motor.GetDirectionTangentToSurface(currentVelocity, _motor.GroundingStatus.GroundNormal) * currentVelocity.magnitude;
+                currentVelocity = ProjectVelocityOnSlope(currentVelocity);
 
-                if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
+                if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > MinRootMotionThreshold)
                 {
                     Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
-                    currentVelocity.x = rootMotionVelocity.x;
-                    currentVelocity.z = rootMotionVelocity.z;
+                    currentVelocity = ProjectVelocityOnSlope(rootMotionVelocity);
                     _rootMotionPositionDelta = Vector3.zero;
                 }
                 else
                 {
                     Vector3 targetVelocity = _moveInputVector * _moveSpeed;
 
-                    if (_moveInputVector.magnitude > 0.1f)
+                    if (_moveInputVector.magnitude > MinInputThreshold)
                     {
                         currentVelocity = Vector3.Lerp(
                             currentVelocity,
@@ -285,29 +310,25 @@ namespace Player
             }
             else
             {
-                // 공중 이동
                 if (_moveInputVector.sqrMagnitude > 0f)
                 {
                     Vector3 targetMovementVelocity = _moveInputVector * _maxAirMoveSpeed;
-
-                    // 불안정한 경사면에서 기어오르기 방지
+                    
                     if (_motor.GroundingStatus.FoundAnyGround)
                     {
-                        Vector3 perpenticularObstructionNormal = Vector3.Cross(
+                        Vector3 perpendicularObstructionNormal = Vector3.Cross(
                             Vector3.Cross(_motor.CharacterUp, _motor.GroundingStatus.GroundNormal), 
                             _motor.CharacterUp
                         ).normalized;
-                        targetMovementVelocity = Vector3.ProjectOnPlane(targetMovementVelocity, perpenticularObstructionNormal);
+                        targetMovementVelocity = Vector3.ProjectOnPlane(targetMovementVelocity, perpendicularObstructionNormal);
                     }
 
                     Vector3 velocityDiff = Vector3.ProjectOnPlane(targetMovementVelocity - currentVelocity, _gravity);
                     currentVelocity += velocityDiff * _airAccelerationSpeed * deltaTime;
                 }
-
-                // 중력
+                
                 currentVelocity += _gravity * deltaTime;
-
-                // 드래그
+                
                 currentVelocity *= (1f / (1f + (_drag * deltaTime)));
             }
 
@@ -316,6 +337,10 @@ namespace Player
 
         public void PostGroundingUpdate(float deltaTime)
         {
+            if (!_motor.LastGroundingStatus.IsStableOnGround && _motor.GroundingStatus.IsStableOnGround)
+            {
+                _currentVelocity = Vector3.ProjectOnPlane(_currentVelocity, _motor.CharacterUp);
+            }
         }
 
         public void AfterCharacterUpdate(float deltaTime)
@@ -349,7 +374,7 @@ namespace Player
 
             float moveAmount = _movementEnabled ? _currentVelocity.magnitude / _moveSpeed : 0f;
             _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
-            _animator.SetBool(_isMovingHash, _movementEnabled && moveAmount > 0.1f);
+            _animator.SetBool(_isMovingHash, _movementEnabled && moveAmount > MinInputThreshold);
         }
 
         public void SetMovementEnabled(bool movementEnabled)
@@ -418,7 +443,7 @@ namespace Player
 
         public bool IsMoving()
         {
-            return _moveInputVector.magnitude > 0.1f;
+            return _moveInputVector.magnitude > MinInputThreshold;
         }
 
         public Vector3 GetCurrentVelocity()
@@ -433,7 +458,7 @@ namespace Player
 
         public void SetLookDirection(Vector3 direction)
         {
-            if (direction.magnitude > 0.1f)
+            if (direction.magnitude > MinInputThreshold)
             {
                 _lookDirection = direction.normalized;
             }
