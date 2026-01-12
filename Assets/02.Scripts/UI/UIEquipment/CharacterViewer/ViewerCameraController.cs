@@ -9,8 +9,8 @@ public class ViewerCameraController : MonoBehaviour
     [Header("카메라 설정")]
     [SerializeField] private float _rotationSpeed = 100f;
     [SerializeField] private float _cameraDistance = 1.7f;
-    [SerializeField] private float _cameraHeight = 0.8f;
-    [SerializeField] private float _lookAtHeight = 0.7f;
+    [SerializeField] private float _cameraHeight = 0.6f;
+    [SerializeField] private float _lookAtHeight = 1.1f;
 
     [Header("자동 회전")]
     [SerializeField] private bool _autoRotate = false;
@@ -20,6 +20,9 @@ public class ViewerCameraController : MonoBehaviour
     [SerializeField] private float _zoomSpeed = 2f;
     [SerializeField] private float _minDistance = 1f;
     [SerializeField] private float _maxDistance = 5f;
+
+    [SerializeField] private float _framingUp = 0.0f; // 캐릭터 위아래 위치 조정용
+    [SerializeField] private float _viewerCharacterScale = 0.95f; // 캐릭터 복사본 사이즈용
 
     private float _currentRotationAngle = 0f;
     private bool _isEnabled = false;
@@ -92,32 +95,24 @@ public class ViewerCameraController : MonoBehaviour
 
     public void ResetRotation()
     {
-        // ✅ 수정: null 체크 추가
         if (_target == null)
         {
-            Debug.LogWarning("[ViewerCameraController] 타겟이 없어 회전을 리셋할 수 없습니다.");
             _currentRotationAngle = 0f; // 기본값 0으로 설정
             return;
         }
         
         _currentRotationAngle = _target.eulerAngles.y; // 항상 정면보이도록
-        Debug.Log($"[ViewerCameraController] 회전 리셋: {_currentRotationAngle}도");
     }
 
-    /// <summary>
-    /// ✅ 추가: 카메라 위치를 즉시 강제 업데이트
-    /// </summary>
     public void ForceUpdateCamera()
     {
         if (_target == null)
         {
-            Debug.LogWarning("[ViewerCameraController] 타겟이 없어 카메라를 업데이트할 수 없습니다.");
             return;
         }
         
         ResetRotation();
         UpdateCameraPosition();
-        Debug.Log($"[ViewerCameraController] 카메라 강제 업데이트 완료");
     }
 
     public void HandleRotation(float rotationInput)
@@ -159,6 +154,7 @@ public class ViewerCameraController : MonoBehaviour
 
     private void UpdateCameraPosition()
     {
+        Debug.Log($"[ViewerCamera] camH={_cameraHeight}, lookAtH={_lookAtHeight}");
         if (_target == null || _viewerCamera == null)
         {
             return;
@@ -177,11 +173,10 @@ public class ViewerCameraController : MonoBehaviour
         _viewerCamera.transform.position = _target.position + offset;
 
         // 카메라가 타겟을 바라보도록 설정
-        Vector3 lookAtPosition = _target.position + Vector3.up * _lookAtHeight;
+        Vector3 lookAtPosition = _target.position + Vector3.up * (_lookAtHeight + _framingUp);
         _viewerCamera.transform.LookAt(lookAtPosition);
     }
 
-    // Public 프로퍼티
     public Camera ViewerCamera => _viewerCamera;
     public bool AutoRotate
     {

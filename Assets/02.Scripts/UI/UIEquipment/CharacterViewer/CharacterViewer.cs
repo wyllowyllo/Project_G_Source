@@ -29,6 +29,10 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private Vector3 _cloneWorldPosition = new Vector3(10000f, 0f, 0f); // 절대 좌표로 멀리 배치
     [SerializeField] private string _idleAnimationState = "Idle_Standing"; // 서있는 포즈 애니메이션
 
+    [Header("Viewer 캐릭터 크기 조절")]
+    [SerializeField, Range(0.8f, 1.0f)]
+    private float _viewerCharacterScale = 0.95f;
+
     private bool _isViewerActive = false;
     private Animator _playerAnimator;
     private EquipmentManager _equipmentManager;
@@ -134,9 +138,7 @@ private void Start()
         _cameraController.SetEnabled(false);
     }
 
-/// <summary>
-    /// 메인 카메라가 CharacterViewer 레이어를 렌더링하지 않도록 설정
-    /// </summary>
+    // 메인 카메라가 CharacterViewer 레이어를 렌더링하지 않도록 설정
     private void ConfigureMainCamera()
     {
         // Main Camera 찾기
@@ -169,7 +171,6 @@ private void Start()
         {
             _inputHandler.OnToggleRequested += HandleToggleRequest;
             _inputHandler.OnRotationInput += HandleRotationInput;
-            _inputHandler.OnZoomInput += HandleZoomInput;
         }
     }
 
@@ -179,7 +180,6 @@ private void Start()
         {
             _inputHandler.OnToggleRequested -= HandleToggleRequest;
             _inputHandler.OnRotationInput -= HandleRotationInput;
-            _inputHandler.OnZoomInput -= HandleZoomInput;
         }
     }
 
@@ -205,14 +205,6 @@ private void Start()
         }
     }
 
-    private void HandleZoomInput(float scrollInput)
-    {
-        if (_cameraController != null)
-        {
-            _cameraController.HandleZoom(scrollInput);
-        }
-    }
-
     private void ToggleViewer()
     {
         _isViewerActive = !_isViewerActive;
@@ -227,11 +219,7 @@ private void Start()
         }
     }
 
-    #region 배그 방식: 캐릭터 복사본 관리
-
-    /// <summary>
-    /// 플레이어의 복사본 생성
-    /// </summary>
+    // 플레이어의 복사본 생성
     private void CreateCharacterClone()
     {
         if (_player == null)
@@ -251,11 +239,10 @@ private void Start()
         _characterClone.name = "CharacterClone_Viewer";
         _cloneTransform = _characterClone.transform;
 
-        // ✅ 수정: 복사본을 절대 좌표의 먼 곳에 배치 (메인 카메라에 안 보이게)
+        // 복사본을 절대 좌표의 먼 곳에 배치 (메인 카메라에 안 보이게)
         _cloneTransform.position = _cloneWorldPosition;
         _cloneTransform.rotation = Quaternion.identity; // 정면을 바라보도록
-
-        Debug.Log($"[CharacterViewer] 복사본 위치: {_cloneTransform.position}");
+        _cloneTransform.localScale *= _viewerCharacterScale;
 
         // 복사본의 레이어를 CharacterViewer로 변경
         _layerManager.SetLayerRecursively(_cloneTransform);
@@ -388,8 +375,6 @@ private void Start()
             _cloneEquipment = null;
         }
     }
-
-    #endregion
 
 private void OpenViewer()
     {
