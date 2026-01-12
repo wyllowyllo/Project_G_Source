@@ -1,5 +1,6 @@
 using Combat.Damage;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Combat.Core
 {
@@ -27,7 +28,7 @@ namespace Combat.Core
             };
         }
         
-        // 피격 시 넉백 적용.
+        // 피격 시 넉백 적용 (Rigidbody).
         public static void ApplyKnockbackOnDamage(this Combatant combatant, Rigidbody rb, float force)
         {
             if (rb == null) return;
@@ -37,6 +38,24 @@ namespace Combat.Core
                 if (info.HitDirection != Vector3.zero)
                 {
                     rb.AddForce(info.HitDirection * force, ForceMode.Impulse);
+                }
+            };
+        }
+
+        // 피격 시 넉백 적용 (NavMeshAgent).
+        public static void ApplyKnockbackOnDamage(this Combatant combatant, NavMeshAgent agent, float force)
+        {
+            if (agent == null) return;
+
+            combatant.OnDamaged += info =>
+            {
+                if (info.HitDirection == Vector3.zero) return;
+
+                Vector3 knockbackTarget = combatant.Transform.position + info.HitDirection * force;
+
+                if (NavMesh.SamplePosition(knockbackTarget, out NavMeshHit hit, force, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
                 }
             };
         }

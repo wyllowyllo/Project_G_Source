@@ -1,15 +1,17 @@
-using UnityEngine;
+using Monster.Ability;
 
 namespace Monster.AI.States
 {
-    // 플레이어에게 접근하는 상태
+    // 플레이어에게 접근하는 상태: Run 애니메이션 재생
     public class ApproachState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
-        private readonly Transform _transform;
 
-       
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
+        private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         public EMonsterState StateType => EMonsterState.Approach;
 
@@ -17,56 +19,45 @@ namespace Monster.AI.States
         {
             _controller = controller;
             _stateMachine = stateMachine;
-            _transform = controller.transform;
+
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
-           StateInit();
+            _navAgentAbility?.Resume();
+
+            // 애니메이션: 달리기 (비전투 이동)
+            _animatorAbility?.SetInCombat(false);
+            _animatorAbility?.SetSpeed(1f);
         }
 
         public void Update()
         {
-            float distanceToPlayer = Vector3.Distance(_transform.position, _controller.PlayerTransform.position);
-            
-            if (distanceToPlayer > _controller.Data.DetectionRange)
+            if (!_playerDetectAbility.IsInDetectionRange())
             {
                 _stateMachine.ChangeState(EMonsterState.ReturnHome);
                 return;
             }
 
-            ApproachToTarget();
+            // 플레이어 위치로 이동
+            if (_playerDetectAbility.HasPlayer)
+            {
+                _navAgentAbility?.SetDestination(_playerDetectAbility.PlayerPosition);
+            }
 
-            // 거리 밴드 안에 들어오면 Strafe로 전환
-            if (distanceToPlayer <= _controller.Data.PreferredMaxDistance)
+            // 교전 거리 진입 시 Strafe로 전이
+            if (!_playerDetectAbility.IsTooFar())
             {
                 _stateMachine.ChangeState(EMonsterState.Strafe);
                 return;
             }
-
-            
         }
 
         public void Exit()
         {
-        }
-
-        private void StateInit()
-        {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
-            
-        }
-
-        private void ApproachToTarget()
-        {
-            // 플레이어에게 접근
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.SetDestination(_controller.PlayerTransform.position);
-            }
         }
     }
 }

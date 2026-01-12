@@ -1,3 +1,4 @@
+using Monster.Ability;
 using UnityEngine;
 
 namespace Monster.AI.States
@@ -9,7 +10,11 @@ namespace Monster.AI.States
         private readonly MonsterStateMachine _stateMachine;
         private readonly Transform _transform;
 
-        private const float ArrivalThreshold = 0.5f; // 홈 도착 판정 거리
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
+        private readonly AnimatorAbility _animatorAbility;
+
+        private const float ArrivalThreshold = 0.5f;
 
         public EMonsterState StateType => EMonsterState.ReturnHome;
 
@@ -18,44 +23,34 @@ namespace Monster.AI.States
             _controller = controller;
             _stateMachine = stateMachine;
             _transform = controller.transform;
+
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
-            StartReturningHome();
+            _navAgentAbility?.Resume();
+            _navAgentAbility?.SetDestination(_controller.HomePosition);
+
+            // 애니메이션: 비전투 걷기
+            _animatorAbility?.SetInCombat(false);
+            _animatorAbility?.SetSpeed(0.5f);
 
             Debug.Log($"{_controller.gameObject.name}: 테더 초과 - 홈 복귀 시작");
         }
 
         public void Update()
         {
-            float distanceToHome = Vector3.Distance(_transform.position, _controller.HomePosition);
-            
-            if (distanceToHome <= ArrivalThreshold)
+            if (_navAgentAbility.HasReachedDestination(ArrivalThreshold))
             {
-                CompleteReturn();
+                _stateMachine.ChangeState(EMonsterState.Idle);
+                Debug.Log($"{_controller.gameObject.name}: 홈 복귀 완료");
             }
-        }
-
-        private void CompleteReturn()
-        {
-            _stateMachine.ChangeState(EMonsterState.Idle);
-
-            Debug.Log($"{_controller.gameObject.name}: 홈 복귀 완료");
         }
 
         public void Exit()
         {
-           
-        }
-
-        private void StartReturningHome()
-        {
-            if (_controller.NavAgent != null && _controller.NavAgent.isActiveAndEnabled)
-            {
-                _controller.NavAgent.isStopped = false;
-                _controller.NavAgent.SetDestination(_controller.HomePosition);
-            }
         }
     }
 }

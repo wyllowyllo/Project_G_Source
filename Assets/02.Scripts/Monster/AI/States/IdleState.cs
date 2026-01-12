@@ -1,13 +1,17 @@
-using UnityEngine;
+using Monster.Ability;
 
 namespace Monster.AI.States
 {
-    // 대기 상태
+    // 대기 상태: 비전투 대기, 플레이어 감지 시 Alert로 전이
     public class IdleState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
-        private readonly Transform _transform;
+
+        // Abilities
+        private readonly NavAgentAbility _navAgentAbility;
+        private readonly PlayerDetectAbility _playerDetectAbility;
+        private readonly AnimatorAbility _animatorAbility;
 
         public EMonsterState StateType => EMonsterState.Idle;
 
@@ -15,50 +19,33 @@ namespace Monster.AI.States
         {
             _controller = controller;
             _stateMachine = stateMachine;
-            _transform = controller.transform;
+
+            _navAgentAbility = controller.GetAbility<NavAgentAbility>();
+            _playerDetectAbility = controller.GetAbility<PlayerDetectAbility>();
+            _animatorAbility = controller.GetAbility<AnimatorAbility>();
         }
 
         public void Enter()
         {
-            StopNavigation();
+            _navAgentAbility?.Stop();
+
+            // 애니메이션: 비전투 대기
+            _animatorAbility?.SetSpeed(0f);
+            _animatorAbility?.SetInCombat(false);
         }
 
         public void Update()
         {
-
-            float distanceToPlayer = Vector3.Distance(
-                _transform.position,
-                _controller.PlayerTransform.position
-            );
-
-
-            if (distanceToPlayer <= _controller.Data.DetectionRange)
+            // 플레이어 감지 시 Alert 상태로 전이
+            if (_playerDetectAbility.IsInDetectionRange())
             {
-                _stateMachine.ChangeState(EMonsterState.Approach);
+                _stateMachine.ChangeState(EMonsterState.Alert);
             }
-
-            // TODO: 추후 Roam(순찰) 기능 추가 가능
         }
 
         public void Exit()
         {
-            ResumeNavigation();
-        }
-
-        private void StopNavigation()
-        {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = true;
-            }
-        }
-
-        private void ResumeNavigation()
-        {
-            if (_controller.NavAgent != null)
-            {
-                _controller.NavAgent.isStopped = false;
-            }
+            _navAgentAbility?.Resume();
         }
     }
 }

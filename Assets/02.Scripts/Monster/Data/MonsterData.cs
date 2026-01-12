@@ -24,10 +24,12 @@ namespace Monster.Data
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
 
-        [Header("전투 스탯")]
-        [SerializeField] private float _maxHealth = 100f;
-        [SerializeField] private float _attackDamage = 10f;
+        [Header("공격 행동")]
         [SerializeField] private float _attackRange = 2f;
+        [Tooltip("약공 사정거리 (제자리 공격)")]
+        [SerializeField] private float _lightAttackRange = 1.5f;
+        [Tooltip("강공 사정거리 (돌진 공격)")]
+        [SerializeField] private float _heavyAttackRange = 2.5f;
         [SerializeField] private float _attackCooldown = 1.5f;
 
         [Header("이동 스탯")]
@@ -40,11 +42,11 @@ namespace Monster.Data
 
         [Header("거리 밴드 시스템")]
         [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
-        [SerializeField] private float _preferredMinDistance = 2.0f;
+        [SerializeField] private float _preferredMinDistance = 1.0f;
         [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
         [SerializeField] private float _preferredMaxDistance = 4.0f;
         [Tooltip("스트레이프(좌우 이동) 속도")]
-        [SerializeField] private float _strafeSpeed = 2.5f;
+        [SerializeField] private float _strafeSpeed = 1.5f;
 
         [Header("테더 시스템")]
         [Tooltip("홈 포지션으로부터 최대 이탈 거리")]
@@ -74,14 +76,24 @@ namespace Monster.Data
         [Tooltip("강공 쿨다운")]
         [SerializeField] private float _heavyAttackCooldown = 3.0f;
 
-        [Header("스트레이프 서브모드")]
-        [Tooltip("목표 위치 근처 도달 판정 거리")]
-        [SerializeField] private float _repositionStopRadius = 1.3f;
-        [Tooltip("셔플 이동 반경")]
-        [SerializeField] private float _shuffleRadius = 1.2f;
-        [Tooltip("페인트 이동 거리")]
-        [SerializeField] private float _feintStep = 0.8f;
+        [Header("스트레이프 행동")]
+        [Tooltip("원호 이동 각속도 (도/초)")]
+        [SerializeField] private float _circleAngularSpeed = 15f;
+        [Tooltip("스트레이프 행동 최소 지속 시간")]
+        [SerializeField] private float _strafeMinDuration = 1.5f;
+        [Tooltip("스트레이프 행동 최대 지속 시간")]
+        [SerializeField] private float _strafeMaxDuration = 3.5f;
+        [Tooltip("정지 상태 확률")]
+        [SerializeField, Range(0f, 1f)] private float _strafePauseChance = 0.2f;
+        [Tooltip("방향 전환 확률 (Circle 모드에서)")]
+        [SerializeField, Range(0f, 1f)] private float _directionChangeChance = 0.3f;
+        [Tooltip("속도 보간 계수 (높을수록 빠르게 가감속)")]
+        [SerializeField] private float _speedLerpFactor = 3f;
         
+        [Header("피격 반응")]
+        [Tooltip("넉백 강도")]
+        [SerializeField] private float _knockbackForce = 2f;
+
         [Header("경험치 및 보상")]
         [SerializeField] private int _experienceReward = 10;
         [SerializeField] private int _goldReward = 5;
@@ -89,9 +101,9 @@ namespace Monster.Data
         // Properties
         public string MonsterName => _monsterName;
         public int MonsterLevel => _monsterLevel;
-        public float MaxHealth => _maxHealth;
-        public float AttackDamage => _attackDamage;
         public float AttackRange => _attackRange;
+        public float LightAttackRange => _lightAttackRange;
+        public float HeavyAttackRange => _heavyAttackRange;
         public float AttackCooldown => _attackCooldown;
         public float MoveSpeed => _moveSpeed;
         public float RotationSpeed => _rotationSpeed;
@@ -121,9 +133,15 @@ namespace Monster.Data
         public float HeavyAttackChance => _heavyAttackChance;
         public float HeavyAttackCooldown => _heavyAttackCooldown;
 
-        // 스트레이프 서브모드
-        public float RepositionStopRadius => _repositionStopRadius;
-        public float ShuffleRadius => _shuffleRadius;
-        public float FeintStep => _feintStep;
+        // 스트레이프 행동
+        public float CircleAngularSpeed => _circleAngularSpeed;
+        public float StrafeMinDuration => _strafeMinDuration;
+        public float StrafeMaxDuration => _strafeMaxDuration;
+        public float StrafePauseChance => _strafePauseChance;
+        public float DirectionChangeChance => _directionChangeChance;
+        public float SpeedLerpFactor => _speedLerpFactor;
+
+        // 피격 반응
+        public float KnockbackForce => _knockbackForce;
     }
 }

@@ -21,14 +21,31 @@ namespace Combat.Sample
         [Header("Settings")]
         [SerializeField] private float _destroyDelay = 1f;
         [SerializeField] private bool _useObjectPooling;
-        
+
         [Header("References")]
         [SerializeField] private Animator _animator;
+
+        [Header("VFX")]
+        [SerializeField] private GameObject _hitVFXPrefab;
+        [SerializeField] private GameObject _criticalHitVFXPrefab;
+        [SerializeField] private GameObject _deathVFXPrefab;
+        [SerializeField] private float _vfxLifetime = 2f;
+
+        [Header("SFX")]
+        [SerializeField] private AudioSource _audioSource;
+        [SerializeField] private AudioClip _hitSound;
+        [SerializeField] private AudioClip _criticalHitSound;
+        [SerializeField] private AudioClip _deathSound;
+        [SerializeField, Range(0f, 1f)] private float _sfxVolume = 1f;
+
+        [Header("Damage Number")]
+        [SerializeField] private GameObject _damageNumberPrefab;
+        [SerializeField] private Vector3 _damageNumberOffset = new Vector3(0, 2f, 0);
         
         private Combatant _combatant;
         private Rigidbody _rigidbody;
         
-        private static readonly int DamageTrigger = Animator.StringToHash("Damage");
+        private static readonly int DamageTrigger = Animator.StringToHash("Hit");
         private static readonly int DeathTrigger = Animator.StringToHash("Death");
 
         private void Awake()
@@ -84,16 +101,20 @@ namespace Combat.Sample
         private void HandleDamaged(DamageInfo info)
         {
             Debug.Log($"[Enemy] 피격: {info.Amount} 데미지 (남은 체력: {_combatant.CurrentHealth:F0})");
-            
+
             PlayDamageAnimation();
+            SpawnHitVFX(info);
+            PlayHitSFX(info);
             SpawnDamageNumber(info);
         }
 
         private void HandleDeath()
         {
             Debug.Log("[Enemy] 사망");
-            
+
             PlayDeathAnimation();
+            SpawnDeathVFX();
+            PlayDeathSFX();
             DropLoot();
             DisableCollision();
         }
@@ -124,10 +145,53 @@ namespace Combat.Sample
             }
         }
 
+        private void SpawnHitVFX(DamageInfo info)
+        {
+            var prefab = info.IsCritical ? _criticalHitVFXPrefab : _hitVFXPrefab;
+            if (prefab == null) return;
+
+            Vector3 spawnPos = info.HitPoint != Vector3.zero
+                ? info.HitPoint
+                : transform.position + Vector3.up;
+
+            var vfx = Instantiate(prefab, spawnPos, Quaternion.identity);
+            Destroy(vfx, _vfxLifetime);
+        }
+
+        private void SpawnDeathVFX()
+        {
+            if (_deathVFXPrefab == null) return;
+
+            var vfx = Instantiate(_deathVFXPrefab, transform.position, Quaternion.identity);
+            Destroy(vfx, _vfxLifetime);
+        }
+
+        private void PlayHitSFX(DamageInfo info)
+        {
+            if (_audioSource == null) return;
+
+            var clip = info.IsCritical ? _criticalHitSound : _hitSound;
+            if (clip != null)
+            {
+                _audioSource.PlayOneShot(clip, _sfxVolume);
+            }
+        }
+
+        private void PlayDeathSFX()
+        {
+            if (_audioSource == null || _deathSound == null) return;
+            _audioSource.PlayOneShot(_deathSound, _sfxVolume);
+        }
+
         private void SpawnDamageNumber(DamageInfo info)
         {
-            // TODO: 데미지 숫자 UI 시스템과 연동
-            // DamageNumberManager.Spawn(transform.position, info.Amount, info.IsCritical);
+            if (_damageNumberPrefab == null) return;
+
+            var pos = transform.position + _damageNumberOffset;
+            var go = Instantiate(_damageNumberPrefab, pos, Quaternion.identity);
+
+            var damageNumberUI = go.GetComponent<UI.DamageNumberUI>();
+            damageNumberUI?.Initialize(info.Amount, info.IsCritical);
         }
 
         private void DropLoot()

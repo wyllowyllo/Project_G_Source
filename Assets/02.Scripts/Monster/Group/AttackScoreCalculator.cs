@@ -70,8 +70,8 @@ namespace Monster.Group
 
             float score = 0f;
 
-            // 거리 점수
-            score += CalculateDistanceScore(distance, monster.Data.AttackRange);
+            // 거리 점수 (강공 기준)
+            score += CalculateDistanceScore(distance, monster.Data.HeavyAttackRange);
 
             // 각도 점수 (측면 선호)
             score += CalculateAngleScore(monsterPosition, playerPosition);
@@ -87,7 +87,7 @@ namespace Monster.Group
 
         private bool IsWithinAttackRange(MonsterController monster, float distance)
         {
-            float maxDistance = monster.Data.AttackRange + _attackRangeBuffer + 2.0f;
+            float maxDistance = monster.Data.HeavyAttackRange + _attackRangeBuffer + 2.0f;
             return distance <= maxDistance;
         }
 
