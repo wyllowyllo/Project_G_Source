@@ -104,7 +104,7 @@ namespace Equipment
         {
             if (equipmentData == null)
             {
-                Debug.LogWarning("[EquipmentTooltip] EquipmentData is null!");
+                Debug.Log("[EquipmentTooltip] EquipmentData is null");
                 return;
             }
 
