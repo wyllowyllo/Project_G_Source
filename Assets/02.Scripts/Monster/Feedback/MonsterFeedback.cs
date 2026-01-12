@@ -1,3 +1,4 @@
+using System.Collections;
 using Combat.Core;
 using Combat.Damage;
 using UnityEngine;
@@ -5,13 +6,8 @@ using UnityEngine.AI;
 
 namespace Monster.Feedback
 {
-    /// <summary>
-    /// 몬스터의 피격 피드백을 관리하는 컴포넌트
-    /// - 넉백
-    /// - VFX (피격, 크리티컬, 사망)
-    /// - SFX (피격, 크리티컬, 사망)
-    /// - 데미지 숫자
-    /// </summary>
+    // 몬스터의 피격 피드백을 관리하는 컴포넌트
+    // 넉백, VFX, SFX, 데미지 숫자
     [RequireComponent(typeof(Combatant))]
     public class MonsterFeedback : MonoBehaviour
     {
@@ -19,7 +15,11 @@ namespace Monster.Feedback
         [SerializeField] private NavMeshAgent _navAgent;
 
         [Header("Knockback")]
-        [SerializeField] private float _knockbackForce = 2f;
+        [SerializeField] private float _knockbackDistance = 1.5f;
+        [SerializeField] private float _knockbackDuration = 0.15f;
+        [SerializeField] private AnimationCurve _knockbackCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        private Coroutine _knockbackCoroutine;
 
         [Header("VFX")]
         [SerializeField] private GameObject _hitVFXPrefab;
@@ -85,12 +85,53 @@ namespace Monster.Feedback
         {
             if (hitDirection == Vector3.zero || _navAgent == null) return;
 
-            Vector3 knockbackTarget = transform.position + hitDirection * _knockbackForce;
-
-            if (NavMesh.SamplePosition(knockbackTarget, out NavMeshHit hit, _knockbackForce, NavMesh.AllAreas))
+            // 이미 진행 중인 넉백이 있으면 중단하고 새로 시작
+            if (_knockbackCoroutine != null)
             {
-                _navAgent.Warp(hit.position);
+                StopCoroutine(_knockbackCoroutine);
             }
+            _knockbackCoroutine = StartCoroutine(KnockbackCoroutine(hitDirection));
+        }
+
+        private IEnumerator KnockbackCoroutine(Vector3 hitDirection)
+        {
+            Vector3 startPos = transform.position;
+            Vector3 targetPos = startPos + hitDirection * _knockbackDistance;
+
+            // NavMesh 위의 유효한 위치로 보정
+            if (!NavMesh.SamplePosition(targetPos, out NavMeshHit hit, _knockbackDistance, NavMesh.AllAreas))
+            {
+                yield break;
+            }
+            targetPos = hit.position;
+
+            // 넉백 중 NavAgent 위치 업데이트 비활성화
+            bool wasUpdatePosition = _navAgent.updatePosition;
+            _navAgent.updatePosition = false;
+            _navAgent.isStopped = true;
+
+            float elapsed = 0f;
+            while (elapsed < _knockbackDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / _knockbackDuration);
+                float curveValue = _knockbackCurve.Evaluate(t);
+
+                Vector3 newPos = Vector3.Lerp(startPos, targetPos, curveValue);
+
+                // 이동 중에도 NavMesh 유효성 체크
+                if (NavMesh.SamplePosition(newPos, out NavMeshHit moveHit, 0.5f, NavMesh.AllAreas))
+                {
+                    transform.position = moveHit.position;
+                }
+
+                yield return null;
+            }
+
+            // NavAgent 위치 동기화 및 복원
+            _navAgent.Warp(transform.position);
+            _navAgent.updatePosition = wasUpdatePosition;
+            _knockbackCoroutine = null;
         }
 
         private void SpawnHitVFX(DamageInfo info)
