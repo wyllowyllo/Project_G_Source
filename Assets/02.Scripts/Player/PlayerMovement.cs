@@ -43,6 +43,7 @@ namespace Player
         private Vector3 _rootMotionPositionDelta;
         private bool _applyRootMotion = false;
         private int _rootMotionRequestCount = 0;
+        private float _rootMotionMultiplier = 1f;
 
         private void Awake()
         {
@@ -166,7 +167,7 @@ namespace Player
 
             if (_applyRootMotion)
             {
-                _rootMotionPositionDelta += _animator.deltaPosition;
+                _rootMotionPositionDelta += _animator.deltaPosition * _rootMotionMultiplier;
             }
         }
 
@@ -332,6 +333,7 @@ namespace Player
             {
                 _applyRootMotion = false;
                 _rootMotionPositionDelta = Vector3.zero;
+                _rootMotionMultiplier = 1f;
             }
         }
         
@@ -339,6 +341,11 @@ namespace Player
         {
             _rootMotionRequestCount++;
             _applyRootMotion = true;
+        }
+
+        public void SetRootMotionMultiplier(float multiplier)
+        {
+            _rootMotionMultiplier = multiplier;
         }
         
         public void ExecuteDodgeMovement()
