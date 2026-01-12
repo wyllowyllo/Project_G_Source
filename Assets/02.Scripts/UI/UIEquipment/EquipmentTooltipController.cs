@@ -4,10 +4,6 @@ using TMPro;
 
 namespace Equipment
 {
-    /// <summary>
-    /// 장비 아이템 위에 표시되는 툴팁 UI를 관리합니다.
-    /// DroppedEquipment와 함께 사용됩니다.
-    /// </summary>
     [RequireComponent(typeof(DroppedEquipment))]
     public class EquipmentTooltipController : MonoBehaviour
     {
@@ -49,14 +45,12 @@ namespace Equipment
         {
             _droppedEquipment = GetComponent<DroppedEquipment>();
             
-            // Canvas 설정
             if (_tooltipCanvas != null)
             {
                 _tooltipCanvas.renderMode = RenderMode.WorldSpace;
                 _tooltipCanvas.worldCamera = Camera.main;
             }
 
-            // 초기에는 숨김
             if (_tooltipPanel != null && !_alwaysShow)
             {
                 _tooltipPanel.SetActive(false);
@@ -67,14 +61,12 @@ namespace Equipment
         {
             _mainCamera = Camera.main;
             
-            // 플레이어 찾기
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
                 _playerTransform = player.transform;
             }
 
-            // 장비 데이터 표시
             if (_droppedEquipment != null && _droppedEquipment.EquipmentData != null)
             {
                 UpdateTooltip(_droppedEquipment.EquipmentData);
@@ -83,7 +75,6 @@ namespace Equipment
 
         private void LateUpdate()
         {
-            // 빌보드 효과 (카메라를 향하도록)
             if (_enableBillboard && _tooltipCanvas != null && _mainCamera != null)
             {
                 _tooltipCanvas.transform.LookAt(
@@ -92,7 +83,6 @@ namespace Equipment
                 );
             }
 
-            // 거리에 따른 표시/숨김
             if (!_alwaysShow && _playerTransform != null)
             {
                 float distance = Vector3.Distance(transform.position, _playerTransform.position);
@@ -104,16 +94,12 @@ namespace Equipment
                 }
             }
 
-            // 툴팁 위치 업데이트
             if (_tooltipCanvas != null)
             {
                 _tooltipCanvas.transform.position = transform.position + _tooltipOffset;
             }
         }
 
-        /// <summary>
-        /// 장비 데이터로 툴팁 업데이트
-        /// </summary>
         public void UpdateTooltip(EquipmentData equipmentData)
         {
             if (equipmentData == null)
@@ -122,7 +108,6 @@ namespace Equipment
                 return;
             }
 
-            // 등급 텍스트
             if (_gradeText != null)
             {
                 string gradeKorean = GetGradeKorean(equipmentData.Grade);
@@ -130,25 +115,21 @@ namespace Equipment
                 _gradeText.color = GetGradeColor(equipmentData.Grade);
             }
 
-            // 아이템 이름
             if (_itemNameText != null)
             {
                 _itemNameText.text = $"장비이름: {equipmentData.EquipmentName}";
             }
 
-            // 공격력
             if (_attackText != null)
             {
                 _attackText.text = $"공격력: {equipmentData.AttackBonus:F0}";
             }
 
-            // 방어력
             if (_defenseText != null)
             {
                 _defenseText.text = $"방어력: {equipmentData.DefenseBonus:F0}";
             }
 
-            // 배경 색상
             if (_backgroundImage != null)
             {
                 _backgroundImage.color = GetBackgroundColor(equipmentData.Grade);
@@ -161,9 +142,6 @@ namespace Equipment
             }
         }
 
-        /// <summary>
-        /// 등급을 한글로 변환
-        /// </summary>
         private string GetGradeKorean(EquipmentGrade grade)
         {
             return grade switch
@@ -176,9 +154,6 @@ namespace Equipment
             };
         }
 
-        /// <summary>
-        /// 등급에 따른 색상 반환
-        /// </summary>
         private Color GetGradeColor(EquipmentGrade grade)
         {
             return grade switch
@@ -191,9 +166,6 @@ namespace Equipment
             };
         }
 
-        /// <summary>
-        /// 등급에 따른 배경 색상 반환
-        /// </summary>
         private Color GetBackgroundColor(EquipmentGrade grade)
         {
             return grade switch
@@ -206,9 +178,6 @@ namespace Equipment
             };
         }
 
-        /// <summary>
-        /// 툴팁 강제 표시
-        /// </summary>
         public void ShowTooltip()
         {
             if (_tooltipPanel != null)
@@ -217,9 +186,6 @@ namespace Equipment
             }
         }
 
-        /// <summary>
-        /// 툴팁 강제 숨김
-        /// </summary>
         public void HideTooltip()
         {
             if (_tooltipPanel != null)
@@ -228,31 +194,15 @@ namespace Equipment
             }
         }
 
-        /// <summary>
-        /// 툴팁 표시 거리 설정
-        /// </summary>
         public void SetShowDistance(float distance)
         {
             _showDistance = distance;
         }
 
-        /// <summary>
-        /// 툴팁 오프셋 설정
-        /// </summary>
         public void SetTooltipOffset(Vector3 offset)
         {
             _tooltipOffset = offset;
         }
 
-        private void OnDrawGizmosSelected()
-        {
-            // 표시 거리 시각화
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, _showDistance);
-
-            // 툴팁 위치 시각화
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position + _tooltipOffset, 0.1f);
-        }
     }
 }
