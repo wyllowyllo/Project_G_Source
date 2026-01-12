@@ -1,3 +1,4 @@
+using Common;
 using UnityEngine;
 
 namespace Player
@@ -86,20 +87,48 @@ namespace Player
             }
 
             // 커서 잠금
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            if (CursorManager.Instance != null)
+            {
+                CursorManager.Instance.LockCursor();
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
 
         private void HandleInput()
         {
-            // 마우스 입력
-            mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-            mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+            // CursorManager가 없으면 직접 커서 입력 처리
+            if (CursorManager.Instance == null)
+            {
+                HandleCursorInput();
+            }
+
+            // 커서가 잠겨있을 때만 카메라 회전 입력 처리
+            bool isCursorLocked = CursorManager.Instance != null
+                ? CursorManager.Instance.IsLocked
+                : Cursor.lockState == CursorLockMode.Locked;
+
+            if (isCursorLocked)
+            {
+                mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+                mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+            }
+            else
+            {
+                mouseX = 0f;
+                mouseY = 0f;
+            }
 
             // 줌 입력
             scrollInput = Input.GetAxis("Mouse ScrollWheel");
+        }
 
-            // ESC로 커서 해제
+        private void HandleCursorInput()
+        {
+            // ESC로 커서 토글
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (Cursor.lockState == CursorLockMode.Locked)
@@ -114,8 +143,8 @@ namespace Player
                 }
             }
 
-            // 마우스 클릭으로 다시 잠금
-            if (Input.GetMouseButtonDown(1) && Cursor.lockState == CursorLockMode.None)
+            // 마우스 우클릭으로 다시 잠금
+            if (Input.GetMouseButtonDown(1) && Cursor.lockState != CursorLockMode.Locked)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;

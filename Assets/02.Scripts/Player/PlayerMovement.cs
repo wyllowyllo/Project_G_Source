@@ -1,9 +1,10 @@
+using System.Collections.Generic;
 using KinematicCharacterController;
 using UnityEngine;
 
 namespace Player
 {
-    public class PlayerMovement : MonoBehaviour, ICharacterController
+    public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester
     {
         [Header("Movement Settings")]
         [SerializeField] private float _moveSpeed = 5f;
@@ -13,6 +14,7 @@ namespace Player
 
         [Header("Camera Settings")]
         [SerializeField] private Transform _cameraTransform;
+        [SerializeField] private CinemachineCameraController _cinemachineCameraController;
         [SerializeField] private bool _useCameraForward = true;
 
         [Header("Ground Settings")]
@@ -40,8 +42,8 @@ namespace Player
         private bool _movementEnabled = true;
         
         private Vector3 _rootMotionPositionDelta;
-        private bool _applyRootMotion = false;
-        private int _rootMotionRequestCount = 0;
+        private readonly Dictionary<IRootMotionRequester, float> _rootMotionRequesters = new();
+        private float _rootMotionMultiplier = 1f;
 
         private void Awake()
         {
@@ -56,6 +58,11 @@ namespace Player
                 _cameraTransform = Camera.main.transform;
             }
             
+            if (_cinemachineCameraController == null)
+            {
+                _cinemachineCameraController = FindAnyObjectByType<CinemachineCameraController>();
+            }
+            
             _lookDirection = transform.forward;
             
             _movementEnabled = true;
@@ -64,9 +71,6 @@ namespace Player
         private void Update()
         {
             HandleInput();
-
-            if (!_movementEnabled) return;
-
             UpdateAnimations();
         }
 
@@ -119,16 +123,26 @@ namespace Player
             {
                 return Vector3.zero;
             }
-            
-            Vector3 cameraForward = _cameraTransform.forward;
-            Vector3 cameraRight = _cameraTransform.right;
-            
-            cameraForward.y = 0f;
-            cameraRight.y = 0f;
 
-            cameraForward.Normalize();
-            cameraRight.Normalize();
+            Vector3 cameraForward;
+            Vector3 cameraRight;
             
+            if (_cinemachineCameraController != null)
+            {
+                cameraForward = _cinemachineCameraController.GetTargetForward();
+                cameraRight = _cinemachineCameraController.GetTargetRight();
+            }
+            else
+            {
+                cameraForward = _cameraTransform.forward;
+                cameraRight = _cameraTransform.right;
+                
+                cameraForward.y = 0f;
+                cameraRight.y = 0f;
+                cameraForward.Normalize();
+                cameraRight.Normalize();
+            }
+
             return (cameraForward * inputVector.z + cameraRight * inputVector.x).normalized;
         }
 
@@ -151,9 +165,9 @@ namespace Player
         {
             if (_animator == null) return;
 
-            if (_applyRootMotion)
+            if (_rootMotionRequesters.Count > 0)
             {
-                _rootMotionPositionDelta += _animator.deltaPosition;
+                _rootMotionPositionDelta += _animator.deltaPosition * _rootMotionMultiplier;
             }
         }
 
@@ -229,7 +243,7 @@ namespace Player
 
        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
-            if (_applyRootMotion && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
+            if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > 0.000001f)
             {
                 Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
                 
@@ -295,10 +309,10 @@ namespace Player
         private void UpdateAnimations()
         {
             if (_animator == null) return;
-            
-            float moveAmount = _moveInputVector.magnitude;
+
+            float moveAmount = _movementEnabled ? _moveInputVector.magnitude : 0f;
             _animator.SetFloat(_moveSpeedHash, moveAmount, 0.1f, Time.deltaTime);
-            _animator.SetBool(_isMovingHash, moveAmount > 0.1f);
+            _animator.SetBool(_isMovingHash, _movementEnabled && moveAmount > 0.1f);
         }
 
         public void SetMovementEnabled(bool movementEnabled)
@@ -312,20 +326,34 @@ namespace Player
             }
         }
         
-        public void ReleaseRootMotion()
+        public void ReleaseRootMotion(IRootMotionRequester requester)
         {
-            _rootMotionRequestCount = Mathf.Max(0, _rootMotionRequestCount - 1);
-            if (_rootMotionRequestCount == 0)
+            if (!_rootMotionRequesters.Remove(requester)) return;
+
+            if (_rootMotionRequesters.Count == 0)
             {
-                _applyRootMotion = false;
                 _rootMotionPositionDelta = Vector3.zero;
+                _rootMotionMultiplier = 1f;
+            }
+            else
+            {
+                RecalculateMultiplier();
             }
         }
-        
-        public void RequestRootMotion()
+
+        public void RequestRootMotion(IRootMotionRequester requester, float multiplier = 1f)
         {
-            _rootMotionRequestCount++;
-            _applyRootMotion = true;
+            _rootMotionRequesters[requester] = multiplier;
+            RecalculateMultiplier();
+        }
+
+        private void RecalculateMultiplier()
+        {
+            _rootMotionMultiplier = 1f;
+            foreach (var mult in _rootMotionRequesters.Values)
+            {
+                _rootMotionMultiplier *= mult;
+            }
         }
         
         public void ExecuteDodgeMovement()
@@ -338,12 +366,12 @@ namespace Player
                 SetMovementEnabled(false);
             }
 
-            RequestRootMotion();
+            RequestRootMotion(this);
         }
 
         public void OnDodgeMovementEnd()
         {
-            ReleaseRootMotion();
+            ReleaseRootMotion(this);
 
             if (!_canMoveWhileDodging)
             {

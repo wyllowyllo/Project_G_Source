@@ -36,6 +36,7 @@ namespace Player
         {
             if (!HasAnimator) return;
 
+            _animator.ResetTrigger(_attackEndTrigger);
             _animator.SetInteger(_comboStepParameters, comboStep);
             _animator.SetTrigger(_attackTrigger);
         }
@@ -58,6 +59,8 @@ namespace Player
         {
             if (!HasAnimator) return;
 
+            _animator.ResetTrigger(_attackTrigger);
+            _animator.ResetTrigger(_attackEndTrigger);
             _animator.SetTrigger(_dodgeTrigger);
         }
 

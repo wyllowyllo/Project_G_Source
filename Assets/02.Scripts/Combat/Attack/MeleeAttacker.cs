@@ -12,15 +12,17 @@ namespace Combat.Attack
         [Header("References")]
         [SerializeField] private HitboxTrigger _hitbox;
 
-        
+
         [Header("Settings")]
         [SerializeField] private DamageType _damageType = DamageType.Normal;
 
         private Combatant _combatant;
         private ComboAttackHandler _comboHandler;
         private AttackContext _currentAttackContext;
-        
+        private AttackSession _currentSession;
+
         public ICombatant Combatant => _combatant;
+        public AttackSession CurrentSession => _currentSession;
         public bool CanAttack => _comboHandler.CurrentState is ComboState.Idle or ComboState.ComboWindow
                                  && _combatant.IsAlive && !_combatant.IsStunned;
 
@@ -73,22 +75,45 @@ namespace Combat.Attack
             if (!CanAttack) return false;
             return _comboHandler.TryAttack();
         }
-        
+
         public void Attack() => TryAttack();
-        
-        public void OnAttackHitStart()
+
+        public AttackSession StartNewSession(int comboStep)
         {
+            // 이전 세션 정리
+            if (_currentSession != null && _currentSession.IsActive)
+            {
+                _hitbox?.DisableHitbox();
+            }
+
+            _currentSession?.Invalidate();
+            _currentSession = new AttackSession(comboStep);
+            return _currentSession;
+        }
+
+        public void OnAttackHitStart(AttackSession session)
+        {
+            if (!IsSessionValid(session)) return;
             if (_hitbox == null) return;
 
             _currentAttackContext = AttackContext.Scaled(_combatant, _comboHandler.CurrentMultiplier, type: _damageType);
             _hitbox.EnableHitbox(_combatant.Team);
         }
-        
-        
+
+        public void OnAttackHitEnd(AttackSession session)
+        {
+            if (!IsSessionValid(session)) return;
+            _hitbox?.DisableHitbox();
+        }
 
         public void ForceDisableHitbox()
         {
             _hitbox?.DisableHitbox();
+        }
+
+        private bool IsSessionValid(AttackSession session)
+        {
+            return session != null && session == _currentSession && session.IsActive;
         }
 
         public void OnComboWindowStart()

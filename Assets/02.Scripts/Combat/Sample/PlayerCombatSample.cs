@@ -98,13 +98,15 @@ namespace Combat.Sample
             float hitStart = _attackDuration * 0.3f;
             float hitDuration = _attackDuration * 0.4f;
             float hitEnd = _attackDuration * 0.3f;
-            
+
+            var session = _attacker.StartNewSession(_attacker.CurrentComboStep);
+
             yield return new WaitForSeconds(hitStart);
-            _attacker.OnAttackHitStart();
-            
+            _attacker.OnAttackHitStart(session);
+
             yield return new WaitForSeconds(hitDuration);
-            _attacker.ForceDisableHitbox();
-            
+            _attacker.OnAttackHitEnd(session);
+
             yield return new WaitForSeconds(hitEnd);
             _attacker.OnComboWindowStart();
         }
