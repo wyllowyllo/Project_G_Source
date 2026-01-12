@@ -1,6 +1,7 @@
 using System.Collections;
 using Combat.Core;
 using Combat.Damage;
+using Monster.Feedback.Data;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -38,6 +39,10 @@ namespace Monster.Feedback
         [SerializeField] private GameObject _damageNumberPrefab;
         [SerializeField] private Vector3 _damageNumberOffset = new Vector3(0, 2f, 0);
 
+        [Header("Enhanced Feedback")]
+        [SerializeField] private FeedbackSettings _feedbackSettings;
+        [SerializeField] private HitFlashController _hitFlashController;
+
         private Combatant _combatant;
 
         private void Awake()
@@ -46,6 +51,10 @@ namespace Monster.Feedback
             if (_navAgent == null)
             {
                 _navAgent = GetComponent<NavMeshAgent>();
+            }
+            if (_hitFlashController == null)
+            {
+                _hitFlashController = GetComponent<HitFlashController>();
             }
         }
 
@@ -69,16 +78,62 @@ namespace Monster.Feedback
 
         private void HandleDamaged(DamageInfo info)
         {
+            var intensity = DetermineIntensity(info);
+
+            // 기존 피드백
             ApplyKnockback(info.HitDirection);
-            SpawnHitVFX(info);
-            PlayHitSFX(info);
+            SpawnHitVfx(info);
+            PlayHitSfx(info);
             SpawnDamageNumber(info);
+
+            // Enhanced 피드백
+            TriggerEnhancedFeedback(intensity, info.HitPoint, info.HitDirection);
         }
 
         private void HandleDeath()
         {
-            SpawnDeathVFX();
-            PlayDeathSFX();
+            SpawnDeathVfx();
+            PlayDeathSfx();
+
+            // Enhanced 사망 피드백
+            TriggerEnhancedFeedback(FeedbackIntensity.Death, transform.position, Vector3.zero);
+        }
+
+        private FeedbackIntensity DetermineIntensity(DamageInfo info)
+        {
+            if (info.IsCritical) return FeedbackIntensity.Critical;
+            return FeedbackIntensity.Normal;
+        }
+
+        private void TriggerEnhancedFeedback(FeedbackIntensity intensity, Vector3 hitPoint, Vector3 hitDirection)
+        {
+            if (_feedbackSettings == null) return;
+
+            // 히트스탑
+            var hitstopConfig = _feedbackSettings.GetHitstopConfig(intensity);
+            HitstopManager.Instance?.TriggerHitstop(hitstopConfig);
+
+            // 카메라 쉐이크
+            var shakeConfig = _feedbackSettings.GetCameraShakeConfig(intensity);
+            if (hitDirection != Vector3.zero)
+            {
+                CameraShakeController.Instance?.TriggerDirectionalShake(shakeConfig, hitDirection);
+            }
+            else
+            {
+                CameraShakeController.Instance?.TriggerShakeAtPosition(shakeConfig, hitPoint);
+            }
+
+            // 히트 플래시
+            var flashConfig = _feedbackSettings.GetHitFlashConfig(intensity);
+            _hitFlashController?.TriggerFlash(flashConfig);
+
+            // 화면 효과 (크리티컬/사망만)
+            if (intensity == FeedbackIntensity.Critical || intensity == FeedbackIntensity.Death)
+            {
+                var screenConfig = _feedbackSettings.GetScreenEffectConfig(intensity);
+                ScreenEffectController.Instance?.TriggerScreenEffect(screenConfig);
+            }
         }
 
         private void ApplyKnockback(Vector3 hitDirection)
@@ -134,7 +189,7 @@ namespace Monster.Feedback
             _knockbackCoroutine = null;
         }
 
-        private void SpawnHitVFX(DamageInfo info)
+        private void SpawnHitVfx(DamageInfo info)
         {
             var prefab = info.IsCritical ? _criticalHitVFXPrefab : _hitVFXPrefab;
             if (prefab == null) return;
@@ -147,7 +202,7 @@ namespace Monster.Feedback
             Destroy(vfx, _vfxLifetime);
         }
 
-        private void SpawnDeathVFX()
+        private void SpawnDeathVfx()
         {
             if (_deathVFXPrefab == null) return;
 
@@ -155,7 +210,7 @@ namespace Monster.Feedback
             Destroy(vfx, _vfxLifetime);
         }
 
-        private void PlayHitSFX(DamageInfo info)
+        private void PlayHitSfx(DamageInfo info)
         {
             if (_audioSource == null) return;
 
@@ -166,7 +221,7 @@ namespace Monster.Feedback
             }
         }
 
-        private void PlayDeathSFX()
+        private void PlayDeathSfx()
         {
             if (_audioSource == null || _deathSound == null) return;
             _audioSource.PlayOneShot(_deathSound, _sfxVolume);
