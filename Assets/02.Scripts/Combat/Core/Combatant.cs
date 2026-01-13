@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Combat.Core
 {
     [RequireComponent(typeof(Health))]
-    public class Combatant : MonoBehaviour, ICombatant, IDamageable, IHealthProvider
+    public class Combatant : MonoBehaviour, ICombatant, IDamageable, IHealthProvider, ICloneDisableable
     {
         [SerializeField] private CombatTeam _team;
         [SerializeField] private CombatStatsData _statsData;
@@ -142,6 +142,11 @@ namespace Combat.Core
             {
                 OnInvincibilityStart?.Invoke();
             }
+        }
+
+        public void OnCloneDisable()
+        {
+            // 전투 상태 초기화, 이벤트 구독 해제
         }
 
         public void SetStunned(float duration)

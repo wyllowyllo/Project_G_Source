@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace Player
 {
-    public class PlayerHpBar : MonoBehaviour
+    public class PlayerHpBar : MonoBehaviour, ICloneDisableable
     {
 
         [SerializeField] private Combatant _playerCombatant; 
@@ -86,6 +86,19 @@ namespace Player
 
             UpdateHpBarSmooth();
             UpdateBackSlider();
+        }
+        public void OnCloneDisable()
+        {
+            // UI 요소들 숨기기, 이벤트 구독 해제
+            if (_playerProgression != null)
+            {
+                _playerProgression.OnLevelUp -= HandleLevelUp;
+            }
+            if (_playerCombatant != null)
+            {
+                _playerCombatant.OnDamaged -= HandleDamaged;
+                _playerCombatant.OnDeath -= HandleDeath;
+            }
         }
 
         private void HandleLevelUp(int previousLevel, int newLevel)

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Player
 {
-    public class PlayerInputHandler : MonoBehaviour
+    public class PlayerInputHandler : MonoBehaviour, ICloneDisableable
     {
         private bool _useMouseButton = true;
 
@@ -103,6 +103,15 @@ namespace Player
             {
                 ClearBuffer();
             }
+        }
+
+        public void OnCloneDisable()
+        {
+            // 입력 비활성화
+            SetEnabled(false);
+
+            // 버퍼 초기화
+            ClearBuffer();
         }
     }
 }
