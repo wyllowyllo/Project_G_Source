@@ -6,6 +6,8 @@ namespace Player
 {
     public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester
     {
+        public bool ForwardOnly => false;
+
         private const float MinVelocityThreshold = 0.01f;
         private const float MinRootMotionThreshold = 0.000001f;
         private const float MinInputThreshold = 0.1f;
@@ -177,8 +179,36 @@ namespace Player
 
             if (_rootMotionRequesters.Count > 0)
             {
-                _rootMotionPositionDelta += _animator.deltaPosition * _rootMotionMultiplier;
+                Vector3 delta = _animator.deltaPosition * _rootMotionMultiplier;
+
+                if (HasForwardOnlyRequester())
+                {
+                    delta = FilterBackwardMotion(delta);
+                }
+
+                _rootMotionPositionDelta += delta;
             }
+        }
+
+        private bool HasForwardOnlyRequester()
+        {
+            foreach (var requester in _rootMotionRequesters.Keys)
+            {
+                if (requester.ForwardOnly) return true;
+            }
+            return false;
+        }
+
+        private Vector3 FilterBackwardMotion(Vector3 delta)
+        {
+            Vector3 localDelta = transform.InverseTransformDirection(delta);
+
+            if (localDelta.z < 0f)
+            {
+                localDelta.z = 0f;
+            }
+
+            return transform.TransformDirection(localDelta);
         }
 
         public void BeforeCharacterUpdate(float deltaTime)

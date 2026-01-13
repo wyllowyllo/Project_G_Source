@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using Progression;
+using Skill;
 
 namespace Player
 {
@@ -25,6 +27,8 @@ namespace Player
         [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
         public event Action OnDodgeInputPressed;
 
+        public event Action<SkillSlot> OnSkillInputPressed;
+
         private void Update()
         {
             if(!_isEnabled)
@@ -44,11 +48,18 @@ namespace Player
             {
                 OnAttackInputPressed?.Invoke();
             }
-            
+
             if (Input.GetKeyDown(_dodgeKey))
             {
                 OnDodgeInputPressed?.Invoke();
             }
+
+            if (Input.GetKeyDown(KeyCode.Q))
+                OnSkillInputPressed?.Invoke(SkillSlot.Q);
+            if (Input.GetKeyDown(KeyCode.E))
+                OnSkillInputPressed?.Invoke(SkillSlot.E);
+            if (Input.GetKeyDown(KeyCode.R))
+                OnSkillInputPressed?.Invoke(SkillSlot.R);
         }
 
         private void UpdateBuffer()

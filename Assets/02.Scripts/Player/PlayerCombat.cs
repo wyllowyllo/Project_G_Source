@@ -1,6 +1,7 @@
 using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
+using Skill;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -33,6 +34,7 @@ namespace Player
 
         private PlayerMovement _playerMovement;
         private PlayerVFXController _vfxController;
+        private SkillCaster _skillCaster;
 
         private ComboState CurrentState => _attacker?.CurrentState ?? ComboState.Idle;
 
@@ -62,6 +64,7 @@ namespace Player
 
             _playerMovement = GetComponent<PlayerMovement>();
             _vfxController = GetComponent<PlayerVFXController>();
+            _skillCaster = GetComponent<SkillCaster>();
 
             ValidateComponents();
         }
@@ -131,6 +134,7 @@ namespace Player
         private void HandleAttackInput()
         {
             if (!CanPerformAction() || _isDodging) return;
+            if (_skillCaster != null && _skillCaster.IsCasting) return;
 
             switch (CurrentState)
             {
@@ -175,7 +179,7 @@ namespace Player
 
         private void HandleDodgeInput()
         {
-            if (!CanPerformAction() || _isDodging)
+            if (!CanPerformAction() || _isDodging || _skillCaster.IsCasting)
                 return;
             
             if (CurrentState != ComboState.Idle)
@@ -213,6 +217,8 @@ namespace Player
             {
                 CancelCurrentAttack();
             }
+
+            _skillCaster?.CancelSkill();
         }
 
         private void HandleHit(IDamageable target, DamageInfo info)

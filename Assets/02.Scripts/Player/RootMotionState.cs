@@ -4,11 +4,17 @@ namespace Player
 {
     public class RootMotionState : StateMachineBehaviour, IRootMotionRequester
     {
+        public bool ForwardOnly => _forwardOnly;
+
         [Range(0.5f, 1f)]
         [SerializeField] private float _releaseThreshold = 0.85f;
 
         [Header("Position Multiplier")]
         [SerializeField] private float _positionMultiplier = 1f;
+
+        [Header("Direction Constraint")]
+        [Tooltip("체크 시 뒤로 가는 루트 모션을 무시합니다")]
+        [SerializeField] private bool _forwardOnly;
 
         private PlayerMovement _movement;
         private bool _released;
