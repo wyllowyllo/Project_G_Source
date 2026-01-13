@@ -133,6 +133,7 @@ namespace Monster.AI
 
             // 상태 등록
             _stateMachine.RegisterState(EMonsterState.Idle, new IdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Patrol, new PatrolState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Alert, new AlertState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine, _groupCommandProvider));
@@ -142,8 +143,9 @@ namespace Monster.AI
             _stateMachine.RegisterState(EMonsterState.Hit, new HitState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Dead, new DeadState(this));
 
-            // 초기 상태 설정
-            _stateMachine.Initialize(EMonsterState.Idle);
+            // 초기 상태 설정 (순찰 모드 ON이면 Patrol, OFF면 Idle)
+            EMonsterState initialState = _monsterData.EnablePatrol ? EMonsterState.Patrol : EMonsterState.Idle;
+            _stateMachine.Initialize(initialState);
         }
 
         private void InitializeAbilities()
