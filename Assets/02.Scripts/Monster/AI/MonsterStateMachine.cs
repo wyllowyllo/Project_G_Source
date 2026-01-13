@@ -68,5 +68,16 @@ namespace Monster.AI
                 Debug.LogError($"MonsterStateMachine: 상태 {newStateType}가 등록되지 않았습니다.");
             }
         }
+
+        // 현재 상태가 IReEnterable이면 ReEnter 호출
+        public bool TryReEnterCurrentState()
+        {
+            if (_currentState is IReEnterable reEnterable)
+            {
+                reEnterable.ReEnter();
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -21,7 +21,7 @@ namespace Monster.AI
         {
             if (_monsterAttacker != null && _controller != null)
             {
-                bool isHeavy = _controller.GroupCommandProvider.CurrentAttackWasHeavy;
+                bool isHeavy = _controller.IsCurrentAttackHeavy();
                 _monsterAttacker.EnableHitbox(isHeavy);
             }
         }
