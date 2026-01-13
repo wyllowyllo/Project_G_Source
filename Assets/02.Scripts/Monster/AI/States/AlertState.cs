@@ -34,7 +34,10 @@ namespace Monster.AI.States
         {
             _isAlertComplete = false;
 
+            // 이동 정지
             _navAgentAbility?.Stop();
+            _animatorAbility?.SetSpeed(0f);
+            _animatorAbility?.SetInCombat(false);
 
             // 경계 애니메이션 트리거
             _animatorAbility?.TriggerAlert(OnAlertComplete);

@@ -20,6 +20,18 @@ namespace Monster.Data
         [Tooltip("Cascading Push-back 활성화 (AI 테스트용)")]
         [SerializeField] private bool _enablePushback = true;
 
+        [Header("행동 패턴")]
+        [Tooltip("순찰 모드 활성화 (비활성화 시 제자리 대기)")]
+        [SerializeField] private bool _enablePatrol = true;
+        [Tooltip("홈 복귀 활성화 (비활성화 시 끝까지 추적)")]
+        [SerializeField] private bool _enableReturnHome = true;
+        [Tooltip("순찰 반경 (홈 위치 기준)")]
+        [SerializeField] private float _patrolRadius = 8f;
+        [Tooltip("순찰 지점 도착 후 최소 대기 시간")]
+        [SerializeField] private float _patrolWaitTimeMin = 1f;
+        [Tooltip("순찰 지점 도착 후 최대 대기 시간")]
+        [SerializeField] private float _patrolWaitTimeMax = 3f;
+
         [Header("기본 정보")]
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
@@ -34,6 +46,7 @@ namespace Monster.Data
 
         [Header("이동 스탯")]
         [SerializeField] private float _moveSpeed = 3.5f;
+        [SerializeField] private float _patrolSpeed = 2f;
         [SerializeField] private float _rotationSpeed = 120f;
 
         [Header("감지 범위")]
@@ -106,6 +119,7 @@ namespace Monster.Data
         public float HeavyAttackRange => _heavyAttackRange;
         public float AttackCooldown => _attackCooldown;
         public float MoveSpeed => _moveSpeed;
+        public float PatrolSpeed => _patrolSpeed;
         public float RotationSpeed => _rotationSpeed;
         public float DetectionRange => _detectionRange;
         public float EngageRange => _engageRange;
@@ -143,5 +157,14 @@ namespace Monster.Data
 
         // 피격 반응
         public float KnockbackForce => _knockbackForce;
+
+        // 행동 패턴
+        public bool EnablePatrol => _enablePatrol;
+        public bool EnableReturnHome => _enableReturnHome;
+        public float PatrolRadius => _patrolRadius;
+        public float PatrolWaitTimeMin => _patrolWaitTimeMin;
+        public float PatrolWaitTimeMax => _patrolWaitTimeMax;
+
+       
     }
 }

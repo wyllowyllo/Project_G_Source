@@ -12,7 +12,7 @@ using UnityEngine.AI;
 
 namespace Monster.AI
 {
-    // 몬스터의 핵심 동작을 제어 (FSM 기반 상태별 동작 관리)
+    
     [RequireComponent(typeof(NavMeshAgent),typeof(Combatant))]
     public class MonsterController : MonoBehaviour
     {
@@ -25,7 +25,7 @@ namespace Monster.AI
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
 
-        // 몬스터 기본 위치
+        
         private Vector3 _homePosition;
         
         // 컴포넌트
@@ -44,10 +44,11 @@ namespace Monster.AI
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
         public MonsterData Data => _monsterData;
         public Combatant Combatant => _combatant;
+        public MonsterAttacker Attacker => _monsterAttacker;
 
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
-      
+
         public GroupCommandProvider GroupCommandProvider => _groupCommandProvider;
 
         public Vector3 HomePosition => _homePosition;
@@ -63,7 +64,7 @@ namespace Monster.AI
             _monsterAttacker = GetComponent<MonsterAttacker>();
             _groupCommandProvider = new GroupCommandProvider(this);
 
-            // Animator 찾기 (Model 하위의 프리팹에 있음)
+            
             _animator = GetComponentInChildren<Animator>();
 
             InitializeMonster();
@@ -79,7 +80,7 @@ namespace Monster.AI
         
         private void Start()
         {
-            // PlayerReferenceProvider로부터 플레이어 참조 가져오기
+           
             if (PlayerReferenceProvider.Instance != null)
             {
                 _playerTransform = PlayerReferenceProvider.Instance.PlayerTransform;
@@ -133,6 +134,7 @@ namespace Monster.AI
 
             // 상태 등록
             _stateMachine.RegisterState(EMonsterState.Idle, new IdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EMonsterState.Patrol, new PatrolState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Alert, new AlertState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine, _groupCommandProvider));
@@ -142,8 +144,9 @@ namespace Monster.AI
             _stateMachine.RegisterState(EMonsterState.Hit, new HitState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Dead, new DeadState(this));
 
-            // 초기 상태 설정
-            _stateMachine.Initialize(EMonsterState.Idle);
+            // 초기 상태 설정 (순찰 모드 ON이면 Patrol, OFF면 Idle)
+            EMonsterState initialState = _monsterData.EnablePatrol ? EMonsterState.Patrol : EMonsterState.Idle;
+            _stateMachine.Initialize(initialState);
         }
 
         private void InitializeAbilities()
@@ -182,26 +185,27 @@ namespace Monster.AI
             }
             return null;
         }
-
-        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+        
+        public bool IsCurrentAttackHeavy() => _groupCommandProvider?.CurrentAttackWasHeavy ?? false;
+        
         public void OnAttackAnimationComplete()
         {
             GetAbility<AnimatorAbility>()?.OnAttackComplete();
         }
 
-        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+       
         public void OnAlertAnimationComplete()
         {
             GetAbility<AnimatorAbility>()?.OnAlertComplete();
         }
 
-        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+        
         public void OnHitAnimationComplete()
         {
             GetAbility<AnimatorAbility>()?.OnHitComplete();
         }
 
-        // MonsterAnimationEventReceiver에서 호출 → AnimatorAbility로 위임
+       
         public void OnDeathAnimationComplete()
         {
             GetAbility<AnimatorAbility>()?.OnDeathComplete();
@@ -225,7 +229,6 @@ namespace Monster.AI
                 _combatant.OnDeath += HandleDeath;
                 _combatant.OnHitStunStart += HandleHitStunStart;
                 _combatant.OnHitStunEnd += HandleHitStunEnd;
-                // 넉백은 MonsterFeedback에서 처리
             }
         }
 
@@ -241,7 +244,6 @@ namespace Monster.AI
 
         private void HandleHitStunStart()
         {
-            // Dead 상태에서는 피격 상태 전환하지 않음
             if (_stateMachine.CurrentStateType == EMonsterState.Dead)
             {
                 return;
@@ -250,11 +252,10 @@ namespace Monster.AI
             // 이미 Hit 상태면 ReEnter로 애니메이션 재시작
             if (_stateMachine.CurrentStateType == EMonsterState.Hit)
             {
-                (_stateMachine.CurrentState as States.HitState)?.ReEnter();
+                _stateMachine.TryReEnterCurrentState();
                 return;
             }
 
-            // Hit 상태로 전환 (HitState.Enter에서 히트박스 비활성화 및 애니메이션 처리)
             _stateMachine.ChangeState(EMonsterState.Hit);
         }
 

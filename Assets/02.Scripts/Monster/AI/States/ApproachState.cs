@@ -36,7 +36,8 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            if (!_playerDetectAbility.IsInDetectionRange())
+            // 홈 복귀 옵션이 켜져있고 감지 범위 밖이면 ReturnHome으로 전이
+            if (_controller.Data.EnableReturnHome && !_playerDetectAbility.IsInDetectionRange())
             {
                 _stateMachine.ChangeState(EMonsterState.ReturnHome);
                 return;
