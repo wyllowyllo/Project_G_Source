@@ -42,7 +42,13 @@ namespace Monster.Feedback
 
             if (_renderers == null || _renderers.Length == 0)
             {
-                _renderers = GetComponentsInChildren<Renderer>();
+                // includeInactive: true로 비활성화된 오브젝트도 검색
+                _renderers = GetComponentsInChildren<Renderer>(true);
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[HitFlashController] Found {_renderers.Length} renderers");
+                }
             }
 
             CacheOriginalColors();
@@ -103,6 +109,7 @@ namespace Monster.Feedback
                 StopCoroutine(_flashCoroutine);
             }
 
+          
             _flashCoroutine = StartCoroutine(FlashCoroutine(config));
         }
 
@@ -136,7 +143,8 @@ namespace Monster.Feedback
                     ApplyColorTint(config.FlashColor, 1f - curveValue);
                 }
 
-                elapsed += Time.deltaTime;
+                // 히트스탑(timeScale=0) 중에도 플래시가 진행되도록 unscaledDeltaTime 사용
+                elapsed += Time.unscaledDeltaTime;
                 yield return null;
             }
 

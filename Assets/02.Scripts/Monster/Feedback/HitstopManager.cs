@@ -9,7 +9,26 @@ namespace Monster.Feedback
     public class HitstopManager : MonoBehaviour
     {
         private static HitstopManager _instance;
-        public static HitstopManager Instance => _instance;
+        public static HitstopManager Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    // 씬에서 찾기
+                    _instance = FindAnyObjectByType<HitstopManager>();
+
+                    // 없으면 자동 생성
+                    if (_instance == null)
+                    {
+                        var go = new GameObject("[HitstopManager]");
+                        _instance = go.AddComponent<HitstopManager>();
+                        DontDestroyOnLoad(go);
+                    }
+                }
+                return _instance;
+            }
+        }
 
         [Header("Settings")]
         [SerializeField] private bool _pauseAudioDuringHitstop = false;
@@ -36,6 +55,7 @@ namespace Monster.Feedback
         {
             if (!config.Enabled || config.Duration <= 0) return;
 
+           
             // 이미 진행 중인 히트스탑이 있으면 취소하고 새로 시작
             if (_activeHitstop != null)
             {
