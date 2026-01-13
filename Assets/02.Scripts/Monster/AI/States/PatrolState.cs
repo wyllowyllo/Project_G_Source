@@ -21,7 +21,8 @@ namespace Monster.AI.States
         private bool _isWaiting;
 
         private const float ArrivalThreshold = 0.5f;
-        private const float WalkSpeed = 2f; // 애니메이션 블렌드용 기준 속도
+        private const float MinPatrolDistance = 2f; // 최소 이동 거리
+        private const int MaxRetryCount = 5; // 목적지 선택 재시도 횟수
 
         public EMonsterState StateType => EMonsterState.Patrol;
 
@@ -90,23 +91,32 @@ namespace Monster.AI.States
 
         private void SetNewPatrolTarget()
         {
-            Vector3 randomDirection = Random.insideUnitSphere * _controller.Data.PatrolRadius;
-            randomDirection += _controller.HomePosition;
-            randomDirection.y = _controller.HomePosition.y;
+            float patrolRadius = _controller.Data.PatrolRadius;
+            Vector3 currentPos = _transform.position;
 
-            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, _controller.Data.PatrolRadius, NavMesh.AllAreas))
+            for (int i = 0; i < MaxRetryCount; i++)
             {
-                _patrolTarget = hit.position;
-                _navAgentAbility?.Resume();
-                _navAgentAbility?.SetDestination(_patrolTarget);
+                Vector3 randomDirection = Random.insideUnitSphere * patrolRadius;
+                randomDirection += _controller.HomePosition;
+                randomDirection.y = _controller.HomePosition.y;
+
+                if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, patrolRadius, NavMesh.AllAreas))
+                {
+                    float distance = Vector3.Distance(currentPos, hit.position);
+                    if (distance >= MinPatrolDistance)
+                    {
+                        _patrolTarget = hit.position;
+                        _navAgentAbility?.Resume();
+                        _navAgentAbility?.SetDestination(_patrolTarget);
+                        return;
+                    }
+                }
             }
-            else
-            {
-                // NavMesh 위치를 찾지 못하면 홈 위치로 복귀
-                _patrolTarget = _controller.HomePosition;
-                _navAgentAbility?.Resume();
-                _navAgentAbility?.SetDestination(_patrolTarget);
-            }
+
+            // 재시도 실패 시 홈 위치로 복귀
+            _patrolTarget = _controller.HomePosition;
+            _navAgentAbility?.Resume();
+            _navAgentAbility?.SetDestination(_patrolTarget);
         }
 
         private void UpdateAnimation()
@@ -117,10 +127,11 @@ namespace Monster.AI.States
             Vector3 velocity = _navAgentAbility?.Velocity ?? Vector3.zero;
             Vector3 localVelocity = _transform.InverseTransformDirection(velocity);
 
-            // 속도 정규화
-            float speed = velocity.magnitude / WalkSpeed;
-            float moveX = Mathf.Clamp(localVelocity.x / WalkSpeed, -1f, 1f);
-            float moveY = Mathf.Clamp(localVelocity.z / WalkSpeed, -1f, 1f);
+            // 속도 정규화 (MoveSpeed 기준)
+            float moveSpeed = _controller.Data.MoveSpeed;
+            float speed = velocity.magnitude / moveSpeed;
+            float moveX = Mathf.Clamp(localVelocity.x / moveSpeed, -1f, 1f);
+            float moveY = Mathf.Clamp(localVelocity.z / moveSpeed, -1f, 1f);
 
             _animatorAbility.SetSpeed(speed);
             _animatorAbility.SetMoveDirection(moveX, moveY);

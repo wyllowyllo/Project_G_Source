@@ -15,7 +15,6 @@ namespace Monster.AI.States
         private readonly AnimatorAbility _animatorAbility;
 
         private const float ArrivalThreshold = 0.5f;
-        private const float WalkSpeed = 2f; // 애니메이션 블렌드용 기준 속도
 
         public EMonsterState StateType => EMonsterState.ReturnHome;
 
@@ -67,10 +66,11 @@ namespace Monster.AI.States
             Vector3 velocity = _navAgentAbility?.Velocity ?? Vector3.zero;
             Vector3 localVelocity = _transform.InverseTransformDirection(velocity);
 
-            // 속도 정규화
-            float speed = velocity.magnitude / WalkSpeed;
-            float moveX = Mathf.Clamp(localVelocity.x / WalkSpeed, -1f, 1f);
-            float moveY = Mathf.Clamp(localVelocity.z / WalkSpeed, -1f, 1f);
+            // 속도 정규화 (MoveSpeed 기준)
+            float moveSpeed = _controller.Data.MoveSpeed;
+            float speed = velocity.magnitude / moveSpeed;
+            float moveX = Mathf.Clamp(localVelocity.x / moveSpeed, -1f, 1f);
+            float moveY = Mathf.Clamp(localVelocity.z / moveSpeed, -1f, 1f);
 
             _animatorAbility.SetSpeed(speed);
             _animatorAbility.SetMoveDirection(moveX, moveY);
