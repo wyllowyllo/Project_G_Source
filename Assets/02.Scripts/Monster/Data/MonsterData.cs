@@ -27,8 +27,10 @@ namespace Monster.Data
         [SerializeField] private bool _enableReturnHome = true;
         [Tooltip("순찰 반경 (홈 위치 기준)")]
         [SerializeField] private float _patrolRadius = 8f;
-        [Tooltip("순찰 지점 도착 후 대기 시간")]
-        [SerializeField] private float _patrolWaitTime = 2f;
+        [Tooltip("순찰 지점 도착 후 최소 대기 시간")]
+        [SerializeField] private float _patrolWaitTimeMin = 1f;
+        [Tooltip("순찰 지점 도착 후 최대 대기 시간")]
+        [SerializeField] private float _patrolWaitTimeMax = 3f;
 
         [Header("기본 정보")]
         [SerializeField] private string _monsterName = "Monster";
@@ -158,6 +160,7 @@ namespace Monster.Data
         public bool EnablePatrol => _enablePatrol;
         public bool EnableReturnHome => _enableReturnHome;
         public float PatrolRadius => _patrolRadius;
-        public float PatrolWaitTime => _patrolWaitTime;
+        public float PatrolWaitTimeMin => _patrolWaitTimeMin;
+        public float PatrolWaitTimeMax => _patrolWaitTimeMax;
     }
 }

@@ -71,7 +71,7 @@ namespace Monster.AI.States
                 {
                     // 도착 시 대기 시작
                     _isWaiting = true;
-                    _waitTimer = _controller.Data.PatrolWaitTime;
+                    _waitTimer = Random.Range(_controller.Data.PatrolWaitTimeMin, _controller.Data.PatrolWaitTimeMax);
                     _navAgentAbility?.Stop();
                 }
             }
