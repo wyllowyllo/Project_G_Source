@@ -49,4 +49,10 @@ public class CharacterViewerInput : MonoBehaviour
         get => _toggleKey;
         set => _toggleKey = value;
     }
+
+    public void OnCloneDisable()
+    {
+        OnToggleRequested = null;
+        OnRotationInput = null;
+    }
 }

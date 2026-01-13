@@ -184,4 +184,10 @@ public class ViewerCameraController : MonoBehaviour
         set => _autoRotate = value;
     }
     public float CameraDistance => _cameraDistance;
+
+    // ICloneDisableable 구현
+    public void OnCloneDisable()
+    {
+
+    }
 }

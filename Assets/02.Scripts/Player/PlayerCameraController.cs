@@ -279,6 +279,13 @@ namespace Player
             return right.normalized;
         }
 
+        // ICloneDisableable 구현
+        public void OnCloneDisable()
+        {
+            // 복사본에서는 카메라 컨트롤 기능이 필요 없으므로 
+            // 특별한 정리 작업 없이 비활성화됩니다.
+        }
+
         private void OnDrawGizmosSelected()
         {
             if (target == null || !Application.isPlaying) return;

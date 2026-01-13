@@ -279,46 +279,17 @@ private void Start()
             characterController.enabled = false;
         }
 
-        DisableComponentsByType(new System.Type[]
-        {
-            typeof(Player.PlayerCameraController),
-            typeof(CharacterViewerInput),
-            typeof(ViewerCameraController)
-        });
-
+        // Rigidbody를 kinematic으로 설정 (물리 시뮬레이션 비활성화)
         if (_characterClone.TryGetComponent<Rigidbody>(out var rb))
         {
             rb.isKinematic = true;
         }
 
+        // 모든 Collider 비활성화 (충돌 감지 비활성화)
         var colliders = _characterClone.GetComponentsInChildren<Collider>();
         foreach (var collider in colliders)
         {
             collider.enabled = false;
-        }
-    }
-
-    private void TryDisableComponent<T>() where T : MonoBehaviour
-    {
-        if (_characterClone.TryGetComponent<T>(out var component))
-        {
-            component.enabled = false;
-        }
-    }
-
-    private void DisableComponentsByType(System.Type[] types)
-    {
-        foreach (var type in types)
-        {
-            var components = _characterClone.GetComponentsInChildren(type, true);
-            foreach (var component in components)
-            {
-                if (component is MonoBehaviour mb)
-                {
-                    mb.enabled = false;
-                    Debug.Log($"[Clone] 타입 기반 비활성화: {type.Name}");
-                }
-            }
         }
     }
 
