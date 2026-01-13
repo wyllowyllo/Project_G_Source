@@ -55,7 +55,6 @@ namespace Monster.Feedback
         {
             if (!config.Enabled || config.Duration <= 0) return;
 
-           
             // 이미 진행 중인 히트스탑이 있으면 취소하고 새로 시작
             if (_activeHitstop != null)
             {

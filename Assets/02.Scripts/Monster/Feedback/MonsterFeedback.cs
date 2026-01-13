@@ -37,7 +37,6 @@ namespace Monster.Feedback
 
         [Header("Enhanced Feedback")]
         [SerializeField] private FeedbackSettings _feedbackSettings;
-        [SerializeField] private HitFlashController _hitFlashController;
 
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
@@ -48,10 +47,6 @@ namespace Monster.Feedback
             if (_navAgent == null)
             {
                 _navAgent = GetComponent<NavMeshAgent>();
-            }
-            if (_hitFlashController == null)
-            {
-                _hitFlashController = GetComponent<HitFlashController>();
             }
         }
 
@@ -120,10 +115,6 @@ namespace Monster.Feedback
             {
                 CameraShakeController.Instance?.TriggerShakeAtPosition(shakeConfig, hitPoint);
             }
-
-            // 히트 플래시
-            var flashConfig = _feedbackSettings.GetHitFlashConfig(intensity);
-            _hitFlashController?.TriggerFlash(flashConfig);
 
             // 화면 효과 (크리티컬/사망만)
             if (intensity == EFeedbackIntensity.Critical || intensity == EFeedbackIntensity.Death)
