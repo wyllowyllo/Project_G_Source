@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ViewerCameraController : MonoBehaviour
+public class ViewerCameraController : MonoBehaviour, ICloneDisableable
 {
     [Header("카메라 참조")]
     [SerializeField] private Camera _viewerCamera;
