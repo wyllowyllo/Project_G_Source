@@ -22,7 +22,7 @@ namespace Monster.Feedback
         [SerializeField] private GameObject _hitVFXPrefab;
         [SerializeField] private GameObject _criticalHitVFXPrefab;
         [SerializeField] private GameObject _deathVFXPrefab;
-        [SerializeField] private float _vfxLifetime = 2f;
+        [SerializeField] private float _vfxLifetime = 0.3f;
 
         [Header("SFX")]
         [SerializeField] private AudioSource _audioSource;
