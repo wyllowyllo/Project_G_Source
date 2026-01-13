@@ -5,7 +5,6 @@ using UnityEngine;
 namespace Monster.Feedback
 {
     // Cinemachine Impulse 시스템을 래핑하여 카메라 쉐이크 효과 제공
-    // Diablo 4 스타일의 묵직한 임팩트 연출
     [RequireComponent(typeof(CinemachineImpulseSource))]
     public class CameraShakeController : MonoBehaviour
     {
@@ -14,10 +13,7 @@ namespace Monster.Feedback
 
         [Header("References")]
         [SerializeField] private CinemachineImpulseSource _impulseSource;
-
-        [Header("Debug")]
-        [SerializeField] private bool _enableDebugLogs = false;
-
+        
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -36,12 +32,7 @@ namespace Monster.Feedback
         public void TriggerShake(CameraShakeConfig config)
         {
             if (!config.Enabled || _impulseSource == null) return;
-
-            if (_enableDebugLogs)
-            {
-                Debug.Log($"[CameraShakeController] Triggering shake: Force={config.Force}");
-            }
-
+            
             // 방향 기반 velocity 생성
             Vector3 velocity = config.Direction.normalized * config.Force;
             _impulseSource.GenerateImpulse(velocity);
@@ -50,11 +41,7 @@ namespace Monster.Feedback
         public void TriggerShakeAtPosition(CameraShakeConfig config, Vector3 position)
         {
             if (!config.Enabled || _impulseSource == null) return;
-
-            if (_enableDebugLogs)
-            {
-                Debug.Log($"[CameraShakeController] Triggering shake at {position}: Force={config.Force}");
-            }
+            
 
             Vector3 velocity = config.Direction.normalized * config.Force;
             _impulseSource.GenerateImpulse(velocity);

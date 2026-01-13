@@ -46,6 +46,7 @@ namespace Monster.Data
 
         [Header("이동 스탯")]
         [SerializeField] private float _moveSpeed = 3.5f;
+        [SerializeField] private float _patrolSpeed = 2f;
         [SerializeField] private float _rotationSpeed = 120f;
 
         [Header("감지 범위")]
@@ -118,6 +119,7 @@ namespace Monster.Data
         public float HeavyAttackRange => _heavyAttackRange;
         public float AttackCooldown => _attackCooldown;
         public float MoveSpeed => _moveSpeed;
+        public float PatrolSpeed => _patrolSpeed;
         public float RotationSpeed => _rotationSpeed;
         public float DetectionRange => _detectionRange;
         public float EngageRange => _engageRange;
@@ -162,5 +164,7 @@ namespace Monster.Data
         public float PatrolRadius => _patrolRadius;
         public float PatrolWaitTimeMin => _patrolWaitTimeMin;
         public float PatrolWaitTimeMax => _patrolWaitTimeMax;
+
+       
     }
 }

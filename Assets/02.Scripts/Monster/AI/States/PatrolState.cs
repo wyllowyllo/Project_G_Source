@@ -42,7 +42,10 @@ namespace Monster.AI.States
             _isWaiting = false;
             _waitTimer = 0f;
 
-            // 애니메이션: 비전투 모드
+            
+            _navAgentAbility?.SetSpeed(_controller.Data.PatrolSpeed);
+
+           
             _animatorAbility?.SetInCombat(false);
 
             SetNewPatrolTarget();
@@ -50,7 +53,7 @@ namespace Monster.AI.States
 
         public void Update()
         {
-            // 플레이어 감지 시 Alert 상태로 전이
+            
             if (_playerDetectAbility.IsInDetectionRange())
             {
                 _stateMachine.ChangeState(EMonsterState.Alert);
@@ -70,20 +73,21 @@ namespace Monster.AI.States
             {
                 if (_navAgentAbility.HasReachedDestination(ArrivalThreshold))
                 {
-                    // 도착 시 대기 시작
+                    
                     _isWaiting = true;
                     _waitTimer = Random.Range(_controller.Data.PatrolWaitTimeMin, _controller.Data.PatrolWaitTimeMax);
                     _navAgentAbility?.Stop();
                 }
             }
 
-            // 애니메이션 업데이트
+           
             UpdateAnimation();
         }
 
         public void Exit()
         {
-            // Alert 전이 시 확실히 멈춤
+            _navAgentAbility?.SetSpeed(_controller.Data.MoveSpeed);
+            
             _navAgentAbility?.Stop();
             _animatorAbility?.SetSpeed(0f);
             _animatorAbility?.SetMoveDirection(0f, 0f);
@@ -127,8 +131,8 @@ namespace Monster.AI.States
             Vector3 velocity = _navAgentAbility?.Velocity ?? Vector3.zero;
             Vector3 localVelocity = _transform.InverseTransformDirection(velocity);
 
-            // 속도 정규화 (MoveSpeed 기준)
-            float moveSpeed = _controller.Data.MoveSpeed;
+            // 속도 정규화 
+            float moveSpeed = _controller.Data.PatrolSpeed;
             float speed = velocity.magnitude / moveSpeed;
             float moveX = Mathf.Clamp(localVelocity.x / moveSpeed, -1f, 1f);
             float moveY = Mathf.Clamp(localVelocity.z / moveSpeed, -1f, 1f);

@@ -103,7 +103,7 @@ namespace Monster.Feedback
 
             // 히트스탑
             var hitstopConfig = _feedbackSettings.GetHitstopConfig(intensity);
-            HitstopManager.Instance?.TriggerHitstop(hitstopConfig);
+            HitstopController.Instance?.TriggerHitstop(hitstopConfig);
 
             // 카메라 쉐이크
             var shakeConfig = _feedbackSettings.GetCameraShakeConfig(intensity);

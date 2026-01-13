@@ -6,23 +6,23 @@ namespace Monster.Feedback
 {
     // Time.timeScale을 조작하여 히트스탑(프레임 프리즈) 효과 제공
     // Hades 스타일의 짧고 강렬한 프레임 정지로 타격감 강화
-    public class HitstopManager : MonoBehaviour
+    public class HitstopController : MonoBehaviour
     {
-        private static HitstopManager _instance;
-        public static HitstopManager Instance
+        private static HitstopController _instance;
+        public static HitstopController Instance
         {
             get
             {
                 if (_instance == null)
                 {
                     // 씬에서 찾기
-                    _instance = FindAnyObjectByType<HitstopManager>();
+                    _instance = FindAnyObjectByType<HitstopController>();
 
                     // 없으면 자동 생성
                     if (_instance == null)
                     {
                         var go = new GameObject("[HitstopManager]");
-                        _instance = go.AddComponent<HitstopManager>();
+                        _instance = go.AddComponent<HitstopController>();
                         DontDestroyOnLoad(go);
                     }
                 }
