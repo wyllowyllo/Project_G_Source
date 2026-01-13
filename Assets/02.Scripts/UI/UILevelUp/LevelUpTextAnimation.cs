@@ -2,9 +2,6 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 
-/// <summary>
-/// 레벨업 텍스트 애니메이션 (이미지와 독립적으로 타이밍 조절 가능)
-/// </summary>
 public class LevelUpTextAnimation : MonoBehaviour
 {
     [Header("텍스트 참조")]
@@ -12,10 +9,10 @@ public class LevelUpTextAnimation : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _messageText;
     
     [Header("타이밍 설정")]
-    [SerializeField] private float _textAppearDelay = 0.3f;      // 텍스트가 나타나는 딜레이
-    [SerializeField] private float _textFadeInDuration = 0.5f;   // 텍스트 페이드인 시간
-    [SerializeField] private float _textDisplayDuration = 2.0f;  // 텍스트가 보이는 시간
-    [SerializeField] private float _textFadeOutDuration = 0.3f;  // 텍스트 페이드아웃 시간 (빠르게!)
+    [SerializeField] private float _textAppearDelay = 0.3f;
+    [SerializeField] private float _textFadeInDuration = 0.5f;
+    [SerializeField] private float _textDisplayDuration = 2.0f;
+    [SerializeField] private float _textFadeOutDuration = 0.3f;
     
     [Header("추가 효과")]
     [SerializeField] private bool _useScaleEffect = true;
@@ -39,9 +36,6 @@ public class LevelUpTextAnimation : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 텍스트 애니메이션 재생
-    /// </summary>
     public void PlayTextAnimation(string levelText = null, string messageText = null)
     {
         if (_isPlaying)
@@ -77,7 +71,7 @@ public class LevelUpTextAnimation : MonoBehaviour
         // 딜레이 (이미지가 먼저 나타나도록)
         yield return new WaitForSeconds(_textAppearDelay);
 
-        // 페이드 인 (천천히 나타남)
+        // 페이드 인
         float elapsed = 0f;
         while (elapsed < _textFadeInDuration)
         {
@@ -153,9 +147,6 @@ public class LevelUpTextAnimation : MonoBehaviour
 
     public bool IsPlaying => _isPlaying;
 
-    /// <summary>
-    /// 텍스트 즉시 숨김
-    /// </summary>
     public void HideTextImmediately()
     {
         StopAllCoroutines();
