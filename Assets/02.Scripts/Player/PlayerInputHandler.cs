@@ -27,6 +27,10 @@ namespace Player
         [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
         public event Action OnDodgeInputPressed;
 
+        [Header("Skill Input")]
+        [SerializeField] private KeyCode _qSkillKey = KeyCode.Q;
+        [SerializeField] private KeyCode _eSkillKey = KeyCode.E;
+        [SerializeField] private KeyCode _rSkillKey = KeyCode.R;
         public event Action<SkillSlot> OnSkillInputPressed;
 
         private void Update()
@@ -54,11 +58,11 @@ namespace Player
                 OnDodgeInputPressed?.Invoke();
             }
 
-            if (Input.GetKeyDown(KeyCode.Q))
+            if (Input.GetKeyDown(_qSkillKey))
                 OnSkillInputPressed?.Invoke(SkillSlot.Q);
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(_eSkillKey))
                 OnSkillInputPressed?.Invoke(SkillSlot.E);
-            if (Input.GetKeyDown(KeyCode.R))
+            if (Input.GetKeyDown(_rSkillKey))
                 OnSkillInputPressed?.Invoke(SkillSlot.R);
         }
 

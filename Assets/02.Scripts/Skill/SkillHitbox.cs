@@ -14,27 +14,19 @@ namespace Skill
         private readonly HashSet<IDamageable> _hitTargets = new HashSet<IDamageable>();
 
         public event Action<HitInfo> OnHit;
-        
-        public int PerformCheck(
-            SkillAreaType areaType,
-            float range,
-            float angle,
-            float boxWidth,
-            float boxHeight,
-            Vector3 positionOffset,
-            LayerMask enemyLayer,
-            CombatTeam attackerTeam)
+
+        public int PerformCheck(SkillAreaContext context)
         {
             _hitTargets.Clear();
 
-            int hitCount = GetTargetsInArea(areaType, range, angle, boxWidth, boxHeight, positionOffset, enemyLayer);
+            int hitCount = GetTargetsInArea(context);
             int validHits = 0;
 
             for (int i = 0; i < hitCount; i++)
             {
                 var collider = _hitBuffer[i];
 
-                if (!TryGetValidTarget(collider, attackerTeam, out var damageable, out var targetCombatant))
+                if (!TryGetValidTarget(collider, context.AttackerTeam, out var damageable, out var targetCombatant))
                     continue;
 
                 _hitTargets.Add(damageable);
@@ -49,22 +41,15 @@ namespace Skill
             return validHits;
         }
 
-        private int GetTargetsInArea(
-            SkillAreaType areaType,
-            float range,
-            float angle,
-            float boxWidth,
-            float boxHeight,
-            Vector3 positionOffset,
-            LayerMask enemyLayer)
+        private int GetTargetsInArea(SkillAreaContext context)
         {
-            Vector3 origin = transform.position + transform.TransformDirection(positionOffset);
+            Vector3 origin = transform.position + transform.TransformDirection(context.PositionOffset);
 
-            return areaType switch
+            return context.AreaType switch
             {
-                SkillAreaType.Sphere => GetTargetsInSphere(origin, range, enemyLayer),
-                SkillAreaType.Box => GetTargetsInBox(origin, range, boxWidth, boxHeight, enemyLayer),
-                SkillAreaType.Cone => GetTargetsInCone(origin, range, angle, enemyLayer),
+                SkillAreaType.Sphere => GetTargetsInSphere(origin, context.Range, context.EnemyLayer),
+                SkillAreaType.Box => GetTargetsInBox(origin, context.Range, context.BoxWidth, context.BoxHeight, context.EnemyLayer),
+                SkillAreaType.Cone => GetTargetsInCone(origin, context.Range, context.Angle, context.EnemyLayer),
                 _ => 0
             };
         }

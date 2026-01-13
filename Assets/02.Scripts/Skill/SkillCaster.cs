@@ -1,13 +1,15 @@
 using System;
-using UnityEngine;
+using System.Collections.Generic;
 using Combat.Core;
+using Combat.Damage;
 using Player;
 using Progression;
+using UnityEngine;
 
 namespace Skill
 {
     [RequireComponent(typeof(SkillHitbox))]
-    public class SkillCaster : MonoBehaviour
+    public class SkillCaster : MonoBehaviour, ISkillAnimationReceiver
     {
         [Header("Skills")]
         [SerializeField] private PlayerSkillData _qSkill;
@@ -23,12 +25,23 @@ namespace Skill
         private PlayerVFXController _vfxController;
         private SkillHitbox _skillHitbox;
 
-        private readonly int[] _skillLevels = new int[3];
-        private readonly float[] _cooldownEndTimes = new float[3];
+        private readonly Dictionary<SkillSlot, int> _skillLevels = new()
+        {
+            { SkillSlot.Q, 0 },
+            { SkillSlot.E, 0 },
+            { SkillSlot.R, 0 }
+        };
+        private readonly Dictionary<SkillSlot, float> _cooldownEndTimes = new()
+        {
+            { SkillSlot.Q, 0f },
+            { SkillSlot.E, 0f },
+            { SkillSlot.R, 0f }
+        };
         private bool _isCasting;
-        
+
         private PlayerSkillData _currentSkill;
         private SkillTierData _currentTier;
+        private AttackContext _currentAttackContext;
 
         public bool IsCasting => _isCasting;
         public event Action<SkillSlot, float> OnSkillUsed;
@@ -98,28 +111,31 @@ namespace Skill
 
         public bool IsSkillReady(SkillSlot slot)
         {
-            int index = (int)slot - 1;
-            if (index < 0 || index >= _cooldownEndTimes.Length) return false;
-            return Time.time >= _cooldownEndTimes[index];
+            if (!_cooldownEndTimes.TryGetValue(slot, out float endTime)) return false;
+            return Time.time >= endTime;
         }
 
         public float GetRemainingCooldown(SkillSlot slot)
         {
-            int index = (int)slot - 1;
-            if (index < 0 || index >= _cooldownEndTimes.Length) return 0f;
-            return Mathf.Max(0f, _cooldownEndTimes[index] - Time.time);
+            if (!_cooldownEndTimes.TryGetValue(slot, out float endTime)) return 0f;
+            return Mathf.Max(0f, endTime - Time.time);
         }
 
         private void ExecuteSkill(PlayerSkillData skill, SkillSlot slot)
         {
-            int index = (int)slot - 1;
-            var tier = skill.GetTier(_skillLevels[index]);
-            
+            var tier = skill.GetTier(_skillLevels[slot]);
+
             _currentSkill = skill;
             _currentTier = tier;
+            _currentAttackContext = AttackContext.Scaled(
+                _combatant,
+                tier.DamageMultiplier,
+                1f,
+                DamageType.Skill
+            );
 
             _isCasting = true;
-            _cooldownEndTimes[index] = Time.time + tier.Cooldown;
+            _cooldownEndTimes[slot] = Time.time + tier.Cooldown;
             OnSkillUsed?.Invoke(slot, tier.Cooldown);
 
             _combatant.SetSuperArmor(true);
@@ -136,39 +152,26 @@ namespace Skill
         {
             if (!_isCasting || _currentSkill == null || _currentTier == null)
                 return;
-            
-            _skillHitbox.PerformCheck(
-                _currentSkill.AreaType,
-                _currentTier.Range,
-                _currentTier.Angle,
-                _currentTier.BoxWidth,
-                _currentTier.BoxHeight,
-                _currentTier.PositionOffset,
+
+            var areaContext = SkillAreaContext.Create(
+                _currentSkill,
+                _currentTier,
                 _enemyLayer,
                 _combatant.Team
             );
-            
+            _skillHitbox.PerformCheck(areaContext);
+
             SpawnEffect(_currentTier);
         }
 
         private void HandleHit(HitInfo hitInfo)
         {
-            if (hitInfo.TargetCombatant is Combatant targetCombatant)
-            {
-                var attackContext = AttackContext.Scaled(
-                    _combatant,
-                    _currentTier.DamageMultiplier,
-                    1f,
-                    DamageType.Skill
-                );
-                var hitContext = new HitContext(
-                    hitInfo.TargetCollider.transform.position,
-                    (hitInfo.TargetCollider.transform.position - transform.position).normalized,
-                    DamageType.Skill
-                );
-                targetCombatant.TakeDamage(attackContext, hitContext);
-            }
-
+            var damageInfo = DamageProcessor.Process(
+                _currentAttackContext,
+                hitInfo,
+                transform.position
+            );
+            hitInfo.Target.TakeDamage(damageInfo);
             OnSkillHit?.Invoke(hitInfo);
         }
 
@@ -195,10 +198,9 @@ namespace Skill
 
         private void HandleSkillEnhanced(SkillSlot slot)
         {
-            int index = (int)slot - 1;
-            if (index >= 0 && index < _skillLevels.Length)
+            if (_skillLevels.ContainsKey(slot))
             {
-                _skillLevels[index]++;
+                _skillLevels[slot]++;
             }
         }
         
@@ -235,6 +237,16 @@ namespace Skill
             _currentSkill = null;
             _currentTier = null;
             _combatant?.SetSuperArmor(false);
+        }
+
+        public void StartSkillTrail()
+        {
+            _vfxController?.StartSkillTrail();
+        }
+
+        public void StopSkillTrail()
+        {
+            _vfxController?.StopSkillTrail();
         }
 
 #if UNITY_EDITOR

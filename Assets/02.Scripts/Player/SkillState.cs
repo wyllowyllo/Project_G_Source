@@ -19,8 +19,7 @@ namespace Player
         [Range(0f, 1f)]
         [SerializeField] private float _animEndTime = 0.9f;
 
-        private SkillCaster _skillCaster;
-        private PlayerVFXController _vfxController;
+        private ISkillAnimationReceiver _receiver;
 
         private bool _damageApplied;
         private bool _trailStarted;
@@ -29,7 +28,7 @@ namespace Player
 
         public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
-            CacheComponents(animator);
+            CacheReceiver(animator);
             ResetFlags();
         }
 
@@ -37,46 +36,34 @@ namespace Player
         {
             float time = stateInfo.normalizedTime;
 
-            // Trail Start
             if (!_trailStarted && time >= _trailStartTime)
             {
                 _trailStarted = true;
-                _vfxController?.StartSkillTrail();
+                _receiver?.StartSkillTrail();
             }
 
-            // Damage Frame
             if (!_damageApplied && time >= _damageFrameTime)
             {
                 _damageApplied = true;
-                _skillCaster?.OnSkillDamageFrame();
+                _receiver?.OnSkillDamageFrame();
             }
 
-            // Trail End
             if (!_trailEnded && _trailStarted && time >= _trailEndTime)
             {
                 _trailEnded = true;
-                _vfxController?.StopSkillTrail();
+                _receiver?.StopSkillTrail();
             }
 
-            // Animation End
             if (!_animEnded && time >= _animEndTime)
             {
                 _animEnded = true;
-                _skillCaster?.OnSkillComplete();
+                _receiver?.OnSkillComplete();
             }
         }
 
-        private void CacheComponents(Animator animator)
+        private void CacheReceiver(Animator animator)
         {
-            if (_skillCaster == null)
-            {
-                _skillCaster = animator.GetComponent<SkillCaster>();
-            }
-
-            if (_vfxController == null)
-            {
-                _vfxController = animator.GetComponent<PlayerVFXController>();
-            }
+            _receiver ??= animator.GetComponent<ISkillAnimationReceiver>();
         }
 
         private void ResetFlags()
