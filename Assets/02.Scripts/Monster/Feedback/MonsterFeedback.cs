@@ -195,6 +195,8 @@ namespace Monster.Feedback
                 ? info.HitPoint
                 : transform.position + Vector3.up;
 
+            //spawnPos.y += 0.5f;
+
             var vfx = Instantiate(prefab, spawnPos, Quaternion.identity);
             Destroy(vfx, _vfxLifetime);
         }
