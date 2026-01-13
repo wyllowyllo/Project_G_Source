@@ -11,6 +11,7 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private Transform _player;
     [SerializeField] private PlayerEquipment _playerEquipment;
     [SerializeField] private Player.PlayerMovement _playerMovement;
+    [SerializeField] private Player.PlayerCombat _playerCombat;
 
     [Header("컴포넌트")]
     [SerializeField] private CharacterViewerInput _inputHandler;
@@ -102,6 +103,11 @@ private void Start()
             if (_playerMovement == null)
             {
                 _playerMovement = _player.GetComponent<Player.PlayerMovement>();
+            }
+
+            if (_playerCombat == null)
+            {
+                _playerCombat = _player.GetComponent<Player.PlayerCombat>();
             }
         }
     }
@@ -252,8 +258,6 @@ private void Start()
 
         // 복사본에서 불필요한 컴포넌트 비활성화
         DisableCloneComponents();
-
-        Debug.Log("[CharacterViewer] 캐릭터 복사본 생성 완료");
     }
 
     private void DisableCloneComponents()
@@ -267,14 +271,12 @@ private void Start()
             {
                 component.OnCloneDisable(); // 정리 작업 수행
                 mb.enabled = false;
-                Debug.Log($"[Clone] ICloneDisableable 컴포넌트 비활성화: {mb.GetType().Name}");
             }
         }
 
         if (_characterClone.TryGetComponent<CharacterController>(out var characterController))
         {
             characterController.enabled = false;
-            Debug.Log("[Clone] CharacterController 비활성화");
         }
 
         DisableComponentsByType(new System.Type[]
@@ -301,7 +303,6 @@ private void Start()
         if (_characterClone.TryGetComponent<T>(out var component))
         {
             component.enabled = false;
-            Debug.Log($"[Clone] 컴포넌트 비활성화: {typeof(T).Name}");
         }
     }
 
@@ -400,6 +401,8 @@ private void OpenViewer()
         // 플레이어 이동 비활성화
         SetPlayerMovementEnabled(false);
 
+        SetPlayerCombatEnabled(false);
+
         // 코루틴으로 복사본 생성 및 카메라 설정
         StartCoroutine(InitializeViewerCoroutine());
 
@@ -471,14 +474,40 @@ private void OpenViewer()
 
         SetPlayerMovementEnabled(true);
 
+        SetPlayerCombatEnabled(true);
+
         SetCursorState(false);
     }
+
+    /*    private void SetPlayerMovementEnabled(bool enabled)
+        {
+            if (_playerMovement != null)
+            {
+                _playerMovement.SetMovementEnabled(enabled);
+            }
+        }*/
 
     private void SetPlayerMovementEnabled(bool enabled)
     {
         if (_playerMovement != null)
         {
             _playerMovement.SetMovementEnabled(enabled);
+
+            // KinematicCharacterMotor를 직접 비활성화해서 확실하게 멈춤!
+            var motor = _playerMovement.GetMotor();
+            if (motor != null)
+            {
+                motor.enabled = enabled;
+            }
+        }
+
+    }
+
+    private void SetPlayerCombatEnabled(bool enabled)
+    {
+        if (_playerCombat != null)
+        {
+            _playerCombat.SetCombatEnabled(enabled);
         }
     }
 

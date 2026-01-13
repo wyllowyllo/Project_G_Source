@@ -6,7 +6,7 @@ using UnityEngine.Events;
 
 namespace Player
 {
-    public class PlayerCombat : MonoBehaviour
+    public class PlayerCombat : MonoBehaviour, ICloneDisableable
     {
         [Header("Events")]
         public UnityEvent<int> OnComboStarted;
@@ -300,6 +300,13 @@ namespace Player
             _isDodging = false;
             
             _playerMovement?.OnDodgeMovementEnd();
+        }
+
+        public void OnCloneDisable()
+        {
+            // 입력 비활성화
+            _inputHandler?.SetEnabled(false);
+            _inputHandler?.ClearBuffer();
         }
     }
 }
