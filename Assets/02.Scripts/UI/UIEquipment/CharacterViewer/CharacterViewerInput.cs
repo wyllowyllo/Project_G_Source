@@ -9,7 +9,6 @@ public class CharacterViewerInput : MonoBehaviour
     // 입력 이벤트
     public event Action OnToggleRequested;
     public event Action<float> OnRotationInput;
-    public event Action<float> OnZoomInput;
 
     private bool _isActive = false;
 
@@ -30,7 +29,6 @@ public class CharacterViewerInput : MonoBehaviour
         if (_isActive)
         {
             HandleRotationInput();
-            HandleZoomInput();
         }
     }
 
@@ -46,18 +44,15 @@ public class CharacterViewerInput : MonoBehaviour
         }
     }
 
-    private void HandleZoomInput()
-    {
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll != 0f)
-        {
-            OnZoomInput?.Invoke(scroll);
-        }
-    }
-
     public KeyCode ToggleKey
     {
         get => _toggleKey;
         set => _toggleKey = value;
+    }
+
+    public void OnCloneDisable()
+    {
+        OnToggleRequested = null;
+        OnRotationInput = null;
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Player
 {
-    public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester
+    public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester, ICloneDisableable
     {
         private const float MinVelocityThreshold = 0.01f;
         private const float MinRootMotionThreshold = 0.000001f;
@@ -417,7 +417,14 @@ namespace Player
                 _rootMotionMultiplier *= mult;
             }
         }
-        
+
+        public void OnCloneDisable()
+        {
+            // 이동 입력 벡터, 속도 초기화, 회전상태 리셋, RootMotion 데이터 해제
+            SetMovementEnabled(false);
+            ReleaseRootMotion(this);
+        }
+
         public void ExecuteDodgeMovement()
         {
             Vector3 dodgeDirection = GetCurrentInputDirection();
