@@ -12,14 +12,10 @@ namespace Monster.Feedback
     [RequireComponent(typeof(Combatant))]
     public class MonsterFeedback : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private NavMeshAgent _navAgent;
-
         [Header("Knockback")]
         [SerializeField] private float _knockbackDistance = 1.5f;
         [SerializeField] private float _knockbackDuration = 0.15f;
         [SerializeField] private AnimationCurve _knockbackCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
         private Coroutine _knockbackCoroutine;
 
         [Header("VFX")]
@@ -43,6 +39,7 @@ namespace Monster.Feedback
         [SerializeField] private FeedbackSettings _feedbackSettings;
         [SerializeField] private HitFlashController _hitFlashController;
 
+        private NavMeshAgent _navAgent;
         private Combatant _combatant;
 
         private void Awake()
@@ -96,16 +93,16 @@ namespace Monster.Feedback
             PlayDeathSfx();
 
             // Enhanced 사망 피드백
-            TriggerEnhancedFeedback(FeedbackIntensity.Death, transform.position, Vector3.zero);
+            TriggerEnhancedFeedback(EFeedbackIntensity.Death, transform.position, Vector3.zero);
         }
 
-        private FeedbackIntensity DetermineIntensity(DamageInfo info)
+        private EFeedbackIntensity DetermineIntensity(DamageInfo info)
         {
-            if (info.IsCritical) return FeedbackIntensity.Critical;
-            return FeedbackIntensity.Normal;
+            if (info.IsCritical) return EFeedbackIntensity.Critical;
+            return EFeedbackIntensity.Normal;
         }
 
-        private void TriggerEnhancedFeedback(FeedbackIntensity intensity, Vector3 hitPoint, Vector3 hitDirection)
+        private void TriggerEnhancedFeedback(EFeedbackIntensity intensity, Vector3 hitPoint, Vector3 hitDirection)
         {
             if (_feedbackSettings == null) return;
 
@@ -129,7 +126,7 @@ namespace Monster.Feedback
             _hitFlashController?.TriggerFlash(flashConfig);
 
             // 화면 효과 (크리티컬/사망만)
-            if (intensity == FeedbackIntensity.Critical || intensity == FeedbackIntensity.Death)
+            if (intensity == EFeedbackIntensity.Critical || intensity == EFeedbackIntensity.Death)
             {
                 var screenConfig = _feedbackSettings.GetScreenEffectConfig(intensity);
                 ScreenEffectController.Instance?.TriggerScreenEffect(screenConfig);

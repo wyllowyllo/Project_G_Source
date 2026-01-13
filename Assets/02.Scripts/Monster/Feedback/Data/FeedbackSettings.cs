@@ -73,42 +73,42 @@ namespace Monster.Feedback.Data
             Duration = 0.25f
         };
 
-        public HitstopConfig GetHitstopConfig(FeedbackIntensity intensity)
+        public HitstopConfig GetHitstopConfig(EFeedbackIntensity intensity)
         {
             return intensity switch
             {
-                FeedbackIntensity.Critical or FeedbackIntensity.Heavy => _criticalHitstop,
-                FeedbackIntensity.Death => _deathHitstop,
+                EFeedbackIntensity.Critical or EFeedbackIntensity.Heavy => _criticalHitstop,
+                EFeedbackIntensity.Death => _deathHitstop,
                 _ => _normalHitstop
             };
         }
 
-        public CameraShakeConfig GetCameraShakeConfig(FeedbackIntensity intensity)
+        public CameraShakeConfig GetCameraShakeConfig(EFeedbackIntensity intensity)
         {
             return intensity switch
             {
-                FeedbackIntensity.Critical or FeedbackIntensity.Heavy => _criticalShake,
-                FeedbackIntensity.Death => _deathShake,
+                EFeedbackIntensity.Critical or EFeedbackIntensity.Heavy => _criticalShake,
+                EFeedbackIntensity.Death => _deathShake,
                 _ => _normalShake
             };
         }
 
-        public HitFlashConfig GetHitFlashConfig(FeedbackIntensity intensity)
+        public HitFlashConfig GetHitFlashConfig(EFeedbackIntensity intensity)
         {
             return intensity switch
             {
-                FeedbackIntensity.Critical or FeedbackIntensity.Heavy => _criticalFlash,
-                FeedbackIntensity.Death => _deathFlash,
+                EFeedbackIntensity.Critical or EFeedbackIntensity.Heavy => _criticalFlash,
+                EFeedbackIntensity.Death => _deathFlash,
                 _ => _normalFlash
             };
         }
 
-        public ScreenEffectConfig GetScreenEffectConfig(FeedbackIntensity intensity)
+        public ScreenEffectConfig GetScreenEffectConfig(EFeedbackIntensity intensity)
         {
             return intensity switch
             {
-                FeedbackIntensity.Critical or FeedbackIntensity.Heavy => _criticalScreen,
-                FeedbackIntensity.Death => _deathScreen,
+                EFeedbackIntensity.Critical or EFeedbackIntensity.Heavy => _criticalScreen,
+                EFeedbackIntensity.Death => _deathScreen,
                 _ => _normalScreen
             };
         }
