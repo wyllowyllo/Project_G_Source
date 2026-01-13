@@ -150,6 +150,12 @@ namespace Monster.Feedback
 
         private IEnumerator KnockbackCoroutine(Vector3 hitDirection)
         {
+            // NavMeshAgent가 활성화되어 있고 NavMesh 위에 있는지 확인
+            if (!_navAgent.isActiveAndEnabled || !_navAgent.isOnNavMesh)
+            {
+                yield break;
+            }
+
             Vector3 startPos = transform.position;
             Vector3 targetPos = startPos + hitDirection * _knockbackDistance;
 
@@ -184,8 +190,11 @@ namespace Monster.Feedback
             }
 
             // NavAgent 위치 동기화 및 복원
-            _navAgent.Warp(transform.position);
-            _navAgent.updatePosition = wasUpdatePosition;
+            if (_navAgent.isActiveAndEnabled && _navAgent.isOnNavMesh)
+            {
+                _navAgent.Warp(transform.position);
+                _navAgent.updatePosition = wasUpdatePosition;
+            }
             _knockbackCoroutine = null;
         }
 
