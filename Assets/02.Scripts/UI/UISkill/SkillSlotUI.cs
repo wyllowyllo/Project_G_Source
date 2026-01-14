@@ -18,7 +18,10 @@ public class SkillSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public float animationDuration = 0.3f;
 
     [Header("Lock UI")]
+    public GameObject lockOverlay;
+    public TextMeshProUGUI unlockText;
 
+    private bool _isUnlocked = true;
 
     private SkillData skillData;
     private SkillTooltip tooltip;
@@ -60,6 +63,12 @@ public class SkillSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (!_isUnlocked)
+        {
+            return;
+        }
+
+
         if (skillData != null && tooltip != null)
         {
             // RectTransform을 직접 전달
@@ -84,6 +93,30 @@ public class SkillSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
         {
             StopAllCoroutines();
             StartCoroutine(AnimateHover(false));
+        }
+    }
+
+    public void SetUnlocked(bool unlocked, int requiredLevel)
+    {
+        _isUnlocked = unlocked;
+
+        if (iconImage != null)
+        {
+            iconImage.enabled = unlocked;
+        }
+        if (levelText != null)
+        {
+            levelText.enabled = unlocked;
+        }
+
+        if(unlockText != null)
+        {
+            unlockText.text = unlocked ? "" : $"Lv.{requiredLevel}";
+        }
+
+        if (lockOverlay != null)
+        {
+            lockOverlay.SetActive(!unlocked);
         }
     }
 

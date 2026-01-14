@@ -241,28 +241,4 @@ public class RankUpManager : MonoBehaviour
         ApplyRankColors(_currentRank);
         UpdateRankUI();
     }
-
-/*    private void HandleLevelUp(int previousLevel, int newLevel)
-    {
-        if (_rankConfig.IsRankUp(previousLevel, newLevel, out string newRank))
-        {
-            // 기본 애니메이션
-            PlayRankUpAnimation(newRank);
-
-            // S 랭크 도달 시 특별 효과
-            if (newRank == "S")
-            {
-                PlaySpecialSRankEffect();
-            }
-
-            _currentRank = newRank;
-        }
-    }
-
-    private void PlaySpecialSRankEffect()
-    {
-        // 추가 파티클 효과
-        // 특별 사운드
-        // 화면 전체 이펙트 등
-    }*/
 }

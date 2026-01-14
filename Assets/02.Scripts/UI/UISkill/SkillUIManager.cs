@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using Progression;
 
 public class SkillUIManager : MonoBehaviour
 {
@@ -16,16 +17,41 @@ public class SkillUIManager : MonoBehaviour
     
     [Header("Animation Settings")]
     public float slotAnimationDelay = 0.1f;
-    
+
+    [SerializeField] private PlayerProgression _playerProgression;
+
+    public void RefreshSlotUnlocksPublic() => RefreshSlotUnlocks();
+
     private List<SkillSlotUI> skillSlots = new List<SkillSlotUI>();
     
     private void Start()
     {
+        if(_playerProgression == null)
+        {
+            _playerProgression = FindObjectOfType<PlayerProgression>();
+        }
         InitializeSkills();
         SetupUI();
         CreateSkillSlots();
     }
-    
+
+    private void OnEnable()
+    {
+        if (_playerProgression != null)
+            _playerProgression.OnLevelUp += HandleLevelUp;
+    }
+
+    private void OnDisable()
+    {
+        if (_playerProgression != null)
+            _playerProgression.OnLevelUp -= HandleLevelUp;
+    }
+
+    private void HandleLevelUp(int prev, int next)
+    {
+        RefreshSlotUnlocks();
+    }
+
     private void InitializeSkills()
     {
         if (skills.Count == 0)
@@ -53,10 +79,10 @@ public class SkillUIManager : MonoBehaviour
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gridLayout.constraintCount = 3;
             gridLayout.cellSize = new Vector2(120, 120);
-            gridLayout.spacing = new Vector2(120, 100);
+            gridLayout.spacing = new Vector2(120, 110);
         }
     }
-    
+
     private void CreateSkillSlots()
     {
         if (skillSlotPrefab == null || skillGridContainer == null)
@@ -85,6 +111,8 @@ public class SkillUIManager : MonoBehaviour
                 skillSlots.Add(slot);
             }
         }
+
+        RefreshSlotUnlocks();
     }
     
     // 스킬 데이터를 동적으로 업데이트하는 메서드
@@ -104,6 +132,36 @@ public class SkillUIManager : MonoBehaviour
         {
             skills[index].level++;
             skillSlots[index].Initialize(skills[index], tooltip);
+        }
+    }
+
+    private int GetUnlockLevelForIndex(int index)
+    {
+        int col = index % 3;
+
+        // Element1,4,7
+        if (col == 1)
+            return 10;
+
+        // Element2,5,8
+        if (col == 2)
+            return 20;
+
+        // Element0,3,6
+        return 1; // 기본 해금 레벨
+    }
+
+    private void RefreshSlotUnlocks()
+    {
+        if (_playerProgression == null) return;
+
+        int playerLevel = _playerProgression.Level;
+
+        for (int i = 0; i < skillSlots.Count; i++)
+        {
+            int need = GetUnlockLevelForIndex(i);
+            bool unlocked = playerLevel >= need;
+            skillSlots[i].SetUnlocked(unlocked, need);
         }
     }
 }
