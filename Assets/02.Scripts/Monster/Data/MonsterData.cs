@@ -10,6 +10,14 @@ namespace Monster.Data
         HeavyOnly   // 강공만 사용 (약공 없음)
     }
 
+    // 몬스터 공격 타입
+    public enum EMonsterAttackType
+    {
+        Melee,      // 근접 공격
+        Ranged,     // 원거리 공격
+        Hybrid      // 혼합 (거리에 따라 전환)
+    }
+
     // 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject
     [CreateAssetMenu(fileName = "MonsterData", menuName = "ProjectG/Monster/MonsterData")]
     public class MonsterData : ScriptableObject
@@ -36,6 +44,10 @@ namespace Monster.Data
         [SerializeField] private string _monsterName = "Monster";
         [SerializeField] private int _monsterLevel = 1;
 
+        [Header("공격 타입")]
+        [Tooltip("몬스터의 공격 방식")]
+        [SerializeField] private EMonsterAttackType _attackType = EMonsterAttackType.Melee;
+
         [Header("공격 행동")]
         [SerializeField] private float _attackRange = 2f;
         [Tooltip("약공 사정거리 (제자리 공격)")]
@@ -43,6 +55,20 @@ namespace Monster.Data
         [Tooltip("강공 사정거리 (돌진 공격)")]
         [SerializeField] private float _heavyAttackRange = 2.5f;
         [SerializeField] private float _attackCooldown = 1.5f;
+
+        [Header("원거리 공격")]
+        [Tooltip("투사체 프리팹")]
+        [SerializeField] private GameObject _projectilePrefab;
+        [Tooltip("투사체 발사 위치 오프셋 (로컬 좌표)")]
+        [SerializeField] private Vector3 _projectileSpawnOffset = new Vector3(0f, 1f, 0.5f);
+        [Tooltip("투사체 속도")]
+        [SerializeField] private float _projectileSpeed = 15f;
+        [Tooltip("원거리 공격 사거리")]
+        [SerializeField] private float _rangedAttackRange = 10f;
+        [Tooltip("원거리 공격 최소 거리 (이보다 가까우면 근접 또는 후퇴)")]
+        [SerializeField] private float _rangedMinDistance = 4f;
+        [Tooltip("원거리 공격 데미지 배율")]
+        [SerializeField] private float _rangedDamageMultiplier = 1.0f;
 
         [Header("이동 스탯")]
         [SerializeField] private float _moveSpeed = 3.5f;
@@ -139,6 +165,17 @@ namespace Monster.Data
         // 근접 공격 Properties
         public float ChargeSpeed => _chargeSpeed;
         public float RetreatDistance => _retreatDistance;
+
+        // 공격 타입 및 원거리 공격 Properties
+        public EMonsterAttackType AttackType => _attackType;
+        public GameObject ProjectilePrefab => _projectilePrefab;
+        public Vector3 ProjectileSpawnOffset => _projectileSpawnOffset;
+        public float ProjectileSpeed => _projectileSpeed;
+        public float RangedAttackRange => _rangedAttackRange;
+        public float RangedMinDistance => _rangedMinDistance;
+        public float RangedDamageMultiplier => _rangedDamageMultiplier;
+        public bool IsRanged => _attackType == EMonsterAttackType.Ranged || _attackType == EMonsterAttackType.Hybrid;
+        public bool IsMelee => _attackType == EMonsterAttackType.Melee || _attackType == EMonsterAttackType.Hybrid;
 
         // 전투 리듬
         public EAttackMode AttackMode => _attackMode;

@@ -49,10 +49,11 @@ namespace Monster.Ability
                 _eventReceiver = _animator.gameObject.AddComponent<MonsterAnimationEventReceiver>();
             }
 
-            // MonsterAttacker 찾기 (MonsterController와 같은 오브젝트에 있음)
+            // Attacker 컴포넌트 찾기 (MonsterController와 같은 오브젝트에 있음)
             MonsterAttacker monsterAttacker = _controller.GetComponent<MonsterAttacker>();
+            MonsterRangedAttacker rangedAttacker = _controller.GetComponent<MonsterRangedAttacker>();
 
-            _eventReceiver.Initialize(_controller, monsterAttacker);
+            _eventReceiver.Initialize(_controller, monsterAttacker, rangedAttacker);
         }
 
         // ===== Float 파라미터 =====

@@ -9,6 +9,7 @@ using Monster.Manager;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using EMonsterAttackType = Monster.Data.EMonsterAttackType;
 
 namespace Monster.AI
 {
@@ -32,6 +33,7 @@ namespace Monster.AI
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
         private MonsterAttacker _monsterAttacker;
+        private MonsterRangedAttacker _rangedAttacker;
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
         private Animator _animator;
@@ -45,6 +47,8 @@ namespace Monster.AI
         public MonsterData Data => _monsterData;
         public Combatant Combatant => _combatant;
         public MonsterAttacker Attacker => _monsterAttacker;
+        public MonsterRangedAttacker RangedAttacker => _rangedAttacker;
+        public bool IsRangedType => _monsterData != null && _monsterData.IsRanged;
 
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
@@ -62,28 +66,35 @@ namespace Monster.AI
             _navAgent = GetComponent<NavMeshAgent>();
             _combatant = GetComponent<Combatant>();
             _monsterAttacker = GetComponent<MonsterAttacker>();
+            _rangedAttacker = GetComponent<MonsterRangedAttacker>();
             _groupCommandProvider = new GroupCommandProvider(this);
 
-            
+
             _animator = GetComponentInChildren<Animator>();
 
             InitializeMonster();
-            InitializeMonsterAttacker();
+            InitializeAttackers();
             InitializeAbilities();
             InitializeStateMachine();
         }
 
-        private void InitializeMonsterAttacker()
+        private void InitializeAttackers()
         {
             _monsterAttacker?.Initialize();
+
+            if (_rangedAttacker != null)
+            {
+                _rangedAttacker.SetMonsterData(_monsterData);
+                _rangedAttacker.Initialize();
+            }
         }
         
         private void Start()
         {
-           
             if (PlayerReferenceProvider.Instance != null)
             {
                 _playerTransform = PlayerReferenceProvider.Instance.PlayerTransform;
+                _rangedAttacker?.SetPlayerTransform(_playerTransform);
             }
             else
             {
@@ -138,7 +149,17 @@ namespace Monster.AI
             _stateMachine.RegisterState(EMonsterState.Alert, new AlertState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine, _groupCommandProvider));
-            _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
+
+            // 공격 타입에 따라 다른 AttackState 등록
+            if (_monsterData.AttackType == EMonsterAttackType.Ranged)
+            {
+                _stateMachine.RegisterState(EMonsterState.Attack, new RangedAttackState(this, _stateMachine, _groupCommandProvider));
+            }
+            else
+            {
+                _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
+            }
+
             _stateMachine.RegisterState(EMonsterState.Recover, new RecoverState(this, _stateMachine, _groupCommandProvider));
             _stateMachine.RegisterState(EMonsterState.ReturnHome, new ReturnHomeState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Hit, new HitState(this, _stateMachine));

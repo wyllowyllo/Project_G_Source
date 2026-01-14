@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Monster.Combat
 {
     [RequireComponent(typeof(Combatant))]
-    public class MonsterAttacker : MonoBehaviour
+    public class MonsterAttacker : MonoBehaviour, IMonsterAttacker
     {
         [Header("References")]
         [SerializeField] private HitboxTrigger[] _hitboxes;
@@ -19,7 +19,9 @@ namespace Monster.Combat
         private Combatant _combatant;
         private AttackContext _currentAttackContext;
         private bool _isInitialized;
+        private bool _isAttacking;
 
+        public bool IsAttacking => _isAttacking;
         public event Action<IDamageable, DamageInfo> OnHit;
 
         public void Initialize()
@@ -48,10 +50,21 @@ namespace Monster.Combat
             }
         }
 
+        public void ExecuteAttack(bool isHeavy)
+        {
+            EnableHitbox(isHeavy);
+        }
+
+        public void CancelAttack()
+        {
+            DisableHitbox();
+        }
+
         public void EnableHitbox(bool isHeavy)
         {
             if (!_isInitialized) return;
 
+            _isAttacking = true;
             float multiplier = isHeavy ? _heavyAttackMultiplier : _lightAttackMultiplier;
 
             _currentAttackContext = AttackContext.Scaled(
@@ -69,6 +82,7 @@ namespace Monster.Combat
 
         public void DisableHitbox()
         {
+            _isAttacking = false;
             foreach (var hitbox in _hitboxes)
             {
                 hitbox?.DisableHitbox();
