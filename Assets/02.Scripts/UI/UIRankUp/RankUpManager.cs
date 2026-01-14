@@ -9,6 +9,9 @@ public class RankUpManager : MonoBehaviour
     [SerializeField] private RankAnimation _rankAnimation;
     [SerializeField] private RankConfig _rankConfig;
 
+    [SerializeField] private ParticleSystem _rankParticleEffect;
+    [SerializeField] private ParticleSystem _rankParticleSubEffect;
+
     [Header("UI 참조 (선택사항)")]
     [SerializeField] private TextMeshProUGUI _currentRankText;
     [SerializeField] private TextMeshProUGUI _nextRankText;
@@ -115,9 +118,30 @@ public class RankUpManager : MonoBehaviour
         
         // 랭크 색상 적용
         ApplyRankColors(newRank);
-        
+
+        PlayRankUpEffect();
+
         // 애니메이션 실행
         _rankAnimation.PlayRankUpAnimation(newRank);
+    }
+
+    private void PlayRankUpEffect()
+    {
+        if (_rankParticleEffect == null)
+        {
+            return;
+        }
+
+        if (_rankParticleSubEffect == null)
+        {
+            return;
+        }
+
+        _rankParticleEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        _rankParticleEffect.Play();
+
+        _rankParticleSubEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        _rankParticleSubEffect.Play();
     }
 
     // RankConfig의 설정을 애니메이션에 적용
