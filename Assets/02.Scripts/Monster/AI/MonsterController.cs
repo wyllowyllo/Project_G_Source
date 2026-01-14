@@ -150,14 +150,21 @@ namespace Monster.AI
             _stateMachine.RegisterState(EMonsterState.Approach, new ApproachState(this, _stateMachine));
             _stateMachine.RegisterState(EMonsterState.Strafe, new StrafeState(this, _stateMachine, _groupCommandProvider));
 
-            // 공격 타입에 따라 다른 AttackState 등록
-            if (_monsterData.AttackType == EMonsterAttackType.Ranged)
+            // 공격 타입에 따라 AttackState 등록
+            switch (_monsterData.AttackType)
             {
-                _stateMachine.RegisterState(EMonsterState.Attack, new RangedAttackState(this, _stateMachine, _groupCommandProvider));
-            }
-            else
-            {
-                _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
+                case EMonsterAttackType.Melee:
+                    _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
+                    break;
+
+                case EMonsterAttackType.Ranged:
+                    _stateMachine.RegisterState(EMonsterState.RangedAttack, new RangedAttackState(this, _stateMachine, _groupCommandProvider));
+                    break;
+
+                case EMonsterAttackType.Hybrid:
+                    _stateMachine.RegisterState(EMonsterState.Attack, new AttackState(this, _stateMachine, _groupCommandProvider));
+                    _stateMachine.RegisterState(EMonsterState.RangedAttack, new RangedAttackState(this, _stateMachine, _groupCommandProvider));
+                    break;
             }
 
             _stateMachine.RegisterState(EMonsterState.Recover, new RecoverState(this, _stateMachine, _groupCommandProvider));

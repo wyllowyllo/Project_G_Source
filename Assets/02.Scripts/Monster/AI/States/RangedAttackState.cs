@@ -25,7 +25,7 @@ namespace Monster.AI.States
         private float _phaseTimer;
         private bool _isAttackComplete;
 
-        public EMonsterState StateType => EMonsterState.Attack;
+        public EMonsterState StateType => EMonsterState.RangedAttack;
 
         public RangedAttackState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
         {

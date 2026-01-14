@@ -412,10 +412,16 @@ namespace Monster.AI.States
 
         private bool TryAttack(float now)
         {
-            // 원거리 몬스터는 별도 로직
+            // 원거리 전용 몬스터
             if (Data.AttackType == EMonsterAttackType.Ranged)
             {
-                return TryRangedAttack(now);
+                return TryRangedAttack(now, EMonsterState.RangedAttack);
+            }
+
+            // 하이브리드 몬스터: 거리에 따라 근접/원거리 선택
+            if (Data.AttackType == EMonsterAttackType.Hybrid)
+            {
+                return TryHybridAttack(now);
             }
 
             EAttackMode attackMode = Data.AttackMode;
@@ -455,7 +461,7 @@ namespace Monster.AI.States
             return false;
         }
 
-        private bool TryRangedAttack(float now)
+        private bool TryRangedAttack(float now, EMonsterState targetState)
         {
             float distance = _playerDetectAbility.DistanceToPlayer;
 
@@ -475,7 +481,7 @@ namespace Monster.AI.States
                 {
                     _groupCommandProvider.SetNextAttackHeavy(false);
                     _groupCommandProvider.ConsumeLightAttack(now, Data.AttackCooldown);
-                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    _stateMachine.ChangeState(targetState);
                     return true;
                 }
             }
@@ -484,6 +490,61 @@ namespace Monster.AI.States
             if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
             {
                 if (_groupCommandProvider.CanAttack() &&
+                    _groupCommandProvider.CanHeavyAttack(now) &&
+                    Random.value < Data.HeavyAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(true);
+                    _groupCommandProvider.ConsumeHeavyAttack(now, Data.HeavyAttackCooldown);
+                    _stateMachine.ChangeState(targetState);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryHybridAttack(float now)
+        {
+            float distance = _playerDetectAbility.DistanceToPlayer;
+
+            // 근접 범위 내면 근접 공격 우선
+            if (distance <= Data.LightAttackRange)
+            {
+                return TryMeleeAttack(now);
+            }
+
+            // 원거리 범위 내면 원거리 공격
+            if (distance >= Data.RangedMinDistance && distance <= Data.RangedAttackRange)
+            {
+                return TryRangedAttack(now, EMonsterState.RangedAttack);
+            }
+
+            return false;
+        }
+
+        private bool TryMeleeAttack(float now)
+        {
+            EAttackMode attackMode = Data.AttackMode;
+
+            // 약공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
+            {
+                if (_playerDetectAbility.DistanceToPlayer <= Data.LightAttackRange &&
+                    _groupCommandProvider.CanLightAttack(now) &&
+                    Random.value < Data.LightAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(false);
+                    _groupCommandProvider.ConsumeLightAttack(now, Data.AttackCooldown);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    return true;
+                }
+            }
+
+            // 강공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
+            {
+                if (_playerDetectAbility.DistanceToPlayer <= Data.HeavyAttackRange &&
+                    _groupCommandProvider.CanAttack() &&
                     _groupCommandProvider.CanHeavyAttack(now) &&
                     Random.value < Data.HeavyAttackChance)
                 {
