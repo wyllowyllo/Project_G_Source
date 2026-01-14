@@ -132,6 +132,7 @@ namespace Monster.AI.States
 
         private void OnAnimationComplete()
         {
+            Debug.Log($"{_controller.gameObject.name}: 공격 애니메이션 완료 콜백 수신");
             _isAttackComplete = true;
         }
 
