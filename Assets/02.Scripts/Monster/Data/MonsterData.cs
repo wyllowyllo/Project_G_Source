@@ -165,6 +165,29 @@ namespace Monster.Data
         public float PatrolWaitTimeMin => _patrolWaitTimeMin;
         public float PatrolWaitTimeMax => _patrolWaitTimeMax;
 
-       
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // 거리 밴드 시스템 규칙:
+            // 1. preferredMinDistance < preferredMaxDistance
+            // 2. lightAttackRange >= preferredMinDistance (약공 범위 진입 시 후퇴 방지)
+            // 3. heavyAttackRange >= preferredMinDistance (강공 범위 진입 시 후퇴 방지)
+
+            if (_preferredMinDistance >= _preferredMaxDistance)
+            {
+                Debug.LogWarning($"[{name}] preferredMinDistance({_preferredMinDistance}) >= preferredMaxDistance({_preferredMaxDistance}). 최소 거리가 최대 거리보다 작아야 합니다.");
+            }
+
+            if (_lightAttackRange < _preferredMinDistance)
+            {
+                Debug.LogWarning($"[{name}] lightAttackRange({_lightAttackRange}) < preferredMinDistance({_preferredMinDistance}). 약공 범위에 진입하면 후퇴하여 공격이 불가능합니다.");
+            }
+
+            if (_heavyAttackRange < _preferredMinDistance)
+            {
+                Debug.LogWarning($"[{name}] heavyAttackRange({_heavyAttackRange}) < preferredMinDistance({_preferredMinDistance}). 강공 범위에 진입하면 후퇴하여 공격이 불가능합니다.");
+            }
+        }
+#endif
     }
 }
