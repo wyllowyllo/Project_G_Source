@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using Skill;
+using Progression;
+
 public class UISkill : MonoBehaviour
 {
     [SerializeField] private string _skillName;
@@ -13,6 +16,9 @@ public class UISkill : MonoBehaviour
 
     private float _currentCooldownTime;
     private bool _isCooldown;
+
+    private SkillCaster _caster;
+    private SkillSlot _boundSlot;
 
     private void Awake()
     {
@@ -117,5 +123,35 @@ public class UISkill : MonoBehaviour
         _isCooldown = boolean;
         _textCooldownTime.enabled = boolean;
         _imageCooldownTime.enabled = boolean;
+    }
+
+    public void BindToSkillCaster(SkillCaster caster, SkillSlot slot)
+    {
+        if (_caster != null)
+            _caster.OnSkillUsed -= HandleSkillUsed;
+
+        _caster = caster;
+        _boundSlot = slot;
+
+        if (_caster != null)
+            _caster.OnSkillUsed += HandleSkillUsed;
+    }
+
+    private void OnDestroy()
+    {
+        if (_caster != null)
+            _caster.OnSkillUsed -= HandleSkillUsed;
+    }
+
+    private void HandleSkillUsed(SkillSlot slot, float cooldown)
+    {
+        if (slot == _boundSlot)
+            StartCooldown(cooldown);
+    }
+
+    public void StartCooldown(float cooldownTime)
+    {
+        _maxCooldownTime = cooldownTime;
+        StartCoroutine(nameof(OnCooldownTime), cooldownTime);
     }
 }

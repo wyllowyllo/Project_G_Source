@@ -18,6 +18,7 @@ namespace Combat.Core
         private float _hitStunEndTime;
         private bool _wasInvincible;
         private bool _wasStunned;
+        private bool _hasSuperArmor;
 
         public Transform Transform => transform;
         public CombatStats Stats => _stats;
@@ -39,6 +40,7 @@ namespace Combat.Core
         public bool IsAlive => _health.IsAlive;
         public bool IsInvincible => Time.time < _invincibilityEndTime;
         public bool IsStunned => Time.time < _hitStunEndTime;
+        public bool HasSuperArmor => _hasSuperArmor;
         public bool CanTakeDamage => IsAlive && !IsInvincible;
 
         public event Action<DamageInfo> OnDamaged;
@@ -98,7 +100,7 @@ namespace Combat.Core
         public void TakeDamage(DamageInfo damageInfo)
         {
             if (!CanTakeDamage) return;
-            
+
             _health.TakeDamage(damageInfo.Amount);
             OnDamaged?.Invoke(damageInfo);
 
@@ -107,7 +109,8 @@ namespace Combat.Core
                 if (_hitReactionSettings.AutoInvincibilityOnHit)
                     SetInvincible(_hitReactionSettings.InvincibilityDuration);
 
-                if (_hitReactionSettings.AutoHitStunOnHit)
+                // 슈퍼아머 중에는 데미지는 받되 경직(HitStun) 없음
+                if (_hitReactionSettings.AutoHitStunOnHit && !_hasSuperArmor)
                     SetStunned(_hitReactionSettings.HitStunDuration);
             }
         }
@@ -183,6 +186,11 @@ namespace Combat.Core
                 _wasStunned = false;
                 OnHitStunEnd?.Invoke();
             }
+        }
+
+        public void SetSuperArmor(bool enabled)
+        {
+            _hasSuperArmor = enabled;
         }
 
         private void HandleDeath()

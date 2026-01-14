@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Combat.Core;
+using Skill;
 using UnityEngine;
 
 namespace Progression
