@@ -1,4 +1,3 @@
-using Progression;
 using Skill;
 using UnityEngine;
 
@@ -21,6 +20,7 @@ namespace Player
         private static readonly int _skillTrigger = Animator.StringToHash("Skill");
         private static readonly int _skillSlotParameter = Animator.StringToHash("SkillSlot");
         private static readonly int _skillEndTrigger = Animator.StringToHash("SkillEnd");
+        private static readonly int _glideStateParameter = Animator.StringToHash("GlideState");
 
         private bool HasAnimator => _animator != null;
 
@@ -112,6 +112,30 @@ namespace Player
 
             AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(layerIndex);
             return stateInfo.IsName(stateName);
+        }
+
+        public void PlayGlide(GlideState state)
+        {
+            if (!HasAnimator) return;
+
+            _animator.SetInteger(_glideStateParameter, (int)state);
+
+            if (state == GlideState.SuperJump)
+            {
+                _animator.ResetTrigger(_attackTrigger);
+                _animator.ResetTrigger(_attackEndTrigger);
+                _animator.ResetTrigger(_skillEndTrigger);
+                _animator.SetInteger(_skillSlotParameter, (int)SkillSlot.E);
+                _animator.SetTrigger(_skillTrigger);
+            }
+        }
+
+        public void EndGlide()
+        {
+            if (!HasAnimator) return;
+
+            _animator.SetInteger(_glideStateParameter, (int)GlideState.Inactive);
+            _animator.SetTrigger(_skillEndTrigger);
         }
     }
 }

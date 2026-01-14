@@ -20,6 +20,10 @@ namespace Player
         [SerializeField] private float _sprintFOV = 55f;
         [SerializeField] private float _lockOnFOV = 45f;
         [SerializeField] private float _fovSmoothTime = 0.3f;
+
+        [Header("Glide Camera")]
+        [SerializeField] private float _glideVerticalMin = -70f;
+        [SerializeField] private float _glideVerticalMax = 70f;
         
         private float _targetScale = 1f;
         private float _currentScale = 1f;
@@ -36,6 +40,10 @@ namespace Player
         private Cinemachine3OrbitRig.Orbit _initialTopOrbit;
         private Cinemachine3OrbitRig.Orbit _initialCenterOrbit;
         private Cinemachine3OrbitRig.Orbit _initialBottomOrbit;
+
+        private float _initialVerticalMin;
+        private float _initialVerticalMax;
+        private bool _isGliding;
         
         public float CurrentScale => _currentScale;
         public float NormalizedZoom => Mathf.InverseLerp(_maxScale, _minScale, _currentScale);
@@ -63,6 +71,9 @@ namespace Player
                 _initialTopOrbit = orbits.Top;
                 _initialCenterOrbit = orbits.Center;
                 _initialBottomOrbit = orbits.Bottom;
+
+                _initialVerticalMin = _orbitalFollow.VerticalAxis.Range.x;
+                _initialVerticalMax = _orbitalFollow.VerticalAxis.Range.y;
             }
 
             if (_cinemachineCamera != null)
@@ -191,7 +202,24 @@ namespace Player
         {
             _targetFOV = _normalFOV;
         }
-        
+
+        public void SetGlideMode(bool isGliding)
+        {
+            if (_orbitalFollow == null) return;
+            _isGliding = isGliding;
+
+            var verticalAxis = _orbitalFollow.VerticalAxis;
+            if (isGliding)
+            {
+                verticalAxis.Range = new Vector2(_glideVerticalMin, _glideVerticalMax);
+            }
+            else
+            {
+                verticalAxis.Range = new Vector2(_initialVerticalMin, _initialVerticalMax);
+            }
+            _orbitalFollow.VerticalAxis = verticalAxis;
+        }
+
         public Vector3 GetTargetForward()
         {
             if (_orbitalFollow == null) return Vector3.forward;

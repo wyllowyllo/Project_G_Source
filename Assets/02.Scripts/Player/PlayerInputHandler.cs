@@ -22,6 +22,9 @@ namespace Player
         public bool IsEnabled => _isEnabled;
 
         public event Action OnAttackInputPressed;
+        public event Action OnAimInputPressed;
+        public event Action OnAimInputReleased;
+        public bool IsAiming { get; private set; }
 
         [Header("Dodge Input")]
         [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
@@ -32,6 +35,10 @@ namespace Player
         [SerializeField] private KeyCode _eSkillKey = KeyCode.E;
         [SerializeField] private KeyCode _rSkillKey = KeyCode.R;
         public event Action<SkillSlot> OnSkillInputPressed;
+
+        [Header("Aim Input")]
+        [SerializeField] private bool _useMouseForAim = true;
+        [SerializeField] private KeyCode _aimKey = KeyCode.F;
 
         private void Update()
         {
@@ -51,6 +58,20 @@ namespace Player
             if (attackPressed)
             {
                 OnAttackInputPressed?.Invoke();
+            }
+
+            bool aimDown = _useMouseForAim ? Input.GetMouseButtonDown(1) : Input.GetKeyDown(_aimKey);
+            bool aimUp = _useMouseForAim ? Input.GetMouseButtonUp(1) : Input.GetKeyUp(_aimKey);
+
+            if (aimDown)
+            {
+                IsAiming = true;
+                OnAimInputPressed?.Invoke();
+            }
+            if (aimUp)
+            {
+                IsAiming = false;
+                OnAimInputReleased?.Invoke();
             }
 
             if (Input.GetKeyDown(_dodgeKey))

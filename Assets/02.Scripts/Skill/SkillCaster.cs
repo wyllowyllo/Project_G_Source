@@ -24,6 +24,7 @@ namespace Skill
         private PlayerMovement _playerMovement;
         private PlayerVFXController _vfxController;
         private SkillHitbox _skillHitbox;
+        private GlideController _glideController;
 
         private readonly Dictionary<SkillSlot, int> _skillLevels = new()
         {
@@ -69,6 +70,7 @@ namespace Skill
             _animationController = GetComponent<PlayerAnimationController>();
             _playerMovement = GetComponent<PlayerMovement>();
             _vfxController = GetComponent<PlayerVFXController>();
+            _glideController = GetComponent<GlideController>();
 
             if (_progression != null)
                 _progression.OnSkillEnhanced += HandleSkillEnhanced;
@@ -78,6 +80,12 @@ namespace Skill
 
             if (_skillHitbox != null)
                 _skillHitbox.OnHit += HandleHit;
+
+            if (_glideController != null)
+            {
+                _glideController.OnGlideEnded += HandleGlideEnded;
+                _glideController.OnDiveBombDamageRequest += HandleDiveBombDamage;
+            }
         }
 
         private void OnDestroy()
@@ -90,6 +98,12 @@ namespace Skill
 
             if (_skillHitbox != null)
                 _skillHitbox.OnHit -= HandleHit;
+
+            if (_glideController != null)
+            {
+                _glideController.OnGlideEnded -= HandleGlideEnded;
+                _glideController.OnDiveBombDamageRequest -= HandleDiveBombDamage;
+            }
         }
 
         public void HandleSkillInput(SkillSlot slot)
@@ -102,11 +116,51 @@ namespace Skill
             if (!IsSkillReady(slot)) return false;
             if (_isCasting) return false;
 
+            if (slot == SkillSlot.E && _glideController != null)
+            {
+                return TryUseGlideSkill(slot);
+            }
+
             var skill = GetSkillData(slot);
             if (skill == null) return false;
 
             ExecuteSkill(skill, slot);
             return true;
+        }
+
+        private bool TryUseGlideSkill(SkillSlot slot)
+        {
+            if (_glideController.IsActive) return false;
+
+            var skill = GetSkillData(slot);
+            var tier = skill?.GetTier(_skillLevels[slot]);
+            float cooldown = tier?.Cooldown ?? 10f;
+
+            _isCasting = true;
+            _cooldownEndTimes[slot] = Time.time + cooldown;
+            OnSkillUsed?.Invoke(slot, cooldown);
+
+            _combatant.SetSuperArmor(true);
+            _glideController.PrepareGlide();
+            return true;
+        }
+
+        private void HandleGlideEnded()
+        {
+            _isCasting = false;
+            _combatant?.SetSuperArmor(false);
+        }
+
+        private void HandleDiveBombDamage(SkillAreaContext context, float damageMultiplier)
+        {
+            _currentAttackContext = AttackContext.Scaled(
+                _combatant,
+                damageMultiplier,
+                1f,
+                DamageType.Skill
+            );
+
+            _skillHitbox.PerformCheck(context);
         }
 
         public bool IsSkillReady(SkillSlot slot)
