@@ -33,7 +33,7 @@ namespace Monster.AI.States
 
             // TODO: 보상 드롭 (경험치, 골드, 아이템)
 
-            Debug.Log($"{_controller.gameObject.name} 사망! 경험치: {_controller.Data.ExperienceReward}, 골드: {_controller.Data.GoldReward}");
+           
         }
 
         public void Update()
