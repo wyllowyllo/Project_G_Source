@@ -11,20 +11,21 @@ public class SkillTooltip : MonoBehaviour
     public TextMeshProUGUI cooldownValueText;
     public RectTransform tooltipRect;
     public CanvasGroup canvasGroup;
-    
+
     [Header("Settings")]
-    public Vector2 offset = new Vector2(20f, 0f);
-    public float fadeSpeed = 5f;
+    public float horizontalSpacing = 40f; // 슬롯과 툴팁 사이 간격
+    public float fadeSpeed = 2f;
     
     private bool isVisible = false;
-    
+    private Coroutine fadeCoroutine;
+
     private void Awake()
     {
         if (tooltipRect == null)
         {
             tooltipRect = GetComponent<RectTransform>();
         }
-        
+
         if (canvasGroup == null)
         {
             canvasGroup = GetComponent<CanvasGroup>();
@@ -33,126 +34,148 @@ public class SkillTooltip : MonoBehaviour
                 canvasGroup = gameObject.AddComponent<CanvasGroup>();
             }
         }
-        
+
         // Start invisible
         canvasGroup.alpha = 0;
+        canvasGroup.blocksRaycasts = false;
         gameObject.SetActive(false);
     }
-    
-    private void Update()
+
+    public void ShowTooltip(SkillData skillData, RectTransform slotTransform)
     {
-        if (isVisible && canvasGroup.alpha < 1f)
-        {
-            canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, 1f, Time.deltaTime * fadeSpeed);
-        }
-        else if (!isVisible && canvasGroup.alpha > 0f)
-        {
-            canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, 0f, Time.deltaTime * fadeSpeed);
-            
-            if (canvasGroup.alpha < 0.01f)
-            {
-                gameObject.SetActive(false);
-            }
-        }
-    }
-    
-    public void ShowTooltip(SkillData skillData, Vector3 slotPosition)
-    {
-        if (skillData == null) return;
-        
+        if (skillData == null || slotTransform == null) return;
+
         // Update text content
         if (skillNameText != null)
         {
             skillNameText.text = skillData.skillName;
         }
-        
+
         if (levelText != null)
         {
             levelText.text = $"레벨 {skillData.level}";
         }
-        
+
         if (descriptionText != null)
         {
             descriptionText.text = skillData.description;
         }
-        
+
         if (cooldownValueText != null)
         {
             cooldownValueText.text = skillData.cooldown;
         }
-        
-        // Position tooltip
-        PositionTooltip(slotPosition);
-        
-        // Show
+
+        // Position tooltip to the left of slot
+        PositionTooltipLeft(slotTransform);
+
+        // Show with fade in
         gameObject.SetActive(true);
         isVisible = true;
+
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+        fadeCoroutine = StartCoroutine(FadeIn());
     }
-    
+
     public void HideTooltip()
     {
         isVisible = false;
+
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+        fadeCoroutine = StartCoroutine(FadeOut());
     }
-    
-    private void PositionTooltip(Vector3 slotPosition)
+
+    private void PositionTooltipLeft(RectTransform slotTransform)
     {
-        if (tooltipRect == null) return;
-        
-        // Convert world position to screen position
-        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(Camera.main, slotPosition);
-        
-        // Add offset
-        screenPos += offset;
-        
-        // Convert screen position to local position in canvas
+        if (tooltipRect == null || slotTransform == null) return;
+
+        // Get canvas
+        RectTransform canvasRect = tooltipRect.parent as RectTransform;
+
+        // Convert slot position to canvas local space
+        Vector2 slotLocalPos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            tooltipRect.parent as RectTransform,
-            screenPos,
-            Camera.main,
-            out Vector2 localPos
+            canvasRect,
+            RectTransformUtility.WorldToScreenPoint(null, slotTransform.position),
+            null,
+            out slotLocalPos
         );
-        
-        tooltipRect.localPosition = localPos;
-        
+
+        // 툴팁 크기
+        float tooltipWidth = tooltipRect.sizeDelta.x;
+        float tooltipHeight = tooltipRect.sizeDelta.y;
+
+        // 슬롯 크기
+        float slotWidth = slotTransform.sizeDelta.x;
+        float slotHeight = slotTransform.sizeDelta.y;
+
+        // 툴팁 위치 계산:
+        // 슬롯 왼쪽 끝 - 툴팁 반 너비 - 간격px
+        Vector2 tooltipPos = new Vector2(slotLocalPos.x - (slotWidth * 0.5f) - (tooltipWidth * 0.5f) - horizontalSpacing,slotLocalPos.y);
+
+        // 툴팁의 앵커가 중앙이므로 그대로 사용
+        tooltipRect.anchoredPosition = tooltipPos;
+
         // Keep tooltip within screen bounds
         ClampToScreen();
     }
-    
+
     private void ClampToScreen()
     {
+        if (tooltipRect == null) return;
+
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) return;
-        
+
         RectTransform canvasRect = canvas.GetComponent<RectTransform>();
-        Vector3[] corners = new Vector3[4];
-        tooltipRect.GetWorldCorners(corners);
-        
-        Vector3 localPos = tooltipRect.localPosition;
-        
-        // Check right edge
-        if (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[2]).x > Screen.width)
+        Vector2 canvasSize = canvasRect.sizeDelta;
+
+        Vector2 tooltipSize = tooltipRect.sizeDelta;
+        Vector2 currentPos = tooltipRect.anchoredPosition;
+
+        // Calculate bounds (툴팁 앵커가 center이므로 절반씩 계산)
+        float minX = -canvasSize.x / 2 + tooltipSize.x / 2;
+        float maxX = canvasSize.x / 2 - tooltipSize.x / 2;
+        float minY = -canvasSize.y / 2 + tooltipSize.y / 2;
+        float maxY = canvasSize.y / 2 - tooltipSize.y / 2;
+
+        // Clamp position
+        currentPos.x = Mathf.Clamp(currentPos.x, minX, maxX);
+        currentPos.y = Mathf.Clamp(currentPos.y, minY, maxY);
+
+        tooltipRect.anchoredPosition = currentPos;
+    }
+
+    private System.Collections.IEnumerator FadeIn()
+    {
+        canvasGroup.blocksRaycasts = false;
+
+        while (canvasGroup.alpha < 0.99f)
         {
-            localPos.x -= (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[2]).x - Screen.width);
+            canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, 1f, Time.deltaTime * fadeSpeed);
+            yield return null;
         }
-        
-        // Check left edge
-        if (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[0]).x < 0)
+
+        canvasGroup.alpha = 1f;
+    }
+
+    private System.Collections.IEnumerator FadeOut()
+    {
+        canvasGroup.blocksRaycasts = false;
+
+        while (canvasGroup.alpha > 0.01f)
         {
-            localPos.x -= RectTransformUtility.WorldToScreenPoint(Camera.main, corners[0]).x;
+            canvasGroup.alpha = Mathf.Lerp(canvasGroup.alpha, 0f, Time.deltaTime * fadeSpeed);
+            yield return null;
         }
-        
-        // Check top edge
-        if (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[1]).y > Screen.height)
-        {
-            localPos.y -= (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[1]).y - Screen.height);
-        }
-        
-        // Check bottom edge
-        if (RectTransformUtility.WorldToScreenPoint(Camera.main, corners[0]).y < 0)
-        {
-            localPos.y -= RectTransformUtility.WorldToScreenPoint(Camera.main, corners[0]).y;
-        }
-        
-        tooltipRect.localPosition = localPos;
+
+        canvasGroup.alpha = 0f;
+        gameObject.SetActive(false);
     }
 }

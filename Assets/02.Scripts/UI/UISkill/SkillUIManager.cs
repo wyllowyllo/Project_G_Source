@@ -10,10 +10,6 @@ public class SkillUIManager : MonoBehaviour
     [Header("UI References")]
     public Transform skillGridContainer;
     public SkillTooltip tooltip;
-    public Image characterImage;
-    
-    [Header("Character Settings")]
-    public Sprite characterSprite;
     
     [Header("Skill Data")]
     public List<SkillData> skills = new List<SkillData>();
@@ -32,7 +28,6 @@ public class SkillUIManager : MonoBehaviour
     
     private void InitializeSkills()
     {
-        // 예시 데이터 - Inspector에서 직접 설정 가능
         if (skills.Count == 0)
         {
             skills = new List<SkillData>
@@ -51,14 +46,7 @@ public class SkillUIManager : MonoBehaviour
     }
     
     private void SetupUI()
-    {
-        // Set character image
-        if (characterImage != null && characterSprite != null)
-        {
-            characterImage.sprite = characterSprite;
-        }
-        
-        // Setup grid layout if not already configured
+    {       
         GridLayoutGroup gridLayout = skillGridContainer.GetComponent<GridLayoutGroup>();
         if (gridLayout != null)
         {
