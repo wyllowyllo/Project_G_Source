@@ -9,8 +9,9 @@ namespace Monster.Combat
     [RequireComponent(typeof(Combatant))]
     public class MonsterRangedAttacker : MonoBehaviour, IMonsterAttacker
     {
-        [Header("References")]
-        [SerializeField] private Transform _firePoint;
+        [Header("FirePoint")]
+        [SerializeField] private Transform _lightAttackFirePoint;
+        [SerializeField] private Transform _heavyAttackFirePoint;
 
         [Header("Projectile Settings")]
         [SerializeField] private GameObject _lightProjectilePrefab;
@@ -35,12 +36,6 @@ namespace Monster.Combat
         public void Initialize()
         {
             _combatant = GetComponent<Combatant>();
-
-            if (_firePoint == null)
-            {
-                _firePoint = transform;
-            }
-
             _isInitialized = true;
         }
 
@@ -72,7 +67,8 @@ namespace Monster.Combat
 
         private void FireProjectile(bool isHeavy)
         {
-            Vector3 spawnPosition = _firePoint.position + _firePoint.TransformDirection(_projectileSpawnOffset);
+            Transform firePoint = isHeavy ? _heavyAttackFirePoint : _lightAttackFirePoint;
+            Vector3 spawnPosition = firePoint.position + firePoint.TransformDirection(_projectileSpawnOffset);
             Vector3 direction = GetFireDirection();
 
             var prefab = isHeavy ? _heavyProjectilePrefab : _lightProjectilePrefab;
@@ -110,10 +106,10 @@ namespace Monster.Combat
             if (_playerTransform != null)
             {
                 Vector3 targetPosition = _playerTransform.position + Vector3.up * 1f;
-                return (targetPosition - _firePoint.position).normalized;
+                return (targetPosition - _heavyAttackFirePoint.position).normalized;
             }
 
-            return _firePoint.forward;
+            return _heavyAttackFirePoint.forward;
         }
 
         private void HandleProjectileHit(IDamageable target, DamageInfo damageInfo)
@@ -124,9 +120,9 @@ namespace Monster.Combat
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (_firePoint == null)
+            if (_heavyAttackFirePoint == null)
             {
-                _firePoint = transform;
+                _heavyAttackFirePoint = transform;
             }
         }
 #endif
