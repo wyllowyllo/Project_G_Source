@@ -412,6 +412,12 @@ namespace Monster.AI.States
 
         private bool TryAttack(float now)
         {
+            // 원거리 몬스터는 별도 로직
+            if (Data.AttackType == EMonsterAttackType.Ranged)
+            {
+                return TryRangedAttack(now);
+            }
+
             EAttackMode attackMode = Data.AttackMode;
 
             // 약공 시도 (제자리 공격 - 밀착 거리 필요)
@@ -436,6 +442,48 @@ namespace Monster.AI.States
             {
                 if (_playerDetectAbility.DistanceToPlayer <= Data.HeavyAttackRange &&
                     _groupCommandProvider.CanAttack() &&
+                    _groupCommandProvider.CanHeavyAttack(now) &&
+                    Random.value < Data.HeavyAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(true);
+                    _groupCommandProvider.ConsumeHeavyAttack(now, Data.HeavyAttackCooldown);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryRangedAttack(float now)
+        {
+            float distance = _playerDetectAbility.DistanceToPlayer;
+
+            // 원거리 공격 범위 체크 (최소 거리 ~ 최대 거리)
+            if (distance < Data.RangedMinDistance || distance > Data.RangedAttackRange)
+            {
+                return false;
+            }
+
+            EAttackMode attackMode = Data.AttackMode;
+
+            // 약공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.LightOnly)
+            {
+                if (_groupCommandProvider.CanLightAttack(now) &&
+                    Random.value < Data.LightAttackChance)
+                {
+                    _groupCommandProvider.SetNextAttackHeavy(false);
+                    _groupCommandProvider.ConsumeLightAttack(now, Data.AttackCooldown);
+                    _stateMachine.ChangeState(EMonsterState.Attack);
+                    return true;
+                }
+            }
+
+            // 강공 시도
+            if (attackMode == EAttackMode.Both || attackMode == EAttackMode.HeavyOnly)
+            {
+                if (_groupCommandProvider.CanAttack() &&
                     _groupCommandProvider.CanHeavyAttack(now) &&
                     Random.value < Data.HeavyAttackChance)
                 {
