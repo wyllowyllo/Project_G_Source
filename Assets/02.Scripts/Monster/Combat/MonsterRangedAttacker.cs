@@ -2,7 +2,6 @@ using System;
 using Combat.Core;
 using Combat.Damage;
 using Monster.Combat.Projectile;
-using Monster.Data;
 using UnityEngine;
 
 namespace Monster.Combat
@@ -12,11 +11,18 @@ namespace Monster.Combat
     {
         [Header("References")]
         [SerializeField] private Transform _firePoint;
-        [SerializeField] private MonsterData _monsterData;
 
-        [Header("Attack Settings")]
+        [Header("Projectile Settings")]
+        [SerializeField] private GameObject _lightProjectilePrefab;
+        [SerializeField] private GameObject _heavyProjectilePrefab;
+        [SerializeField] private Vector3 _projectileSpawnOffset = new Vector3(0f, 1f, 0.5f);
+        [SerializeField] private float _lightProjectileSpeed = 15f;
+        [SerializeField] private float _heavyProjectileSpeed = 12f;
+
+        [Header("Damage Settings")]
         [SerializeField] private float _lightAttackMultiplier = 1.0f;
         [SerializeField] private float _heavyAttackMultiplier = 1.5f;
+        [SerializeField] private float _rangedDamageMultiplier = 1.0f;
 
         private Combatant _combatant;
         private Transform _playerTransform;
@@ -43,17 +49,14 @@ namespace Monster.Combat
             _playerTransform = playerTransform;
         }
 
-        public void SetMonsterData(MonsterData data)
-        {
-            _monsterData = data;
-        }
-
         public void ExecuteAttack(bool isHeavy)
         {
-            if (!_isInitialized || _monsterData == null) return;
-            if (_monsterData.ProjectilePrefab == null)
+            if (!_isInitialized) return;
+
+            var prefab = isHeavy ? _heavyProjectilePrefab : _lightProjectilePrefab;
+            if (prefab == null)
             {
-                Debug.LogWarning($"{gameObject.name}: 투사체 프리팹이 설정되지 않았습니다.");
+                Debug.LogWarning($"{gameObject.name}: {(isHeavy ? "강공" : "약공")} 투사체 프리팹이 설정되지 않았습니다.");
                 return;
             }
 
@@ -69,10 +72,11 @@ namespace Monster.Combat
 
         private void FireProjectile(bool isHeavy)
         {
-            Vector3 spawnPosition = _firePoint.position + _firePoint.TransformDirection(_monsterData.ProjectileSpawnOffset);
+            Vector3 spawnPosition = _firePoint.position + _firePoint.TransformDirection(_projectileSpawnOffset);
             Vector3 direction = GetFireDirection();
 
-            var projectileObj = Instantiate(_monsterData.ProjectilePrefab, spawnPosition, Quaternion.identity);
+            var prefab = isHeavy ? _heavyProjectilePrefab : _lightProjectilePrefab;
+            var projectileObj = Instantiate(prefab, spawnPosition, Quaternion.identity);
             var projectile = projectileObj.GetComponent<MonsterProjectile>();
 
             if (projectile == null)
@@ -90,11 +94,12 @@ namespace Monster.Combat
                 type: DamageType.Normal
             );
 
+            float speed = isHeavy ? _heavyProjectileSpeed : _lightProjectileSpeed;
             projectile.Initialize(
                 attackContext,
                 direction,
-                _monsterData.ProjectileSpeed,
-                _monsterData.RangedDamageMultiplier
+                speed,
+                _rangedDamageMultiplier
             );
 
             projectile.OnHit += HandleProjectileHit;

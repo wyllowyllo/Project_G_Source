@@ -82,11 +82,7 @@ namespace Monster.AI
         {
             _monsterAttacker?.Initialize();
 
-            if (_rangedAttacker != null)
-            {
-                _rangedAttacker.SetMonsterData(_monsterData);
-                _rangedAttacker.Initialize();
-            }
+            _rangedAttacker?.Initialize();
         }
         
         private void Start()

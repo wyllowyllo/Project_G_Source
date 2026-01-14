@@ -61,18 +61,10 @@ namespace Monster.Data
         [SerializeField] private float _attackCooldown = 1.5f;
 
         [Header("원거리 공격")]
-        [Tooltip("투사체 프리팹")]
-        [SerializeField] private GameObject _projectilePrefab;
-        [Tooltip("투사체 발사 위치 오프셋 (로컬 좌표)")]
-        [SerializeField] private Vector3 _projectileSpawnOffset = new Vector3(0f, 1f, 0.5f);
-        [Tooltip("투사체 속도")]
-        [SerializeField] private float _projectileSpeed = 15f;
         [Tooltip("원거리 공격 사거리")]
         [SerializeField] private float _rangedAttackRange = 10f;
         [Tooltip("원거리 공격 최소 거리 (이보다 가까우면 근접 또는 후퇴)")]
         [SerializeField] private float _rangedMinDistance = 4f;
-        [Tooltip("원거리 공격 데미지 배율")]
-        [SerializeField] private float _rangedDamageMultiplier = 1.0f;
 
         [Header("이동 스탯")]
         [SerializeField] private float _moveSpeed = 3.5f;
@@ -143,12 +135,8 @@ namespace Monster.Data
 
         // 공격 타입 및 원거리 공격 Properties
         public EMonsterAttackType AttackType => _attackType;
-        public GameObject ProjectilePrefab => _projectilePrefab;
-        public Vector3 ProjectileSpawnOffset => _projectileSpawnOffset;
-        public float ProjectileSpeed => _projectileSpeed;
         public float RangedAttackRange => _rangedAttackRange;
         public float RangedMinDistance => _rangedMinDistance;
-        public float RangedDamageMultiplier => _rangedDamageMultiplier;
         public bool IsRanged => _attackType == EMonsterAttackType.Ranged || _attackType == EMonsterAttackType.Hybrid;
         public bool IsMelee => _attackType == EMonsterAttackType.Melee || _attackType == EMonsterAttackType.Hybrid;
 
