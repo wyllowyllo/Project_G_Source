@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Player
 {
-    public class GlideSkillState : StateMachineBehaviour
+    public class SuperJumpState : StateMachineBehaviour
     {
         [Header("Jump Timing (Normalized)")]
         [Range(0f, 1f)]

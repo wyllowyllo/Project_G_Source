@@ -166,10 +166,14 @@ namespace Player
         public void StartTrail(AttackSession session)
         {
             _currentTrailSession = session;
+            StartTrail();
+        }
 
+        public void StartTrail()
+        {
             if (_weaponTrail == null)
                 return;
-            
+
             if (_trailCoroutine != null)
             {
                 StopCoroutine(_trailCoroutine);
@@ -195,12 +199,17 @@ namespace Player
             if (session != _currentTrailSession)
                 return;
 
+            _currentTrailSession = null;
+            StopTrail();
+        }
+
+        public void StopTrail()
+        {
             if (_trailActive)
             {
                 _weaponTrail?.End();
                 _trailActive = false;
             }
-            _currentTrailSession = null;
         }
 
         public void StopAllEffects()
@@ -219,26 +228,6 @@ namespace Player
             }
         }
 
-        public void StartSkillTrail()
-        {
-            if (_weaponTrail == null)
-                return;
-
-            if (_trailCoroutine != null)
-            {
-                StopCoroutine(_trailCoroutine);
-            }
-            _trailCoroutine = StartCoroutine(StartTrailNextFrame());
-        }
-
-        public void StopSkillTrail()
-        {
-            if (_trailActive)
-            {
-                _weaponTrail?.End();
-                _trailActive = false;
-            }
-        }
     }
 }
 

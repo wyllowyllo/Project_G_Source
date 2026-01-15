@@ -6,12 +6,15 @@ namespace Skill
     {
         [Header("Landing Indicator")]
         [SerializeField] private GameObject _landingIndicatorPrefab;
+        [SerializeField] private Material _indicatorMaterial;
         [SerializeField] private Color _indicatorColor = new Color(1f, 0.3f, 0f, 0.5f);
 
         [Header("Trajectory Line")]
+        [SerializeField] private Material _trajectoryMaterial;
         [SerializeField] private int _trajectorySegments = 30;
         [SerializeField] private float _lineWidth = 0.1f;
         [SerializeField] private Color _lineColor = new Color(1f, 0.5f, 0f, 0.8f);
+        [SerializeField] private Vector3 _trajectoryStartOffset = Vector3.zero;
 
         private GameObject _landingIndicator;
         private LineRenderer _trajectoryLine;
@@ -48,9 +51,10 @@ namespace Skill
             lineRenderer.endWidth = 0.05f;
             lineRenderer.positionCount = 32;
 
-            var material = new Material(Shader.Find("Sprites/Default"));
-            material.color = _indicatorColor;
-            lineRenderer.material = material;
+            if (_indicatorMaterial != null)
+            {
+                lineRenderer.material = _indicatorMaterial;
+            }
             lineRenderer.startColor = _indicatorColor;
             lineRenderer.endColor = _indicatorColor;
 
@@ -68,9 +72,10 @@ namespace Skill
             _trajectoryLine.endWidth = _lineWidth;
             _trajectoryLine.positionCount = _trajectorySegments;
 
-            var material = new Material(Shader.Find("Sprites/Default"));
-            material.color = _lineColor;
-            _trajectoryLine.material = material;
+            if (_trajectoryMaterial != null)
+            {
+                _trajectoryLine.material = _trajectoryMaterial;
+            }
             _trajectoryLine.startColor = _lineColor;
             _trajectoryLine.endColor = _lineColor;
         }
@@ -121,10 +126,12 @@ namespace Skill
         {
             if (_trajectoryLine == null) return;
 
+            Vector3 offsetStart = start + _trajectoryStartOffset;
+
             for (int i = 0; i < _trajectorySegments; i++)
             {
                 float t = (float)i / (_trajectorySegments - 1);
-                Vector3 position = CalculateParabolicPosition(start, end, t, arcHeight);
+                Vector3 position = CalculateParabolicPosition(offsetStart, end, t, arcHeight);
                 _trajectoryLine.SetPosition(i, position);
             }
         }
