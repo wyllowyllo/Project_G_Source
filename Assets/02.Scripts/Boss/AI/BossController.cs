@@ -43,6 +43,10 @@ namespace Boss.AI
         private BossPhaseManager _phaseManager;
         private BossMinionManager _minionManager;
 
+        // Phase 5 시스템
+        private BossPatternSelector _patternSelector;
+        private BossEnrageSystem _enrageSystem;
+
         // Ability 시스템 (Monster.Ability 재사용)
         private Dictionary<System.Type, EntityAbility> _abilities;
         private List<EntityAbility> _abilityList;
@@ -63,6 +67,10 @@ namespace Boss.AI
         public BossPhaseManager PhaseManager => _phaseManager;
         public BossTelegraph Telegraph => _telegraph;
         public BossMinionManager MinionManager => _minionManager;
+
+        // Phase 5 시스템 프로퍼티
+        public BossPatternSelector PatternSelector => _patternSelector;
+        public BossEnrageSystem EnrageSystem => _enrageSystem;
 
         private void Awake()
         {
@@ -96,6 +104,8 @@ namespace Boss.AI
 
             UpdateAbilities();
             _phaseManager?.Update();
+            _patternSelector?.UpdateCooldowns(Time.deltaTime);
+            _enrageSystem?.Update();
             _stateMachine?.Update();
             UpdateDebugInfo();
         }
@@ -167,6 +177,13 @@ namespace Boss.AI
                     _bossData.ProjectileSpeed
                 );
             }
+
+            // Phase 5: 패턴 선택 시스템
+            _patternSelector = new BossPatternSelector(this);
+
+            // Phase 5: 분노 시스템
+            _enrageSystem = new BossEnrageSystem(this);
+            _enrageSystem.OnEnrageStart += HandleEnrageStart;
         }
 
         private void InitializeStateMachine()
@@ -289,6 +306,9 @@ namespace Boss.AI
 
         private void HandlePhaseTransitionStart(BossPhaseData newPhase)
         {
+            // 패턴 선택기 쿨다운 초기화
+            _patternSelector?.OnPhaseTransition();
+
             // 페이즈 전환 상태로 변경
             _stateMachine?.ChangeState(EBossState.PhaseTransition);
         }
@@ -390,9 +410,15 @@ namespace Boss.AI
 
         private void HandleAllMinionsDead()
         {
-            // 분노 시스템 연동 (Phase 5에서 구현)
-            // _enrageSystem?.OnMinionsDead();
+            // 분노 시스템 연동
+            _enrageSystem?.OnAllMinionsDead();
             Debug.Log($"{gameObject.name}: 모든 잡졸이 사망했습니다.");
+        }
+
+        private void HandleEnrageStart()
+        {
+            Debug.Log($"{gameObject.name}: 분노 상태 돌입!");
+            // 분노 이펙트 표시 등 추가 연출 가능
         }
 
         private void OnEnable()
@@ -424,6 +450,11 @@ namespace Boss.AI
             if (_minionManager != null)
             {
                 _minionManager.OnAllMinionsDead -= HandleAllMinionsDead;
+            }
+
+            if (_enrageSystem != null)
+            {
+                _enrageSystem.OnEnrageStart -= HandleEnrageStart;
             }
         }
     }
