@@ -23,6 +23,8 @@ public class LevelUpTextAnimation : MonoBehaviour
     private Color _messageTextOriginalColor;
     private bool _isPlaying = false;
 
+    private Coroutine _textAnimationCoroutine;
+
     private void Awake()
     {
         if (_levelText != null)
@@ -38,12 +40,13 @@ public class LevelUpTextAnimation : MonoBehaviour
 
     public void PlayTextAnimation(string levelText = null, string messageText = null)
     {
-        if (_isPlaying)
+        if (_isPlaying && _textAnimationCoroutine != null)
         {
-            StopAllCoroutines();
+            StopCoroutine(_textAnimationCoroutine);
+            _textAnimationCoroutine = null;
         }
-        
-        StartCoroutine(TextAnimationCoroutine(levelText, messageText));
+
+        _textAnimationCoroutine = StartCoroutine(TextAnimationCoroutine(levelText, messageText));
     }
 
     private IEnumerator TextAnimationCoroutine(string levelText, string messageText)
@@ -113,6 +116,7 @@ public class LevelUpTextAnimation : MonoBehaviour
 
         SetTextAlpha(0f);
         _isPlaying = false;
+        _textAnimationCoroutine = null;
     }
 
     private void SetTextAlpha(float alpha)
@@ -149,7 +153,12 @@ public class LevelUpTextAnimation : MonoBehaviour
 
     public void HideTextImmediately()
     {
-        StopAllCoroutines();
+        if (_textAnimationCoroutine != null)
+        {
+            StopCoroutine(_textAnimationCoroutine);
+            _textAnimationCoroutine = null;
+        }
+
         SetTextAlpha(0f);
         _isPlaying = false;
     }
