@@ -407,6 +407,14 @@ namespace Monster.AI.States
             float moveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
             float moveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
 
+            // 데드존 적용 - 작은 움직임은 BattleIdle 유지
+            const float deadzone = 0.3f;
+            if (moveX * moveX + moveY * moveY < deadzone * deadzone)
+            {
+                moveX = 0f;
+                moveY = 0f;
+            }
+
             _animatorAbility.SetMoveDirection(moveX, moveY);
         }
 
