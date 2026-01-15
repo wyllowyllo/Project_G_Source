@@ -39,6 +39,10 @@ namespace Monster.AI.States
         private Vector3 _currentVelocity;
         private Vector3 _targetVelocity;
 
+        // 애니메이션 블렌딩 보간
+        private float _smoothMoveX;
+        private float _smoothMoveY;
+
         // 캐시
         private MonsterData Data => _controller.Data;
 
@@ -69,6 +73,8 @@ namespace Monster.AI.States
 
             _currentVelocity = Vector3.zero;
             _targetVelocity = Vector3.zero;
+            _smoothMoveX = 0f;
+            _smoothMoveY = 0f;
 
             // 초기 방향 랜덤 선택
             _circleDirection = Random.value < 0.5f ? 1 : -1;
@@ -404,18 +410,23 @@ namespace Monster.AI.States
             Vector3 localVelocity = _transform.InverseTransformDirection(_currentVelocity);
 
             float strafeSpeed = Data.StrafeSpeed;
-            float moveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
-            float moveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
+            float targetMoveX = Mathf.Clamp(localVelocity.x / strafeSpeed, -1f, 1f);
+            float targetMoveY = Mathf.Clamp(localVelocity.z / strafeSpeed, -1f, 1f);
 
             // 데드존 적용 - 작은 움직임은 BattleIdle 유지
             const float deadzone = 0.3f;
-            if (moveX * moveX + moveY * moveY < deadzone * deadzone)
+            if (targetMoveX * targetMoveX + targetMoveY * targetMoveY < deadzone * deadzone)
             {
-                moveX = 0f;
-                moveY = 0f;
+                targetMoveX = 0f;
+                targetMoveY = 0f;
             }
 
-            _animatorAbility.SetMoveDirection(moveX, moveY);
+            // 부드러운 블렌딩을 위한 보간
+            const float smoothSpeed = 5f;
+            _smoothMoveX = Mathf.Lerp(_smoothMoveX, targetMoveX, Time.deltaTime * smoothSpeed);
+            _smoothMoveY = Mathf.Lerp(_smoothMoveY, targetMoveY, Time.deltaTime * smoothSpeed);
+
+            _animatorAbility.SetMoveDirection(_smoothMoveX, _smoothMoveY);
         }
 
         private bool TryAttack(float now)
