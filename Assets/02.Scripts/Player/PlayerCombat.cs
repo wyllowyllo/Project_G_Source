@@ -176,7 +176,7 @@ namespace Player
 
         private void HandleDamaged(DamageInfo info)
         {
-            if (_isDodging)
+            if (_isDodging || _combatant.HasSuperArmor)
                 return;
 
             if (CurrentState != ComboState.Idle)

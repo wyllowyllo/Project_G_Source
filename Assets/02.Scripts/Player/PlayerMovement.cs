@@ -55,6 +55,7 @@ namespace Player
         private bool _movementEnabled = true;
         
         private Vector3 _rootMotionPositionDelta;
+        private float _rootMotionTimeDelta;
         private readonly Dictionary<IRootMotionRequester, float> _rootMotionRequesters = new();
         private float _rootMotionMultiplier = 1f;
 
@@ -79,10 +80,10 @@ namespace Player
             }
             
             _lookDirection = transform.forward;
-            
+
             _movementEnabled = true;
         }
-        
+
         private void Update()
         {
             HandleInput();
@@ -190,6 +191,7 @@ namespace Player
                 }
 
                 _rootMotionPositionDelta += delta;
+                _rootMotionTimeDelta += Time.deltaTime;
             }
         }
 
@@ -320,11 +322,13 @@ namespace Player
             {
                 currentVelocity = ProjectVelocityOnSlope(currentVelocity);
 
-                if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > MinRootMotionThreshold)
+                if (_rootMotionRequesters.Count > 0 && _rootMotionPositionDelta.sqrMagnitude > MinRootMotionThreshold && _rootMotionTimeDelta > 0)
                 {
-                    Vector3 rootMotionVelocity = _rootMotionPositionDelta / deltaTime;
+                    Vector3 rootMotionVelocity = _rootMotionPositionDelta / _rootMotionTimeDelta;
+
                     currentVelocity = ProjectVelocityOnSlope(rootMotionVelocity);
                     _rootMotionPositionDelta = Vector3.zero;
+                    _rootMotionTimeDelta = 0f;
                 }
                 else
                 {
