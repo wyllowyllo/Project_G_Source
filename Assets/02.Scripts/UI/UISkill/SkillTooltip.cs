@@ -88,6 +88,7 @@ public class SkillTooltip : MonoBehaviour
         {
             StopCoroutine(fadeCoroutine);
         }
+          
         fadeCoroutine = StartCoroutine(FadeOut());
     }
 

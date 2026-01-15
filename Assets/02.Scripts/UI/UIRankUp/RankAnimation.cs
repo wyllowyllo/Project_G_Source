@@ -274,8 +274,6 @@ public class RankAnimation : MonoBehaviour
                 return scheme;
         }
 
-        if (_rankColorSchemes == null || _rankColorSchemes.Length == 0) return new _rankColorScheme();
-        // 기본값 (첫 번째 요소)
-        return _rankColorSchemes[0];
+        return new _rankColorScheme { rank = "Default", primaryColor = Color.white, secondaryColor = Color.gray };
     }
 }

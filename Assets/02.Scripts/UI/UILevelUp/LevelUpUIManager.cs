@@ -15,10 +15,6 @@ public class LevelUpUIManager : MonoBehaviour
     [SerializeField] private string _levelTextFormat = "LEVEL {0}";
     [SerializeField] private string _messageText = "레벨이 올랐습니다!";
 
-    [Header("Debug")]
-    [SerializeField] private bool _enableDebugKeys = true;
-    [SerializeField] private KeyCode _testLevelUpKey = KeyCode.L;
-
     private void OnEnable()
     {
         if (_playerProgression != null)
