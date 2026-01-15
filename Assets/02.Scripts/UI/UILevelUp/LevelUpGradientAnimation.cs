@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
-/// <summary>
-/// 레벨업 이미지를 가운데에서부터 양옆으로 그라데이션으로 펼치는 애니메이션
-/// LevelUpGradient.shader를 사용합니다.
-/// </summary>
 public class LevelUpGradientAnimation : MonoBehaviour
 {
     [Header("레벨업 UI 참조")]
@@ -14,9 +10,9 @@ public class LevelUpGradientAnimation : MonoBehaviour
     [SerializeField] private CanvasGroup _canvasGroup;
 
     [Header("애니메이션 설정")]
-    [SerializeField] private float _expandDuration = 1.2f;  // 펼쳐지는 시간
-    [SerializeField] private float _displayDuration = 2f;   // 화면에 보이는 시간
-    [SerializeField] private float _fadeDuration = 0.5f;    // 사라지는 시간
+    [SerializeField] private float _expandDuration = 1.2f;
+    [SerializeField] private float _displayDuration = 2f;  
+    [SerializeField] private float _fadeDuration = 0.5f; 
     
     [Header("Scale 설정")]
     [SerializeField] private bool _useScaleAnimation = true;
@@ -81,7 +77,6 @@ public class LevelUpGradientAnimation : MonoBehaviour
     {
         if (_levelUpImage == null)
         {
-            Debug.LogError("[LevelUpGradientAnimation] LevelUpImage가 할당되지 않았습니다!");
             return;
         }
 
@@ -93,18 +88,12 @@ public class LevelUpGradientAnimation : MonoBehaviour
         _imageMaterial.SetFloat(GradientProgressID, 0f);
         _imageMaterial.SetFloat(GradientWidthID, 0.3f);
         _imageMaterial.SetFloat(GradientPowerID, 2f);
-
-        Debug.Log($"[LevelUpGradientAnimation] Material 설정 완료 - Shader: {_imageMaterial.shader.name}");
     }
 
-    /// <summary>
-    /// 레벨업 애니메이션 재생
-    /// </summary>
     public void PlayLevelUpAnimation()
     {
         if (_isPlaying)
         {
-            Debug.LogWarning("[LevelUpGradientAnimation] 애니메이션이 이미 재생 중입니다.");
             return;
         }
         

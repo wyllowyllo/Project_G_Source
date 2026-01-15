@@ -4,9 +4,7 @@ using TMPro;
 using Progression;
 using DG.Tweening;
 
-/// <summary>
-/// 현재 랭크와 다음 랭크까지의 진행도를 표시하는 UI 컴포넌트
-/// </summary>
+// 현재 랭크와 다음 랭크까지의 진행도를 표시하는 UI 컴포넌트
 public class UIRankProgress : MonoBehaviour
 {
     [Header("필수 참조")]
@@ -41,20 +39,8 @@ public class UIRankProgress : MonoBehaviour
 
     private void Start()
     {
-        // 자동 참조 찾기
-        if (_playerProgression == null)
-        {
-            _playerProgression = FindObjectOfType<PlayerProgression>();
-        }
-
-        if (_rankUpManager == null)
-        {
-            _rankUpManager = FindObjectOfType<RankUpManager>();
-        }
-
         if (_playerProgression == null || _rankConfig == null)
         {
-            Debug.LogError("[UIRankProgress] 필수 참조가 누락되었습니다!");
             enabled = false;
             return;
         }
@@ -79,11 +65,6 @@ public class UIRankProgress : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        UpdateUI();
-    }
-
     private void OnLevelUp(int previousLevel, int newLevel)
     {
         // 랭크가 변경되었는지 확인
@@ -102,7 +83,8 @@ public class UIRankProgress : MonoBehaviour
     {
         _progressTween?.Kill();
         _progressTween = DOTween.To(() => _displayProgress, x => _displayProgress = x, targetProgress, _progressAnimationDuration)
-            .SetEase(_progressAnimationEase);
+            .SetEase(_progressAnimationEase).OnUpdate(() => UpdateUI())
+            .OnComplete(() => UpdateUI());
     }
 
     private void UpdateUI()
@@ -173,9 +155,7 @@ public class UIRankProgress : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 랭크에 해당하는 스프라이트 반환
-    /// </summary>
+    // 랭크에 해당하는 스프라이트 반환
     private Sprite GetRankSprite(string rank)
     {
         return rank switch
