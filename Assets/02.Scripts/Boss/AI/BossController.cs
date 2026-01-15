@@ -1,5 +1,6 @@
 using Boss.Ability;
 using Boss.AI.States;
+using Boss.Core;
 using Boss.Data;
 using Combat.Core;
 using Common;
@@ -13,18 +14,24 @@ namespace Boss.AI
     public class BossController : MonoBehaviour
     {
         [SerializeField] private EBossState _currentState;
+        [SerializeField] private int _currentPhase;
 
         [Header("설정")]
         [SerializeField] private BossData _bossData;
 
         [Header("참조")]
         [SerializeField] private Transform _playerTransform;
+        [SerializeField] private BossTelegraph _telegraph;
 
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
         private BossStateMachine _stateMachine;
         private Animator _animator;
+
+        // 핵심 시스템
+        private BossSuperArmor _superArmor;
+        private BossPhaseManager _phaseManager;
 
         // Ability 시스템
         private Dictionary<System.Type, BossAbility> _abilities;
@@ -39,6 +46,11 @@ namespace Boss.AI
         public Animator Animator => _animator;
         public BossStateMachine StateMachine => _stateMachine;
         public EBossState CurrentStateType => _stateMachine?.CurrentStateType ?? EBossState.Idle;
+
+        // 핵심 시스템 프로퍼티
+        public BossSuperArmor SuperArmor => _superArmor;
+        public BossPhaseManager PhaseManager => _phaseManager;
+        public BossTelegraph Telegraph => _telegraph;
 
         private void Awake()
         {
@@ -71,6 +83,7 @@ namespace Boss.AI
             }
 
             UpdateAbilities();
+            _phaseManager?.Update();
             _stateMachine?.Update();
             UpdateDebugInfo();
         }
@@ -78,6 +91,7 @@ namespace Boss.AI
         private void UpdateDebugInfo()
         {
             _currentState = _stateMachine?.CurrentStateType ?? EBossState.Idle;
+            _currentPhase = _phaseManager?.CurrentPhaseNumber ?? 1;
         }
 
         private void InitializeBoss()
@@ -91,6 +105,25 @@ namespace Boss.AI
 
             _navAgent.speed = _bossData.MoveSpeed;
             _navAgent.angularSpeed = _bossData.RotationSpeed;
+
+            InitializeCoreSystems();
+        }
+
+        private void InitializeCoreSystems()
+        {
+            // 슈퍼아머 시스템
+            _superArmor = new BossSuperArmor(_bossData.MaxPoise);
+            _superArmor.OnPoiseBroken += HandlePoiseBroken;
+
+            // 페이즈 시스템
+            _phaseManager = new BossPhaseManager(_bossData.Phases, _combatant);
+            _phaseManager.OnPhaseTransitionStart += HandlePhaseTransitionStart;
+
+            // Telegraph (자동 검색)
+            if (_telegraph == null)
+            {
+                _telegraph = GetComponentInChildren<BossTelegraph>();
+            }
         }
 
         private void InitializeStateMachine()
@@ -191,6 +224,45 @@ namespace Boss.AI
             _stateMachine?.ChangeState(EBossState.Dead);
         }
 
+        private void HandlePoiseBroken()
+        {
+            // 슈퍼아머가 활성화된 상태(무한 포이즈)가 아닐 때만 그로기
+            if (!_superArmor.IsInfinite)
+            {
+                _stateMachine?.ChangeState(EBossState.Stagger);
+            }
+        }
+
+        private void HandlePhaseTransitionStart(BossPhaseData newPhase)
+        {
+            // 페이즈 전환 상태로 변경
+            _stateMachine?.ChangeState(EBossState.PhaseTransition);
+        }
+
+        // 외부에서 호출: 포이즈 데미지 처리
+        public void TakePoiseDamage(float damage)
+        {
+            _superArmor?.TakePoiseDamage(damage);
+        }
+
+        // 포이즈 회복 (그로기 종료 후)
+        public void RecoverPoise()
+        {
+            _superArmor?.Recover();
+        }
+
+        // 슈퍼아머 무한 모드 설정 (특정 패턴 중)
+        public void SetSuperArmorInfinite(bool infinite)
+        {
+            _superArmor?.SetInfinite(infinite);
+        }
+
+        // 페이즈 전환 완료 알림
+        public void CompletePhaseTransition()
+        {
+            _phaseManager?.CompleteTransition();
+        }
+
         private void OnEnable()
         {
             if (_combatant != null)
@@ -204,6 +276,17 @@ namespace Boss.AI
             if (_combatant != null)
             {
                 _combatant.OnDeath -= HandleDeath;
+            }
+
+            // 이벤트 해제
+            if (_superArmor != null)
+            {
+                _superArmor.OnPoiseBroken -= HandlePoiseBroken;
+            }
+
+            if (_phaseManager != null)
+            {
+                _phaseManager.OnPhaseTransitionStart -= HandlePhaseTransitionStart;
             }
         }
     }
