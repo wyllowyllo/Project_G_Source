@@ -11,6 +11,8 @@ namespace Skill
     [RequireComponent(typeof(SkillHitbox))]
     public class SkillCaster : MonoBehaviour, ISkillAnimationReceiver
     {
+        private const float DEFAULT_GLIDE_COOLDOWN = 10f;
+
         [Header("Skills")]
         [SerializeField] private PlayerSkillData _qSkill;
         [SerializeField] private PlayerSkillData _eSkill;
@@ -134,7 +136,7 @@ namespace Skill
 
             var skill = GetSkillData(slot);
             var tier = skill?.GetTier(_skillLevels[slot]);
-            float cooldown = tier?.Cooldown ?? 10f;
+            float cooldown = tier?.Cooldown ?? DEFAULT_GLIDE_COOLDOWN;
 
             _isCasting = true;
             _cooldownEndTimes[slot] = Time.time + cooldown;
@@ -285,7 +287,7 @@ namespace Skill
                 _playerMovement?.SetMovementEnabled(true);
             }
 
-            _vfxController?.StopSkillTrail();
+            _vfxController?.StopTrail();
 
             _isCasting = false;
             _currentSkill = null;
@@ -295,12 +297,12 @@ namespace Skill
 
         public void StartSkillTrail()
         {
-            _vfxController?.StartSkillTrail();
+            _vfxController?.StartTrail();
         }
 
         public void StopSkillTrail()
         {
-            _vfxController?.StopSkillTrail();
+            _vfxController?.StopTrail();
         }
 
 #if UNITY_EDITOR

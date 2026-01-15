@@ -66,11 +66,7 @@ namespace Combat.Core
             if (target == null || !target.CanTakeDamage) return;
 
             var attackContext = AttackContext.Fixed(attacker, damage, type: type);
-            var hitContext = new HitContext(
-                target.Transform.position,
-                (target.Transform.position - attacker.Transform.position).normalized,
-                type
-            );
+            var hitContext = HitContext.FromPositions(attacker.Transform.position, target.Transform.position, type);
 
             target.TakeDamage(attackContext, hitContext);
         }
@@ -80,7 +76,7 @@ namespace Combat.Core
         {
             if (target == null || !target.CanTakeDamage) return;
 
-            var hitContext = new HitContext(target.Transform.position, Vector3.zero, type);
+            var hitContext = HitContext.FromEnvironment(target.Transform.position, type);
             var damageInfo = new DamageInfo(damage, false, hitContext);
 
             target.TakeDamage(damageInfo);

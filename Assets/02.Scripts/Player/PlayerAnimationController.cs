@@ -119,12 +119,12 @@ namespace Player
             if (!HasAnimator) return;
 
             _animator.SetInteger(_glideStateParameter, (int)state);
+            _animator.ResetTrigger(_skillEndTrigger);
 
             if (state == GlideState.SuperJump)
             {
                 _animator.ResetTrigger(_attackTrigger);
                 _animator.ResetTrigger(_attackEndTrigger);
-                _animator.ResetTrigger(_skillEndTrigger);
                 _animator.SetInteger(_skillSlotParameter, (int)SkillSlot.E);
                 _animator.SetTrigger(_skillTrigger);
             }

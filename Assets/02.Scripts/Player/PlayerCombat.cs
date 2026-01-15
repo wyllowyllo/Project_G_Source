@@ -35,6 +35,7 @@ namespace Player
         private PlayerMovement _playerMovement;
         private PlayerVFXController _vfxController;
         private SkillCaster _skillCaster;
+        private GlideController _glideController;
 
         private ComboState CurrentState => _attacker?.CurrentState ?? ComboState.Idle;
 
@@ -65,6 +66,7 @@ namespace Player
             _playerMovement = GetComponent<PlayerMovement>();
             _vfxController = GetComponent<PlayerVFXController>();
             _skillCaster = GetComponent<SkillCaster>();
+            _glideController = GetComponent<GlideController>();
 
             ValidateComponents();
         }
@@ -93,6 +95,7 @@ namespace Player
             {
                 _inputHandler.OnAttackInputPressed += HandleAttackInput;
                 _inputHandler.OnDodgeInputPressed += HandleDodgeInput;
+                _inputHandler.OnSkillInputPressed += HandleSkillInputForCombat;
             }
 
             if (_combatant != null)
@@ -115,6 +118,7 @@ namespace Player
             {
                 _inputHandler.OnAttackInputPressed -= HandleAttackInput;
                 _inputHandler.OnDodgeInputPressed -= HandleDodgeInput;
+                _inputHandler.OnSkillInputPressed -= HandleSkillInputForCombat;
             }
 
             if (_combatant != null)
@@ -135,6 +139,7 @@ namespace Player
         {
             if (!CanPerformAction() || _isDodging) return;
             if (_skillCaster != null && _skillCaster.IsCasting) return;
+            if (_glideController != null && _glideController.IsActive) return;
 
             switch (CurrentState)
             {
@@ -174,6 +179,9 @@ namespace Player
             if (_isDodging)
                 return;
 
+            if (CurrentState != ComboState.Idle)
+                CancelCurrentAttack();
+
             _animationController?.PlayDamage();
         }
 
@@ -181,13 +189,22 @@ namespace Player
         {
             if (!CanPerformAction() || _isDodging || _skillCaster.IsCasting)
                 return;
-            
+
+            if (_glideController != null && _glideController.IsActive)
+                return;
+
             if (CurrentState != ComboState.Idle)
             {
                 CancelCurrentAttack();
             }
 
             ExecuteDodge();
+        }
+
+        private void HandleSkillInputForCombat(SkillSlot slot)
+        {
+            if (CurrentState != ComboState.Idle)
+                CancelCurrentAttack();
         }
 
         private void ExecuteDodge()
