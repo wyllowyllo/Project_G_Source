@@ -1,6 +1,7 @@
-using UnityEngine;
-using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
 
 public class LevelUpTextAnimation : MonoBehaviour
 {
@@ -9,18 +10,17 @@ public class LevelUpTextAnimation : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _messageText;
     
     [Header("타이밍 설정")]
-    [SerializeField] private float _textAppearDelay = 0.3f;
-    [SerializeField] private float _textFadeInDuration = 0.5f;
-    [SerializeField] private float _textDisplayDuration = 2.0f;
+    [SerializeField] private float _textAppearDelay = 0.35f;
+    [SerializeField] private float _textFadeInDuration = 0.6f;
+    [SerializeField] private float _textDisplayDuration = 2.3f;
     [SerializeField] private float _textFadeOutDuration = 0.3f;
     
     [Header("추가 효과")]
     [SerializeField] private bool _useScaleEffect = true;
     [SerializeField] private float _startScale = 0.8f;
     [SerializeField] private float _endScale = 1.0f;
-    
-    private Color _levelTextOriginalColor;
-    private Color _messageTextOriginalColor;
+
+    private Dictionary<TextMeshProUGUI, Color> _originalColors = new Dictionary<TextMeshProUGUI, Color>();
     private bool _isPlaying = false;
 
     private Coroutine _textAnimationCoroutine;
@@ -29,12 +29,13 @@ public class LevelUpTextAnimation : MonoBehaviour
     {
         if (_levelText != null)
         {
-            _levelTextOriginalColor = _levelText.color;
+            _originalColors[_levelText] = _levelText.color;
         }
-        
+
         if (_messageText != null)
         {
-            _messageTextOriginalColor = _messageText.color;
+            _originalColors[_messageText] = _messageText.color;
+
         }
     }
 
@@ -121,31 +122,30 @@ public class LevelUpTextAnimation : MonoBehaviour
 
     private void SetTextAlpha(float alpha)
     {
-        if (_levelText != null)
+        foreach (var kvp in _originalColors)
         {
-            Color color = _levelTextOriginalColor;
-            color.a = alpha;
-            _levelText.color = color;
-        }
-        
-        if (_messageText != null)
-        {
-            Color color = _messageTextOriginalColor;
-            color.a = alpha;
-            _messageText.color = color;
+            var text = kvp.Key;
+            var originalColor = kvp.Value;
+
+            if (text != null)
+            {
+                Color color = originalColor;
+                color.a = alpha;
+                text.color = color;
+            }
         }
     }
 
     private void SetTextScale(float scale)
     {
-        if (_levelText != null)
+        var texts = new[] { _levelText, _messageText };
+
+        foreach (var text in texts)
         {
-            _levelText.transform.localScale = Vector3.one * scale;
-        }
-        
-        if (_messageText != null)
-        {
-            _messageText.transform.localScale = Vector3.one * scale;
+            if (text != null)
+            {
+                text.transform.localScale = Vector3.one * scale;
+            }
         }
     }
 

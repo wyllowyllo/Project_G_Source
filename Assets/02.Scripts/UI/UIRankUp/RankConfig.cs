@@ -27,8 +27,8 @@ public class RankConfig : ScriptableObject
         new RankColorSettings 
         { 
             Rank = "B", 
-            PrimaryColor = new Color(0f, 203f, 255f),       
-            SecondaryColor = new Color(0f, 112f, 223f)
+            PrimaryColor = new Color(0f/ 255f, 203f/ 255f, 255f/ 255f),       
+            SecondaryColor = new Color(0f/ 255f, 112f/ 255f, 223f/ 255f)
         },
         new RankColorSettings 
         { 
