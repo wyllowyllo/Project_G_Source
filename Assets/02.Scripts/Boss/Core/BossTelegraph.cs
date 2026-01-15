@@ -114,6 +114,58 @@ namespace Boss.Core
             OnTelegraphStart?.Invoke();
         }
 
+        #region 공격 패턴별 헬퍼 메서드
+
+        // 근접 공격 예고
+        public void ShowMeleeWarning(float range)
+        {
+            ShowCircle(transform.position, range, 0f);
+        }
+
+        // 돌진 공격 예고
+        public void ShowChargeWarning(Vector3 direction, float distance)
+        {
+            Vector3 start = transform.position;
+            Vector3 end = start + direction * distance;
+            ShowLine(start, end, 2f, 0f);
+        }
+
+        // 브레스 공격 예고
+        public void ShowBreathWarning(float angle, float range)
+        {
+            ShowCone(transform.position, transform.forward, angle, range, 0f);
+        }
+
+        // 투사체 조준 예고
+        public void ShowProjectileWarning(Vector3 targetPosition)
+        {
+            ShowLine(transform.position, targetPosition, 0.5f, 0f);
+        }
+
+        // 투사체 조준 업데이트
+        public void UpdateProjectileWarning(Vector3 targetPosition)
+        {
+            if (_activeDecal != null)
+            {
+                Vector3 start = transform.position;
+                Vector3 direction = targetPosition - start;
+                float length = direction.magnitude;
+                Vector3 center = (start + targetPosition) * 0.5f;
+
+                _activeDecal.transform.position = center;
+                _activeDecal.transform.rotation = Quaternion.LookRotation(direction);
+                _activeDecal.transform.localScale = new Vector3(0.5f, 1f, length);
+            }
+        }
+
+        // 소환 위치 예고
+        public void ShowSummonWarning(Vector3[] positions)
+        {
+            ShowMarkers(positions, 0f);
+        }
+
+        #endregion
+
         // 경고 이펙트 표시 (보스 몸체 발광)
         public void ShowWarningEffect(Transform target, float duration)
         {

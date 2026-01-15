@@ -1,7 +1,9 @@
 using Boss.Ability;
 using Boss.AI.States;
+using Boss.Combat;
 using Boss.Core;
 using Boss.Data;
+using Combat.Attack;
 using Combat.Core;
 using Common;
 using Monster.Ability;
@@ -24,6 +26,12 @@ namespace Boss.AI
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private BossTelegraph _telegraph;
 
+        [Header("Combat 컴포넌트")]
+        [SerializeField] private HitboxTrigger _meleeHitbox;
+        [SerializeField] private HitboxTrigger _chargeHitbox;
+        [SerializeField] private BossBreathAttacker _breathAttacker;
+        [SerializeField] private BossProjectileLauncher _projectileLauncher;
+
         // 컴포넌트
         private NavMeshAgent _navAgent;
         private Combatant _combatant;
@@ -33,6 +41,7 @@ namespace Boss.AI
         // 핵심 시스템
         private BossSuperArmor _superArmor;
         private BossPhaseManager _phaseManager;
+        private BossMinionManager _minionManager;
 
         // Ability 시스템 (Monster.Ability 재사용)
         private Dictionary<System.Type, EntityAbility> _abilities;
@@ -53,6 +62,7 @@ namespace Boss.AI
         public BossSuperArmor SuperArmor => _superArmor;
         public BossPhaseManager PhaseManager => _phaseManager;
         public BossTelegraph Telegraph => _telegraph;
+        public BossMinionManager MinionManager => _minionManager;
 
         private void Awake()
         {
@@ -121,10 +131,41 @@ namespace Boss.AI
             _phaseManager = new BossPhaseManager(_bossData.Phases, _combatant);
             _phaseManager.OnPhaseTransitionStart += HandlePhaseTransitionStart;
 
+            // 잡졸 관리 시스템
+            _minionManager = GetComponentInChildren<BossMinionManager>();
+            if (_minionManager == null)
+            {
+                GameObject minionManagerObj = new GameObject("MinionManager");
+                minionManagerObj.transform.SetParent(transform);
+                _minionManager = minionManagerObj.AddComponent<BossMinionManager>();
+            }
+            _minionManager.Initialize(this);
+            _minionManager.OnAllMinionsDead += HandleAllMinionsDead;
+
             // Telegraph (자동 검색)
             if (_telegraph == null)
             {
                 _telegraph = GetComponentInChildren<BossTelegraph>();
+            }
+
+            // Combat 컴포넌트 자동 검색
+            if (_breathAttacker == null)
+            {
+                _breathAttacker = GetComponentInChildren<BossBreathAttacker>();
+            }
+            if (_projectileLauncher == null)
+            {
+                _projectileLauncher = GetComponentInChildren<BossProjectileLauncher>();
+            }
+
+            // 투사체 발사기 설정
+            if (_projectileLauncher != null)
+            {
+                _projectileLauncher.SetProjectileData(
+                    _bossData.ProjectilePrefab,
+                    _bossData.ProjectileDamage,
+                    _bossData.ProjectileSpeed
+                );
             }
         }
 
@@ -139,12 +180,12 @@ namespace Boss.AI
             _stateMachine.RegisterState(EBossState.Dead, new BossDeadState(this));
             _stateMachine.RegisterState(EBossState.PhaseTransition, new BossPhaseTransitionState(this, _stateMachine));
 
-            // TODO: Phase 4에서 공격 상태 등록
-            // _stateMachine.RegisterState(EBossState.MeleeAttack, new BossMeleeAttackState(this, _stateMachine));
-            // _stateMachine.RegisterState(EBossState.Charge, new BossChargeState(this, _stateMachine));
-            // _stateMachine.RegisterState(EBossState.Breath, new BossBreathState(this, _stateMachine));
-            // _stateMachine.RegisterState(EBossState.Projectile, new BossProjectileState(this, _stateMachine));
-            // _stateMachine.RegisterState(EBossState.Summon, new BossSummonState(this, _stateMachine));
+            // Phase 4: 공격 상태 등록
+            _stateMachine.RegisterState(EBossState.MeleeAttack, new BossMeleeAttackState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Charge, new BossChargeState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Breath, new BossBreathState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Projectile, new BossProjectileState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Summon, new BossSummonState(this, _stateMachine));
 
             // 초기 상태: Idle
             _stateMachine.Initialize(EBossState.Idle);
@@ -276,6 +317,84 @@ namespace Boss.AI
             _phaseManager?.CompleteTransition();
         }
 
+        #region Combat API
+
+        // 근접 공격 히트박스
+        public void EnableMeleeHitbox()
+        {
+            _meleeHitbox?.EnableHitbox(_combatant.Team);
+        }
+
+        public void DisableMeleeHitbox()
+        {
+            _meleeHitbox?.DisableHitbox();
+        }
+
+        // 돌진 히트박스
+        public void EnableChargeHitbox()
+        {
+            _chargeHitbox?.EnableHitbox(_combatant.Team);
+        }
+
+        public void DisableChargeHitbox()
+        {
+            _chargeHitbox?.DisableHitbox();
+        }
+
+        // 브레스 공격
+        public void StartBreathAttack()
+        {
+            _breathAttacker?.StartBreath(
+                _bossData.BreathAngle,
+                _bossData.BreathRange,
+                _bossData.BreathDamage
+            );
+        }
+
+        public void StopBreathAttack()
+        {
+            _breathAttacker?.StopBreath();
+        }
+
+        // 투사체 발사
+        public void FireProjectile()
+        {
+            _projectileLauncher?.Fire();
+        }
+
+        public void FireProjectile(int index, int totalCount)
+        {
+            _projectileLauncher?.Fire(index, totalCount);
+        }
+
+        // 잡졸 소환
+        public void SpawnMinions()
+        {
+            if (_minionManager == null) return;
+
+            // 최대 수 제한 확인
+            if (!_minionManager.CanSummonMore(_bossData.MaxAliveMinions))
+            {
+                Debug.Log($"{gameObject.name}: 최대 잡졸 수에 도달하여 소환 불가");
+                return;
+            }
+
+            _minionManager.SpawnMinions(
+                _bossData.SummonPrefabs,
+                _bossData.SummonCount,
+                _bossData.MinionSpawnRadius
+            );
+        }
+
+        #endregion
+
+        private void HandleAllMinionsDead()
+        {
+            // 분노 시스템 연동 (Phase 5에서 구현)
+            // _enrageSystem?.OnMinionsDead();
+            Debug.Log($"{gameObject.name}: 모든 잡졸이 사망했습니다.");
+        }
+
         private void OnEnable()
         {
             if (_combatant != null)
@@ -300,6 +419,11 @@ namespace Boss.AI
             if (_phaseManager != null)
             {
                 _phaseManager.OnPhaseTransitionStart -= HandlePhaseTransitionStart;
+            }
+
+            if (_minionManager != null)
+            {
+                _minionManager.OnAllMinionsDead -= HandleAllMinionsDead;
             }
         }
     }

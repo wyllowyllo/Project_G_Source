@@ -287,5 +287,28 @@ namespace Monster.AI
         {
             // 경직 종료 - 필요시 추가 로직
         }
+
+        /// <summary>
+        /// 즉시 전투 상태로 진입 (순찰 상태 스킵)
+        /// 보스 소환 잡졸이 바로 공격 모드로 들어갈 때 사용
+        /// </summary>
+        public void ForceEnterCombat()
+        {
+            if (!IsAlive) return;
+
+            // 플레이어 참조 확인
+            if (_playerTransform == null && PlayerReferenceProvider.Instance != null)
+            {
+                _playerTransform = PlayerReferenceProvider.Instance.PlayerTransform;
+                _rangedAttacker?.SetPlayerTransform(_playerTransform);
+            }
+
+            // 현재 상태가 전투 관련 상태가 아니면 Approach로 전환
+            var currentState = _stateMachine?.CurrentStateType;
+            if (currentState == EMonsterState.Idle || currentState == EMonsterState.Patrol)
+            {
+                _stateMachine?.ChangeState(EMonsterState.Approach);
+            }
+        }
     }
 }
