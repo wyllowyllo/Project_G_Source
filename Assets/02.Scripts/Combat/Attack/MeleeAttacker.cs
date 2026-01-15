@@ -30,6 +30,7 @@ namespace Combat.Attack
         public ComboState CurrentState => _comboHandler.CurrentState;
         public float CurrentMultiplier => _comboHandler.CurrentMultiplier;
         public int MaxComboSteps => _comboHandler.MaxComboSteps;
+        public Vector3 HitboxPosition => _hitbox != null ? _hitbox.transform.position : transform.position;
 
         public event Action<int, float> OnComboAttack;
         public event Action OnComboReset;
@@ -142,7 +143,7 @@ namespace Combat.Attack
 
         private void HandleHit(HitInfo hitInfo)
         {
-            var damageInfo = DamageProcessor.Process(_currentAttackContext, hitInfo, transform.position);
+            var damageInfo = DamageProcessor.Process(_currentAttackContext, hitInfo, HitboxPosition);
             hitInfo.Target.TakeDamage(damageInfo);
             OnHit?.Invoke(hitInfo.Target, damageInfo);
         }

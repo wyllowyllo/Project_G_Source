@@ -28,6 +28,7 @@ namespace Skill
         private SkillHitbox _skillHitbox;
         private GlideController _glideController;
         private PlayerCombat _playerCombat;
+        private PlayerTargetController _targetController;
 
         private readonly Dictionary<SkillSlot, int> _skillLevels = new()
         {
@@ -75,6 +76,7 @@ namespace Skill
             _vfxController = GetComponent<PlayerVFXController>();
             _glideController = GetComponent<GlideController>();
             _playerCombat = GetComponent<PlayerCombat>();
+            _targetController = GetComponent<PlayerTargetController>();
 
             if (_progression != null)
                 _progression.OnSkillEnhanced += HandleSkillEnhanced;
@@ -146,6 +148,7 @@ namespace Skill
             OnSkillUsed?.Invoke(slot, cooldown);
 
             _combatant.SetSuperArmor(true);
+            _targetController?.RotateTowardsNearestTarget();
             _glideController.PrepareGlide();
             return true;
         }
@@ -204,6 +207,7 @@ namespace Skill
                 _playerMovement?.SetMovementEnabled(false);
             }
 
+            _targetController?.RotateTowardsNearestTarget();
             _animationController?.PlaySkill(slot);
         }
         
