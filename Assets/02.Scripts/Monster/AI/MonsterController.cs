@@ -13,9 +13,8 @@ using EMonsterAttackType = Monster.Data.EMonsterAttackType;
 
 namespace Monster.AI
 {
-    
     [RequireComponent(typeof(NavMeshAgent),typeof(Combatant))]
-    public class MonsterController : MonoBehaviour
+    public class MonsterController : MonoBehaviour, IEntityController
     {
 
         [SerializeField] private EMonsterState _currentState;
@@ -52,6 +51,7 @@ namespace Monster.AI
 
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
+        public float RotationSpeed => _monsterData != null ? _monsterData.RotationSpeed : 0f;
 
         public GroupCommandProvider GroupCommandProvider => _groupCommandProvider;
 

@@ -1,8 +1,12 @@
+using Common;
+using Monster.Ability;
 using UnityEngine;
 
 namespace Boss.Ability
 {
-    public class BossAnimatorAbility : BossAbility
+    // Boss 전용 AnimatorAbility
+    // Monster의 EntityAbility를 상속하여 Boss 특화 기능 구현
+    public class BossAnimatorAbility : EntityAbility
     {
         private Animator _animator;
 
@@ -36,7 +40,7 @@ namespace Boss.Ability
 
         public bool IsActive => _animator != null && _animator.isActiveAndEnabled;
 
-        public override void Initialize(AI.BossController controller)
+        public override void Initialize(IEntityController controller)
         {
             base.Initialize(controller);
             _animator = controller.Animator;

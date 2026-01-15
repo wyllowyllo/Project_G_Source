@@ -4,6 +4,7 @@ using Boss.Core;
 using Boss.Data;
 using Combat.Core;
 using Common;
+using Monster.Ability;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -11,7 +12,7 @@ using UnityEngine.AI;
 namespace Boss.AI
 {
     [RequireComponent(typeof(NavMeshAgent), typeof(Combatant))]
-    public class BossController : MonoBehaviour
+    public class BossController : MonoBehaviour, IEntityController
     {
         [SerializeField] private EBossState _currentState;
         [SerializeField] private int _currentPhase;
@@ -33,9 +34,9 @@ namespace Boss.AI
         private BossSuperArmor _superArmor;
         private BossPhaseManager _phaseManager;
 
-        // Ability 시스템
-        private Dictionary<System.Type, BossAbility> _abilities;
-        private List<BossAbility> _abilityList;
+        // Ability 시스템 (Monster.Ability 재사용)
+        private Dictionary<System.Type, EntityAbility> _abilities;
+        private List<EntityAbility> _abilityList;
 
         // 프로퍼티
         public bool IsAlive => _combatant != null && _combatant.IsAlive;
@@ -44,6 +45,7 @@ namespace Boss.AI
         public NavMeshAgent NavAgent => _navAgent;
         public Transform PlayerTransform => _playerTransform;
         public Animator Animator => _animator;
+        public float RotationSpeed => _bossData != null ? _bossData.RotationSpeed : 0f;
         public BossStateMachine StateMachine => _stateMachine;
         public EBossState CurrentStateType => _stateMachine?.CurrentStateType ?? EBossState.Idle;
 
@@ -140,16 +142,17 @@ namespace Boss.AI
 
         private void InitializeAbilities()
         {
-            _abilities = new Dictionary<System.Type, BossAbility>();
-            _abilityList = new List<BossAbility>();
+            _abilities = new Dictionary<System.Type, EntityAbility>();
+            _abilityList = new List<EntityAbility>();
 
-            RegisterAbility(new BossNavAgentAbility());
+            // Monster.Ability 재사용
+            RegisterAbility(new NavAgentAbility());
             RegisterAbility(new BossPlayerDetectAbility());
-            RegisterAbility(new BossFacingAbility());
+            RegisterAbility(new FacingAbility());
             RegisterAbility(new BossAnimatorAbility());
         }
 
-        private void RegisterAbility(BossAbility ability)
+        private void RegisterAbility(EntityAbility ability)
         {
             ability.Initialize(this);
             _abilities[ability.GetType()] = ability;
@@ -164,9 +167,9 @@ namespace Boss.AI
             }
         }
 
-        public T GetAbility<T>() where T : BossAbility
+        public T GetAbility<T>() where T : EntityAbility
         {
-            if (_abilities.TryGetValue(typeof(T), out BossAbility ability))
+            if (_abilities.TryGetValue(typeof(T), out EntityAbility ability))
             {
                 return ability as T;
             }

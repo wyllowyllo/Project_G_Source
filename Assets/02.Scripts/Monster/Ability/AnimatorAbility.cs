@@ -1,11 +1,11 @@
+using Common;
 using Monster.AI;
 using Monster.Combat;
 using UnityEngine;
 
 namespace Monster.Ability
 {
-    // 애니메이터를 제어하는 Ability
-    // FSM State에서 애니메이션 파라미터와 트리거를 제어
+    // 애니메이터를 제어하는 Ability (Monster 전용)
     public class AnimatorAbility : EntityAbility
     {
         private Animator _animator;
@@ -28,10 +28,13 @@ namespace Monster.Ability
         private System.Action _onHitComplete;
         private System.Action _onDeathComplete;
 
+        // Monster 전용 캐스팅 헬퍼
+        private MonsterController MonsterController => _controller as MonsterController;
+
         // 프로퍼티
         public bool IsActive => _animator != null && _animator.isActiveAndEnabled;
 
-        public override void Initialize(AI.MonsterController controller)
+        public override void Initialize(IEntityController controller)
         {
             base.Initialize(controller);
             _animator = controller.Animator;
@@ -49,11 +52,13 @@ namespace Monster.Ability
                 _eventReceiver = _animator.gameObject.AddComponent<MonsterAnimationEventReceiver>();
             }
 
-            // Attacker 컴포넌트 찾기 (MonsterController와 같은 오브젝트에 있음)
-            MonsterAttacker monsterAttacker = _controller.GetComponent<MonsterAttacker>();
-            MonsterRangedAttacker rangedAttacker = _controller.GetComponent<MonsterRangedAttacker>();
-
-            _eventReceiver.Initialize(_controller, monsterAttacker, rangedAttacker);
+            // Monster 전용: Attacker 컴포넌트 연결
+            if (MonsterController != null)
+            {
+                MonsterAttacker monsterAttacker = MonsterController.GetComponent<MonsterAttacker>();
+                MonsterRangedAttacker rangedAttacker = MonsterController.GetComponent<MonsterRangedAttacker>();
+                _eventReceiver.Initialize(MonsterController, monsterAttacker, rangedAttacker);
+            }
         }
 
         // ===== Float 파라미터 =====
