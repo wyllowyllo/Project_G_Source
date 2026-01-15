@@ -18,7 +18,7 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private ViewerCameraController _cameraController;
 
     [Header("RenderTexture 설정")]
-    [SerializeField] private int _renderTextureWidth = 1024;
+    [SerializeField] private int _renderTextureWidth = 512;
     [SerializeField] private int _renderTextureHeight = 1024;
     [SerializeField] private Color _backgroundColor = new Color(0, 0, 0, 0);
 
