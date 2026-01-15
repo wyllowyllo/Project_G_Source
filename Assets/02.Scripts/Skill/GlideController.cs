@@ -18,14 +18,17 @@ namespace Skill
 
     public class GlideController : MonoBehaviour, IGlideAnimationReceiver
     {
+        private const float SuperJumpGravity = 30f;
+
         [SerializeField] private GlideSettings _settings;
         [SerializeField] private LayerMask _enemyLayer;
+        [SerializeField] private CinemachineCameraController _cameraController;
 
         private PlayerMovement _playerMovement;
         private PlayerAnimationController _animationController;
         private PlayerInputHandler _inputHandler;
         private Combatant _combatant;
-        private CinemachineCameraController _cameraController;
+        private Camera _mainCamera;
 
         private GlideState _currentState = GlideState.Inactive;
         private float _stateTimer;
@@ -35,6 +38,7 @@ namespace Skill
 
         private bool _isAiming;
         private bool _hasValidTarget;
+        private bool _canDiveBomb;
         private Vector3 _aimTargetPosition;
         private Vector3 _diveStartPosition;
         private float _diveProgress;
@@ -58,7 +62,7 @@ namespace Skill
             _inputHandler = GetComponent<PlayerInputHandler>();
             _combatant = GetComponent<Combatant>();
             _aimVisualizer = GetComponentInChildren<DiveBombAimVisualizer>();
-            _cameraController = FindAnyObjectByType<CinemachineCameraController>();
+            _mainCamera = Camera.main;
         }
 
         private void Start()
@@ -105,6 +109,8 @@ namespace Skill
             if (_currentState != GlideState.Inactive) return;
 
             _currentState = GlideState.Preparing;
+            _playerMovement?.SetMovementEnabled(false);
+            _playerMovement?.SetVelocityOverride((_, _) => Vector3.zero);
             _animationController?.PlayGlide(GlideState.SuperJump);
             _cameraController?.SetGlideMode(true);
 
@@ -149,6 +155,13 @@ namespace Skill
             EndGlide();
         }
 
+        public void OnDiveBombReady()
+        {
+            if (_currentState != GlideState.Gliding) return;
+
+            _canDiveBomb = true;
+        }
+
         private void UpdateState()
         {
             switch (_currentState)
@@ -177,6 +190,7 @@ namespace Skill
         {
             _currentState = GlideState.Gliding;
             _stateTimer = 0f;
+            _canDiveBomb = false;
             _animationController?.PlayGlide(GlideState.Gliding);
         }
 
@@ -191,7 +205,6 @@ namespace Skill
         private void TransitionToLanding()
         {
             _currentState = GlideState.Landing;
-            _playerMovement.ClearVelocityOverride();
             _playerMovement.ClearSmoothRotation();
             _animationController?.PlayGlide(GlideState.Landing);
         }
@@ -199,8 +212,8 @@ namespace Skill
         private void TransitionToDiveBombLanding()
         {
             _currentState = GlideState.DiveBombLanding;
-            _playerMovement.ClearVelocityOverride();
             _playerMovement.ClearSmoothRotation();
+            _cameraController?.SetDiveBombMode(false);
             _animationController?.PlayGlide(GlideState.DiveBombLanding);
         }
 
@@ -264,6 +277,7 @@ namespace Skill
         private void HandleAttackInput()
         {
             if (_currentState != GlideState.Gliding) return;
+            if (!_canDiveBomb) return;
 
             if (_isAiming && _hasValidTarget)
             {
@@ -278,10 +292,12 @@ namespace Skill
         private void HandleAimInputPressed()
         {
             if (_currentState != GlideState.Gliding) return;
+            if (!_canDiveBomb) return;
 
             _isAiming = true;
             Time.timeScale = _settings.AimSlowMotionScale;
             _aimVisualizer?.Show();
+            _cameraController?.SetAimMode(true);
         }
 
         private void HandleAimInputReleased()
@@ -292,36 +308,54 @@ namespace Skill
             _hasValidTarget = false;
             Time.timeScale = 1f;
             _aimVisualizer?.Hide();
+            _cameraController?.SetAimMode(false);
         }
 
         private void UpdateAiming()
         {
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null) return;
+            if (_mainCamera == null) return;
 
-            Ray ray = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            Ray ray = _mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            Vector3 hitPoint;
+
             if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, _settings.GroundLayer))
             {
-                Vector3 hitPoint = hit.point;
-                Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
-                Vector3 hitPosXZ = new Vector3(hitPoint.x, 0f, hitPoint.z);
-                float distanceXZ = Vector3.Distance(playerPosXZ, hitPosXZ);
-
-                if (distanceXZ > _settings.MaxAimDistance)
-                {
-                    Vector3 direction = (hitPosXZ - playerPosXZ).normalized;
-                    Vector3 clampedXZ = playerPosXZ + direction * _settings.MaxAimDistance;
-                    hitPoint = new Vector3(clampedXZ.x, hitPoint.y, clampedXZ.z);
-                }
-
-                _hasValidTarget = true;
-                _aimTargetPosition = hitPoint;
-                _aimVisualizer?.UpdateTarget(_aimTargetPosition, transform.position, _settings.ParabolicArcHeight);
+                hitPoint = hit.point;
             }
             else
             {
-                _hasValidTarget = false;
+                hitPoint = CalculateFallbackAimPoint(ray);
             }
+
+            Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
+            Vector3 hitPosXZ = new Vector3(hitPoint.x, 0f, hitPoint.z);
+            float distanceXZ = Vector3.Distance(playerPosXZ, hitPosXZ);
+
+            if (distanceXZ > _settings.MaxAimDistance)
+            {
+                Vector3 direction = (hitPosXZ - playerPosXZ).normalized;
+                Vector3 clampedXZ = playerPosXZ + direction * _settings.MaxAimDistance;
+                hitPoint = new Vector3(clampedXZ.x, hitPoint.y, clampedXZ.z);
+            }
+
+            _hasValidTarget = true;
+            _aimTargetPosition = hitPoint;
+            _aimVisualizer?.UpdateTarget(_aimTargetPosition, transform.position, _settings.ParabolicArcHeight);
+        }
+
+        private Vector3 CalculateFallbackAimPoint(Ray cameraRay)
+        {
+            Vector3 directionXZ = new Vector3(cameraRay.direction.x, 0f, cameraRay.direction.z).normalized;
+            Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
+            Vector3 targetXZ = playerPosXZ + directionXZ * _settings.MaxAimDistance;
+
+            Vector3 rayOrigin = new Vector3(targetXZ.x, transform.position.y + 100f, targetXZ.z);
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit groundHit, 200f, _settings.GroundLayer))
+            {
+                return groundHit.point;
+            }
+
+            return new Vector3(targetXZ.x, 0f, targetXZ.z);
         }
 
         private void StartParabolicDive()
@@ -329,6 +363,8 @@ namespace Skill
             _isAiming = false;
             Time.timeScale = 1f;
             _aimVisualizer?.Hide();
+            _cameraController?.SetAimMode(false);
+            _cameraController?.SetDiveBombMode(true);
 
             _currentState = GlideState.DiveBomb;
             _stateTimer = 0f;
@@ -346,6 +382,8 @@ namespace Skill
 
         private void StartDiveBomb()
         {
+            _cameraController?.SetDiveBombMode(true);
+
             _currentState = GlideState.DiveBomb;
             _stateTimer = 0f;
             _verticalVelocity = -_settings.DiveSpeed;
@@ -363,14 +401,15 @@ namespace Skill
             switch (_currentState)
             {
                 case GlideState.SuperJump:
-                    _verticalVelocity -= 30f * deltaTime;
+                    _verticalVelocity -= SuperJumpGravity * deltaTime;
                     result = new Vector3(0f, _verticalVelocity, 0f);
                     break;
 
                 case GlideState.Gliding:
                     _verticalVelocity = _settings.GlideGravity;
                     Vector3 inputDir = _playerMovement.GetCurrentInputDirection();
-                    _horizontalVelocity = inputDir * _settings.GlideMoveSpeed;
+                    Vector3 moveDir = inputDir.sqrMagnitude > 0.1f ? inputDir : transform.forward;
+                    _horizontalVelocity = moveDir * _settings.GlideMoveSpeed;
                     result = _horizontalVelocity + new Vector3(0f, _verticalVelocity, 0f);
 
                     if (inputDir.sqrMagnitude > 0.1f)
@@ -381,6 +420,11 @@ namespace Skill
 
                 case GlideState.DiveBomb:
                     result = new Vector3(0f, -_settings.DiveSpeed, 0f);
+                    break;
+
+                case GlideState.Landing:
+                case GlideState.DiveBombLanding:
+                    result = Vector3.zero;
                     break;
 
                 default:
@@ -412,10 +456,12 @@ namespace Skill
             if (_currentState == GlideState.Inactive) return;
 
             _currentState = GlideState.Inactive;
-            _playerMovement.ClearVelocityOverride();
-            _playerMovement.ClearSmoothRotation();
+            _playerMovement?.SetMovementEnabled(true);
+            _playerMovement?.ClearVelocityOverride();
+            _playerMovement?.ClearSmoothRotation();
             _animationController?.EndGlide();
             _cameraController?.SetGlideMode(false);
+            _cameraController?.SetDiveBombMode(false);
 
             if (_isAiming)
             {
@@ -423,9 +469,11 @@ namespace Skill
                 _hasValidTarget = false;
                 Time.timeScale = 1f;
                 _aimVisualizer?.Hide();
+                _cameraController?.SetAimMode(false);
             }
 
             _isParabolicDive = false;
+            _canDiveBomb = false;
 
             OnGlideEnded?.Invoke();
         }

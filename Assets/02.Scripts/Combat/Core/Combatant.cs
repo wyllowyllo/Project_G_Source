@@ -94,7 +94,7 @@ namespace Combat.Core
 
         public void TakeDamage(float damage)
         {
-            TakeDamage(new DamageInfo(damage, false, new HitContext()));
+            TakeDamage(new DamageInfo(damage, false, HitContext.Empty));
         }
 
         public void TakeDamage(DamageInfo damageInfo)

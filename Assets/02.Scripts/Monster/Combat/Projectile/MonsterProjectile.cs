@@ -82,7 +82,7 @@ namespace Monster.Combat.Projectile
             // 데미지 배율 적용
             if (_damageMultiplier != 1f)
             {
-                var hitContext = new HitContext(damageInfo.HitPoint, damageInfo.HitDirection, damageInfo.Type);
+                var hitContext = HitContext.FromCollision(damageInfo.HitPoint, damageInfo.HitDirection, damageInfo.Type);
                 damageInfo = new DamageInfo(
                     damageInfo.Amount * _damageMultiplier,
                     damageInfo.IsCritical,

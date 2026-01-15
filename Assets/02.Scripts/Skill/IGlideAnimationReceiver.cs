@@ -7,5 +7,6 @@ namespace Skill
         void OnGlideComplete();
         void OnLandingComplete();
         void OnDiveBombLandingComplete();
+        void OnDiveBombReady();
     }
 }
