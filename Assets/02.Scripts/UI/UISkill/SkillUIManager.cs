@@ -32,7 +32,6 @@ public class SkillUIManager : MonoBehaviour
         {
             _playerProgression = FindObjectOfType<PlayerProgression>();
         }
-        InitializeSkills();
         SetupUI();
         CreateSkillSlots();
     }
@@ -52,25 +51,6 @@ public class SkillUIManager : MonoBehaviour
     private void HandleLevelUp(int prev, int next)
     {
         RefreshSlotUnlocks();
-    }
-
-    private void InitializeSkills()
-    {
-        if (skills.Count == 0)
-        {
-            skills = new List<SkillData>
-            {
-                new SkillData(1, "파이어볼", "강력한 화염 구체를 발사하여 적에게 큰 피해를 입힙니다.", 5, "8초"),
-                new SkillData(2, "빙결", "적을 얼음으로 동결시켜 3초간 움직이지 못하게 만듭니다.", 3, "12초"),
-                new SkillData(3, "순간이동", "짧은 거리를 순간적으로 이동합니다.", 7, "15초"),
-                new SkillData(4, "마나 실드", "마나를 소모하여 피해를 흡수하는 보호막을 생성합니다.", 4, "20초"),
-                new SkillData(5, "번개 연쇄", "번개가 여러 적에게 연쇄적으로 튕겨나갑니다.", 6, "10초"),
-                new SkillData(6, "시간 정지", "주변의 시간을 2초간 멈춥니다.", 8, "30초"),
-                new SkillData(7, "흡혈", "적에게 피해를 주고 그만큼의 체력을 회복합니다.", 2, "6초"),
-                new SkillData(8, "메테오", "하늘에서 거대한 운석을 소환합니다.", 9, "60초"),
-                new SkillData(9, "부활", "죽은 아군을 부활시킵니다.", 1, "120초")
-            };
-        }
     }
     
     private void SetupUI()

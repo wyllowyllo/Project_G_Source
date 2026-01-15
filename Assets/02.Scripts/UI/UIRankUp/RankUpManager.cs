@@ -147,32 +147,15 @@ public class RankUpManager : MonoBehaviour
     // RankConfig의 설정을 애니메이션에 적용
     private void ApplyAnimationSettings()
     {
-        _rankAnimation.duration = _rankConfig.AnimationDuration;
-        _rankAnimation.cameraShakeIntensity = _rankConfig.CameraShakeIntensity;
-        _rankAnimation.rayCount = _rankConfig.RayCount;
+        _rankAnimation.ApplyAnimationSettings(_rankConfig.AnimationDuration, _rankConfig.CameraShakeIntensity,_rankConfig.RayCount);
     }
 
     // 특정 랭크의 색상을 애니메이션에 적용
     private void ApplyRankColors(string rank)
     {
         var colorSettings = _rankConfig.GetColorSettings(rank);
-        
-        // HelloEllaRankAnimation의 rankColorSchemes 배열에서 해당 랭크 찾기
-        foreach (var scheme in _rankAnimation.rankColorSchemes)
-        {
-            if (scheme.rank == rank)
-            {
-                scheme.primaryColor = colorSettings.PrimaryColor;
-                scheme.secondaryColor = colorSettings.SecondaryColor;
-                
-                if (_enableDebugLogs)
-                {
-                    Debug.Log($"[RankUpManager] {rank} 랭크 색상 적용 완료");
-                }
-                
-                break;
-            }
-        }
+
+        _rankAnimation.ApplyRankColors(rank,colorSettings.PrimaryColor,colorSettings.SecondaryColor);
     }
 
     // 현재/다음 랭크 UI 업데이트

@@ -6,8 +6,8 @@ public class LevelUpUIManager : MonoBehaviour
 {
     [Header("참조")]
     [SerializeField] private PlayerProgression _playerProgression;
-    [SerializeField] private LevelUpGradientAnimation _levelUpAnimation;      // 이미지 애니메이션
-    [SerializeField] private LevelUpTextAnimation _textAnimation;             // 텍스트 애니메이션
+    [SerializeField] private LevelUpGradientAnimation _levelUpAnimation; 
+    [SerializeField] private LevelUpTextAnimation _textAnimation;       
 
     [SerializeField] private ParticleSystem _levelUpEffect;
 
@@ -32,26 +32,6 @@ public class LevelUpUIManager : MonoBehaviour
         if (_playerProgression != null)
         {
             _playerProgression.OnLevelUp -= HandleLevelUp;
-        }
-    }
-
-    private void Start()
-    {
-        if (_playerProgression == null)
-        {
-            _playerProgression = FindObjectOfType<PlayerProgression>();
-        }
-
-        // LevelUpGradientAnimation 자동 찾기
-        if (_levelUpAnimation == null)
-        {
-            _levelUpAnimation = FindObjectOfType<LevelUpGradientAnimation>();
-        }
-
-        // LevelUpTextAnimation 자동 찾기
-        if (_textAnimation == null)
-        {
-            _textAnimation = FindObjectOfType<LevelUpTextAnimation>();
         }
     }
 
