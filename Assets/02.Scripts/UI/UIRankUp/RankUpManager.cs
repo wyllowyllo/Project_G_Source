@@ -6,8 +6,16 @@ public class RankUpManager : MonoBehaviour
 {
     [Header("필수 참조")]
     [SerializeField] private PlayerProgression _playerProgression;
-    [SerializeField] private RankAnimation _rankAnimation;
     [SerializeField] private RankConfig _rankConfig;
+
+    [Tooltip("메인 애니메이션 컨트롤러")]
+    [SerializeField] private RankAnimator _rankAnimator;
+
+    [Tooltip("색상 관리 컨트롤러")]
+    [SerializeField] private RankColorController _rankColorController;
+
+    [Tooltip("이펙트 재생 컨트롤러")]
+    [SerializeField] private RankEffectsController _rankEffectsController;
 
     [SerializeField] private ParticleSystem _rankParticleEffect;
     [SerializeField] private ParticleSystem _rankParticleSubEffect;
@@ -19,9 +27,9 @@ public class RankUpManager : MonoBehaviour
     [Header("디버그")]
     [SerializeField] private bool _enableDebugLogs = true;
     [SerializeField] private bool _enableDebugKeys = true;
-    [SerializeField] private KeyCode _testRankUpKey = KeyCode.R;
+    [SerializeField] private KeyCode _testRankUpKey = KeyCode.H;
 
-    private string _currentRank = "D";
+    private string _currentRank = "C";
 
     private void Start()
     {
@@ -31,20 +39,29 @@ public class RankUpManager : MonoBehaviour
             _playerProgression = FindObjectOfType<PlayerProgression>();
             if (_playerProgression == null)
             {
-                Debug.LogError("[RankUpManager] PlayerProgression을 찾을 수 없습니다!");
                 enabled = false;
                 return;
             }
         }
 
-        if (_rankAnimation == null)
+        if (_rankAnimator == null)
         {
-            _rankAnimation = FindObjectOfType<RankAnimation>();
-            if (_rankAnimation == null)
+            _rankAnimator = FindObjectOfType<RankAnimator>();
+            if (_rankAnimator == null)
             {
                 enabled = false;
                 return;
             }
+        }
+
+        if (_rankColorController == null)
+        {
+            _rankColorController = _rankAnimator.GetComponent<RankColorController>();
+        }
+
+        if (_rankEffectsController == null)
+        {
+            _rankEffectsController = _rankAnimator.GetComponent<RankEffectsController>();
         }
 
         if (_rankConfig == null)
@@ -122,7 +139,7 @@ public class RankUpManager : MonoBehaviour
         PlayRankUpEffect();
 
         // 애니메이션 실행
-        _rankAnimation.PlayRankUpAnimation(newRank);
+        _rankAnimator.PlayRankUpAnimation(newRank);
     }
 
     private void PlayRankUpEffect()
@@ -147,7 +164,7 @@ public class RankUpManager : MonoBehaviour
     // RankConfig의 설정을 애니메이션에 적용
     private void ApplyAnimationSettings()
     {
-        _rankAnimation.ApplyAnimationSettings(_rankConfig.AnimationDuration, _rankConfig.CameraShakeIntensity,_rankConfig.RayCount);
+        _rankAnimator.ApplyAnimationSettings(_rankConfig.AnimationDuration);
     }
 
     // 특정 랭크의 색상을 애니메이션에 적용
@@ -155,7 +172,7 @@ public class RankUpManager : MonoBehaviour
     {
         var colorSettings = _rankConfig.GetColorSettings(rank);
 
-        _rankAnimation.ApplyRankColors(rank,colorSettings.PrimaryColor,colorSettings.SecondaryColor);
+        _rankColorController.ApplyRankColors(rank,colorSettings.PrimaryColor,colorSettings.SecondaryColor);
     }
 
     // 현재/다음 랭크 UI 업데이트
