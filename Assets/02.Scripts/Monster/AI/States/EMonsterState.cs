@@ -8,6 +8,7 @@ namespace Monster.AI.States
         Approach,
         Strafe,
         Attack,
+        RangedAttack,
         Recover,
         ReturnHome,
         Hit,

@@ -22,8 +22,11 @@ namespace Monster.Group
         [SerializeField] private float _sideAngleWeight = 3.0f;
 
         [Header("Separation")]
-        [SerializeField] private float _separationRadius = 1.5f;
+        [Tooltip("몬스터 간 분리 시 NavAgent.radius 합에 추가되는 여유 거리")]
+        [SerializeField] private float _separationBuffer = 0.5f;
         [SerializeField] private float _separationWeight = 1.0f;
+        [Tooltip("섹터 점유도 계산 시 기준 반경 (이보다 큰 몬스터는 더 많은 공간 차지)")]
+        [SerializeField] private float _baseRadius = 0.5f;
 
         [Header("공격자 선정(스코어링)")]
         [SerializeField] private float _minAttackReassignInterval = 0.6f;
@@ -101,7 +104,7 @@ namespace Monster.Group
             // 컴포넌트 생성
             _slotManager = new AttackSlotManager(_maxAttackSlots);
             _losChecker = new LineOfSightChecker(_losBlockMask);
-            _separationCalculator = new SeparationForceCalculator(_separationRadius);
+            _separationCalculator = new SeparationForceCalculator(_separationBuffer);
 
             _scoreCalculator = new AttackScoreCalculator(
                 _losChecker,
@@ -116,7 +119,8 @@ namespace Monster.Group
             _sectorCalculator = new SectorOccupancyCalculator(
                 _sectorCount,
                 _sectorScanExtraDist,
-                _sectorSpreadJitterDeg);
+                _sectorSpreadJitterDeg,
+                _baseRadius);
 
             _positionAssigner = new PositionAssigner(
                 _desiredAngleDeg,

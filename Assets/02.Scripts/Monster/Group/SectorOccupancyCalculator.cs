@@ -10,12 +10,14 @@ namespace Monster.Group
         private readonly int _sectorCount;
         private readonly float _sectorScanExtraDist;
         private readonly float _sectorSpreadJitterDeg;
+        private readonly float _baseRadius;
 
-        public SectorOccupancyCalculator(int sectorCount, float sectorScanExtraDist, float sectorSpreadJitterDeg)
+        public SectorOccupancyCalculator(int sectorCount, float sectorScanExtraDist, float sectorSpreadJitterDeg, float baseRadius = 0.5f)
         {
             _sectorCount = sectorCount;
             _sectorScanExtraDist = sectorScanExtraDist;
             _sectorSpreadJitterDeg = sectorSpreadJitterDeg;
+            _baseRadius = baseRadius;
         }
 
         public float[] CalculateSectorOccupancy(List<MonsterController> monsters, Vector3 playerPos, Vector3 playerForward)
@@ -25,7 +27,7 @@ namespace Monster.Group
             for (int i = 0; i < monsters.Count; i++)
             {
                 var monster = monsters[i];
-                if (monster == null || !monster.IsAlive)
+                if (monster == null || !monster.IsAlive || monster.NavAgent == null)
                 {
                     continue;
                 }
@@ -44,8 +46,12 @@ namespace Monster.Group
                 int sectorIndex = AngleToSector(angle);
 
                 // 거리에 따른 가중치 (가까울수록 더 "차있다"로 취급)
-                float weight = Mathf.Lerp(1.5f, 0.5f, Mathf.Clamp01(distance / scanDistance));
-                occupancy[sectorIndex] += weight;
+                float distanceWeight = Mathf.Lerp(1.5f, 0.5f, Mathf.Clamp01(distance / scanDistance));
+
+                // 몬스터 크기에 따른 가중치 (큰 몬스터는 더 많은 공간 차지)
+                float radiusWeight = monster.NavAgent.radius / _baseRadius;
+
+                occupancy[sectorIndex] += distanceWeight * radiusWeight;
             }
 
             return occupancy;

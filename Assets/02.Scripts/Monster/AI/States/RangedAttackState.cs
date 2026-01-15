@@ -1,11 +1,11 @@
 using Monster.Ability;
+using Monster.Combat;
 using UnityEngine;
 
 namespace Monster.AI.States
 {
-    // 공격 상태: Windup (준비) → Perform (애니메이션 실행) 2단계로 구성
-    // NavMeshAgent 이동 없이 애니메이션이 Body를 이동시킴
-    public class AttackState : IMonsterState
+    // 원거리 공격 상태: Aim (조준) → Fire (발사) 2단계로 구성
+    public class RangedAttackState : IMonsterState
     {
         private readonly MonsterController _controller;
         private readonly MonsterStateMachine _stateMachine;
@@ -18,16 +18,16 @@ namespace Monster.AI.States
         private readonly FacingAbility _facingAbility;
         private readonly AnimatorAbility _animatorAbility;
 
-        private enum EAttackPhase { Windup, Perform }
-        private EAttackPhase _currentPhase;
+        private enum ERangedPhase { Aim, Fire }
+        private ERangedPhase _currentPhase;
 
         private bool _isHeavyAttack;
         private float _phaseTimer;
         private bool _isAttackComplete;
 
-        public EMonsterState StateType => EMonsterState.Attack;
+        public EMonsterState StateType => EMonsterState.RangedAttack;
 
-        public AttackState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
+        public RangedAttackState(MonsterController controller, MonsterStateMachine stateMachine, GroupCommandProvider groupCommandProvider)
         {
             _controller = controller;
             _stateMachine = stateMachine;
@@ -42,22 +42,28 @@ namespace Monster.AI.States
 
         public void Enter()
         {
-            // NavAgent 정지
             _navAgentAbility?.Stop();
 
             DetermineAttackType();
 
-            // 약공일 때: 플레이어와 직접 대면한 경우만 공격 (다른 몬스터에게 가로막힌 경우 Strafe)
-            if (!_isHeavyAttack && !HasDirectLineOfSightToPlayer())
+            // 시야 체크 - 플레이어가 보이지 않으면 이동
+            if (!HasLineOfSightToPlayer())
             {
-                Debug.Log($"{_controller.gameObject.name}: 약공 취소 (플레이어 시야 차단됨) - Strafe로 전환");
+                Debug.Log($"{_controller.gameObject.name}: 원거리 공격 취소 (시야 차단됨) - Approach로 전환");
+                _stateMachine.ChangeState(EMonsterState.Approach);
+                return;
+            }
+
+            // 너무 가까우면 후퇴 (원거리는 최소 거리 유지 필요)
+            if (_playerDetectAbility.DistanceToPlayer < _controller.Data.RangedMinDistance)
+            {
+                Debug.Log($"{_controller.gameObject.name}: 원거리 공격 취소 (너무 가까움) - Strafe로 전환");
                 _stateMachine.ChangeState(EMonsterState.Strafe);
                 return;
             }
 
-            InitializeAttackPhase();
-
-            Debug.Log($"{_controller.gameObject.name}: 공격 시작 (Windup) - {(_isHeavyAttack ? "강공" : "약공")}");
+            InitializePhase();
+            Debug.Log($"{_controller.gameObject.name}: 원거리 공격 시작 (Aim) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 
         public void Update()
@@ -73,27 +79,32 @@ namespace Monster.AI.States
 
             switch (_currentPhase)
             {
-                case EAttackPhase.Windup:
-                    UpdateWindupPhase();
+                case ERangedPhase.Aim:
+                    UpdateAimPhase();
                     break;
 
-                case EAttackPhase.Perform:
-                    UpdatePerformPhase();
+                case ERangedPhase.Fire:
+                    UpdateFirePhase();
                     break;
             }
         }
 
         public void Exit()
         {
-            // NavAgent 재개
             _navAgentAbility?.Resume();
         }
 
-        private void UpdateWindupPhase()
+        private void UpdateAimPhase()
         {
-            // Windup 중 플레이어가 너무 멀어지면 취소
-            float attackRange = _isHeavyAttack ? _controller.Data.HeavyAttackRange : _controller.Data.LightAttackRange;
-            if (_playerDetectAbility.DistanceToPlayer > attackRange * 2f)
+            // 조준 중 플레이어가 너무 멀어지면 취소
+            if (_playerDetectAbility.DistanceToPlayer > _controller.Data.RangedAttackRange)
+            {
+                ReturnToCombat();
+                return;
+            }
+
+            // 조준 중 시야 상실 시 취소
+            if (!HasLineOfSightToPlayer())
             {
                 ReturnToCombat();
                 return;
@@ -102,37 +113,36 @@ namespace Monster.AI.States
             // 플레이어 방향으로 회전
             LookAtPlayer();
 
-            // Windup 시간 완료 시 공격 애니메이션 실행
+            // Aim 시간 완료 시 발사
             if (_phaseTimer >= _controller.Data.WindupTime)
             {
-                StartPerformPhase();
+                StartFirePhase();
             }
         }
 
-        private void UpdatePerformPhase()
+        private void UpdateFirePhase()
         {
-            // 애니메이션 완료 대기
+            // 발사 완료 대기
             if (_isAttackComplete)
             {
                 _stateMachine.ChangeState(EMonsterState.Recover);
             }
         }
 
-        private void StartPerformPhase()
+        private void StartFirePhase()
         {
-            _currentPhase = EAttackPhase.Perform;
+            _currentPhase = ERangedPhase.Fire;
             _phaseTimer = 0f;
             _isAttackComplete = false;
 
-            // 공격 애니메이션 트리거
+            // 공격 애니메이션 트리거 + 투사체 발사는 애니메이션 이벤트로 처리
             _animatorAbility?.TriggerAttack(_isHeavyAttack, OnAnimationComplete);
 
-            Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Perform) - {(_isHeavyAttack ? "강공" : "약공")}");
+            Debug.Log($"{_controller.gameObject.name}: 원거리 발사 (Fire) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 
         private void OnAnimationComplete()
         {
-            Debug.Log($"{_controller.gameObject.name}: 공격 애니메이션 완료 콜백 수신");
             _isAttackComplete = true;
         }
 
@@ -143,9 +153,9 @@ namespace Monster.AI.States
             _groupCommandProvider.SetNextAttackHeavy(false);
         }
 
-        private void InitializeAttackPhase()
+        private void InitializePhase()
         {
-            _currentPhase = EAttackPhase.Windup;
+            _currentPhase = ERangedPhase.Aim;
             _phaseTimer = 0f;
             _isAttackComplete = false;
         }
@@ -160,13 +170,13 @@ namespace Monster.AI.States
 
         private void ReturnToCombat()
         {
-            if (_playerDetectAbility.IsTooFar())
+            if (_playerDetectAbility.DistanceToPlayer > _controller.Data.RangedAttackRange)
                 _stateMachine.ChangeState(EMonsterState.Approach);
             else
                 _stateMachine.ChangeState(EMonsterState.Strafe);
         }
 
-        private bool HasDirectLineOfSightToPlayer()
+        private bool HasLineOfSightToPlayer()
         {
             if (!_playerDetectAbility.HasPlayer)
                 return false;

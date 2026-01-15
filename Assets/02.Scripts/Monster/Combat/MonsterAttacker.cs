@@ -6,17 +6,11 @@ using UnityEngine;
 
 namespace Monster.Combat
 {
-    /// <summary>
-    /// 몬스터의 공격을 관리하는 컴포넌트.
-    /// Combat 시스템의 HitboxTrigger를 사용하여 데미지를 전달합니다.
-    ///
-    /// 스탯은 Combatant의 CombatStatsData에서 관리합니다.
-    /// </summary>
     [RequireComponent(typeof(Combatant))]
-    public class MonsterAttacker : MonoBehaviour
+    public class MonsterAttacker : MonoBehaviour, IMonsterAttacker
     {
         [Header("References")]
-        [SerializeField] private HitboxTrigger _hitbox;
+        [SerializeField] private HitboxTrigger[] _hitboxes;
 
         [Header("Attack Settings")]
         [SerializeField] private float _lightAttackMultiplier = 1.0f;
@@ -25,16 +19,21 @@ namespace Monster.Combat
         private Combatant _combatant;
         private AttackContext _currentAttackContext;
         private bool _isInitialized;
+        private bool _isAttacking;
 
+        public bool IsAttacking => _isAttacking;
         public event Action<IDamageable, DamageInfo> OnHit;
 
         public void Initialize()
         {
             _combatant = GetComponent<Combatant>();
 
-            if (_hitbox != null)
+            foreach (var hitbox in _hitboxes)
             {
-                _hitbox.OnHit += HandleHit;
+                if (hitbox != null)
+                {
+                    hitbox.OnHit += HandleHit;
+                }
             }
 
             _isInitialized = true;
@@ -42,23 +41,32 @@ namespace Monster.Combat
 
         private void OnDestroy()
         {
-            if (_hitbox != null)
+            foreach (var hitbox in _hitboxes)
             {
-                _hitbox.OnHit -= HandleHit;
+                if (hitbox != null)
+                {
+                    hitbox.OnHit -= HandleHit;
+                }
             }
         }
 
-        /// <summary>
-        /// 히트박스를 활성화합니다. Animation Event에서 호출됩니다.
-        /// </summary>
-        /// <param name="isHeavy">강공 여부</param>
+        public void ExecuteAttack(bool isHeavy)
+        {
+            EnableHitbox(isHeavy);
+        }
+
+        public void CancelAttack()
+        {
+            DisableHitbox();
+        }
+
         public void EnableHitbox(bool isHeavy)
         {
-            if (!_isInitialized || _hitbox == null) return;
+            if (!_isInitialized) return;
 
+            _isAttacking = true;
             float multiplier = isHeavy ? _heavyAttackMultiplier : _lightAttackMultiplier;
 
-            // Combatant.Stats는 CombatStatsData에서 초기화됨
             _currentAttackContext = AttackContext.Scaled(
                 _combatant,
                 baseMultiplier: 1f,
@@ -66,15 +74,19 @@ namespace Monster.Combat
                 type: DamageType.Normal
             );
 
-            _hitbox.EnableHitbox(_combatant.Team);
+            foreach (var hitbox in _hitboxes)
+            {
+                hitbox?.EnableHitbox(_combatant.Team);
+            }
         }
 
-        /// <summary>
-        /// 히트박스를 비활성화합니다. Animation Event에서 호출됩니다.
-        /// </summary>
         public void DisableHitbox()
         {
-            _hitbox?.DisableHitbox();
+            _isAttacking = false;
+            foreach (var hitbox in _hitboxes)
+            {
+                hitbox?.DisableHitbox();
+            }
         }
 
         private void HandleHit(HitInfo hitInfo)
@@ -92,9 +104,9 @@ namespace Monster.Combat
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (_hitbox == null)
+            if (_hitboxes == null || _hitboxes.Length == 0)
             {
-                _hitbox = GetComponentInChildren<HitboxTrigger>();
+                _hitboxes = GetComponentsInChildren<HitboxTrigger>();
             }
         }
 #endif

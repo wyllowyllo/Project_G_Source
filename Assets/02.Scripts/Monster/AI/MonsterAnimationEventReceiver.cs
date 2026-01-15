@@ -9,11 +9,19 @@ namespace Monster.AI
     {
         private MonsterController _controller;
         private MonsterAttacker _monsterAttacker;
+        private MonsterRangedAttacker _rangedAttacker;
 
         public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker)
         {
             _controller = controller;
             _monsterAttacker = monsterAttacker;
+        }
+
+        public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker, MonsterRangedAttacker rangedAttacker)
+        {
+            _controller = controller;
+            _monsterAttacker = monsterAttacker;
+            _rangedAttacker = rangedAttacker;
         }
 
         // Animation Event: 공격 콜라이더 활성화
@@ -32,9 +40,20 @@ namespace Monster.AI
             _monsterAttacker?.DisableHitbox();
         }
 
+        // Animation Event: 투사체 발사 (원거리 공격용)
+        public void FireProjectile()
+        {
+            if (_rangedAttacker != null && _controller != null)
+            {
+                bool isHeavy = _controller.IsCurrentAttackHeavy();
+                _rangedAttacker.ExecuteAttack(isHeavy);
+            }
+        }
+
         // Animation Event: 공격 애니메이션 완료
         public void OnAttackComplete()
         {
+           
             _controller?.OnAttackAnimationComplete();
         }
 

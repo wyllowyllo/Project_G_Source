@@ -10,6 +10,14 @@ namespace Monster.Data
         HeavyOnly   // 강공만 사용 (약공 없음)
     }
 
+    // 몬스터 공격 타입
+    public enum EMonsterAttackType
+    {
+        Melee,      // 근접 공격
+        Ranged,     // 원거리 공격
+        Hybrid      // 혼합 (거리에 따라 전환)
+    }
+
     // 몬스터의 기본 스탯과 설정을 정의하는 ScriptableObject
     [CreateAssetMenu(fileName = "MonsterData", menuName = "ProjectG/Monster/MonsterData")]
     public class MonsterData : ScriptableObject
@@ -31,11 +39,19 @@ namespace Monster.Data
         [SerializeField] private float _patrolWaitTimeMin = 1f;
         [Tooltip("순찰 지점 도착 후 최대 대기 시간")]
         [SerializeField] private float _patrolWaitTimeMax = 3f;
+        
+        [Header("공격 타입")]
+        [Tooltip("몬스터의 공격 방식")]
+        [SerializeField] private EMonsterAttackType _attackType = EMonsterAttackType.Melee;
 
-        [Header("기본 정보")]
-        [SerializeField] private string _monsterName = "Monster";
-        [SerializeField] private int _monsterLevel = 1;
-
+        [Header("거리 밴드 시스템")]
+        [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
+        [SerializeField] private float _preferredMinDistance = 1.0f;
+        [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
+        [SerializeField] private float _preferredMaxDistance = 4.0f;
+        [Tooltip("스트레이프(좌우 이동) 속도")]
+        [SerializeField] private float _strafeSpeed = 1.5f;
+        
         [Header("공격 행동")]
         [SerializeField] private float _attackRange = 2f;
         [Tooltip("약공 사정거리 (제자리 공격)")]
@@ -43,6 +59,12 @@ namespace Monster.Data
         [Tooltip("강공 사정거리 (돌진 공격)")]
         [SerializeField] private float _heavyAttackRange = 2.5f;
         [SerializeField] private float _attackCooldown = 1.5f;
+
+        [Header("원거리 공격")]
+        [Tooltip("원거리 공격 사거리")]
+        [SerializeField] private float _rangedAttackRange = 10f;
+        [Tooltip("원거리 공격 최소 거리 (이보다 가까우면 근접 또는 후퇴)")]
+        [SerializeField] private float _rangedMinDistance = 4f;
 
         [Header("이동 스탯")]
         [SerializeField] private float _moveSpeed = 3.5f;
@@ -52,15 +74,7 @@ namespace Monster.Data
         [Header("감지 범위")]
         [SerializeField] private float _detectionRange = 12f;
         [SerializeField] private float _engageRange = 10f;
-
-        [Header("거리 밴드 시스템")]
-        [Tooltip("선호 최소 거리 - 이보다 가까우면 후퇴")]
-        [SerializeField] private float _preferredMinDistance = 1.0f;
-        [Tooltip("선호 최대 거리 - 이보다 멀면 접근")]
-        [SerializeField] private float _preferredMaxDistance = 4.0f;
-        [Tooltip("스트레이프(좌우 이동) 속도")]
-        [SerializeField] private float _strafeSpeed = 1.5f;
-
+        
         [Header("테더 시스템")]
         [Tooltip("홈 포지션으로부터 최대 이탈 거리")]
         [SerializeField] private float _tetherRadius = 20f;
@@ -74,13 +88,7 @@ namespace Monster.Data
         [SerializeField] private float _lightAttackRecoverTime = 0.5f;
         [Tooltip("강공 후 회복 시간")]
         [SerializeField] private float _heavyAttackRecoverTime = 2f;
-
-        [Header("근접 공격 - 돌진 패턴")]
-        [Tooltip("돌진 속도 (기본 이동 속도보다 빠름)")]
-        [SerializeField] private float _chargeSpeed = 7f;
-        [Tooltip("후퇴 거리 (공격 후 뒤로 물러나는 거리)")]
-        [SerializeField] private float _retreatDistance = 2f;
-
+        
         [Header("전투 리듬")]
         [Tooltip("약공 발동 확률")]
         [SerializeField, Range(0f, 1f)] private float _lightAttackChance = 0.45f;
@@ -103,17 +111,7 @@ namespace Monster.Data
         [Tooltip("속도 보간 계수 (높을수록 빠르게 가감속)")]
         [SerializeField] private float _speedLerpFactor = 3f;
         
-        [Header("피격 반응")]
-        [Tooltip("넉백 강도")]
-        [SerializeField] private float _knockbackForce = 2f;
-
-        [Header("경험치 및 보상")]
-        [SerializeField] private int _experienceReward = 10;
-        [SerializeField] private int _goldReward = 5;
-
         // Properties
-        public string MonsterName => _monsterName;
-        public int MonsterLevel => _monsterLevel;
         public float AttackRange => _attackRange;
         public float LightAttackRange => _lightAttackRange;
         public float HeavyAttackRange => _heavyAttackRange;
@@ -123,10 +121,8 @@ namespace Monster.Data
         public float RotationSpeed => _rotationSpeed;
         public float DetectionRange => _detectionRange;
         public float EngageRange => _engageRange;
-        public int ExperienceReward => _experienceReward;
-        public int GoldReward => _goldReward;
-
        
+        
         public float PreferredMinDistance => _preferredMinDistance;
         public float PreferredMaxDistance => _preferredMaxDistance;
         public float StrafeSpeed => _strafeSpeed;
@@ -135,10 +131,14 @@ namespace Monster.Data
         public float ExecuteTime => _executeTime;
         public float LightAttackRecoverTime => _lightAttackRecoverTime;
         public float HeavyAttackRecoverTime => _heavyAttackRecoverTime;
+        
 
-        // 근접 공격 Properties
-        public float ChargeSpeed => _chargeSpeed;
-        public float RetreatDistance => _retreatDistance;
+        // 공격 타입 및 원거리 공격 Properties
+        public EMonsterAttackType AttackType => _attackType;
+        public float RangedAttackRange => _rangedAttackRange;
+        public float RangedMinDistance => _rangedMinDistance;
+        public bool IsRanged => _attackType == EMonsterAttackType.Ranged || _attackType == EMonsterAttackType.Hybrid;
+        public bool IsMelee => _attackType == EMonsterAttackType.Melee || _attackType == EMonsterAttackType.Hybrid;
 
         // 전투 리듬
         public EAttackMode AttackMode => _attackMode;
@@ -154,10 +154,7 @@ namespace Monster.Data
         public float StrafePauseChance => _strafePauseChance;
         public float DirectionChangeChance => _directionChangeChance;
         public float SpeedLerpFactor => _speedLerpFactor;
-
-        // 피격 반응
-        public float KnockbackForce => _knockbackForce;
-
+        
         // 행동 패턴
         public bool EnablePatrol => _enablePatrol;
         public bool EnableReturnHome => _enableReturnHome;
@@ -165,6 +162,5 @@ namespace Monster.Data
         public float PatrolWaitTimeMin => _patrolWaitTimeMin;
         public float PatrolWaitTimeMax => _patrolWaitTimeMax;
 
-       
     }
 }
