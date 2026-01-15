@@ -136,8 +136,7 @@ namespace Player
 
             Destroy(vfx, _vfxLifetime);
         }
-
-        // 커스텀
+        
         public void Spawn(GameObject vfxPrefab, Vector3 position, Quaternion rotation)
         {
             if(vfxPrefab == null)
@@ -148,8 +147,7 @@ namespace Player
             GameObject vfx = Instantiate(vfxPrefab, position, rotation);
             Destroy(vfx, _vfxLifetime);
         }
-
-        // VFX 설정
+        
         public void SetAttackVFX(GameObject[] vfxArray)
         {
             _attackVFX = vfxArray;
@@ -171,8 +169,7 @@ namespace Player
 
             if (_weaponTrail == null)
                 return;
-
-            // 이전 트레일이 dying 상태면 정리 후 다음 프레임에서 시작
+            
             if (_trailCoroutine != null)
             {
                 StopCoroutine(_trailCoroutine);
@@ -218,6 +215,27 @@ namespace Player
             if (_trailActive)
             {
                 _weaponTrail?.Clear();
+                _trailActive = false;
+            }
+        }
+
+        public void StartSkillTrail()
+        {
+            if (_weaponTrail == null)
+                return;
+
+            if (_trailCoroutine != null)
+            {
+                StopCoroutine(_trailCoroutine);
+            }
+            _trailCoroutine = StartCoroutine(StartTrailNextFrame());
+        }
+
+        public void StopSkillTrail()
+        {
+            if (_trailActive)
+            {
+                _weaponTrail?.End();
                 _trailActive = false;
             }
         }

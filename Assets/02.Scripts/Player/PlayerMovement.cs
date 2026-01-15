@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using KinematicCharacterController;
 using UnityEngine;
@@ -6,6 +7,8 @@ namespace Player
 {
     public class PlayerMovement : MonoBehaviour, ICharacterController, IRootMotionRequester, ICloneDisableable
     {
+        public bool ForwardOnly => false;
+
         private const float MinVelocityThreshold = 0.01f;
         private const float MinRootMotionThreshold = 0.000001f;
         private const float MinInputThreshold = 0.1f;
@@ -54,6 +57,8 @@ namespace Player
         private Vector3 _rootMotionPositionDelta;
         private readonly Dictionary<IRootMotionRequester, float> _rootMotionRequesters = new();
         private float _rootMotionMultiplier = 1f;
+
+        private Func<Vector3, float, Vector3> _velocityOverride;
 
         private void Awake()
         {
@@ -177,8 +182,36 @@ namespace Player
 
             if (_rootMotionRequesters.Count > 0)
             {
-                _rootMotionPositionDelta += _animator.deltaPosition * _rootMotionMultiplier;
+                Vector3 delta = _animator.deltaPosition * _rootMotionMultiplier;
+
+                if (HasForwardOnlyRequester())
+                {
+                    delta = FilterBackwardMotion(delta);
+                }
+
+                _rootMotionPositionDelta += delta;
             }
+        }
+
+        private bool HasForwardOnlyRequester()
+        {
+            foreach (var requester in _rootMotionRequesters.Keys)
+            {
+                if (requester.ForwardOnly) return true;
+            }
+            return false;
+        }
+
+        private Vector3 FilterBackwardMotion(Vector3 delta)
+        {
+            Vector3 localDelta = transform.InverseTransformDirection(delta);
+
+            if (localDelta.z < 0f)
+            {
+                localDelta.z = 0f;
+            }
+
+            return transform.TransformDirection(localDelta);
         }
 
         public void BeforeCharacterUpdate(float deltaTime)
@@ -276,6 +309,13 @@ namespace Player
 
        public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
+            if (_velocityOverride != null)
+            {
+                currentVelocity = _velocityOverride(currentVelocity, deltaTime);
+                _currentVelocity = currentVelocity;
+                return;
+            }
+
             if (_motor.GroundingStatus.IsStableOnGround)
             {
                 currentVelocity = ProjectVelocityOnSlope(currentVelocity);
@@ -448,6 +488,16 @@ namespace Player
             }
         }
 
+        public void SetVelocityOverride(Func<Vector3, float, Vector3> overrideFunc)
+        {
+            _velocityOverride = overrideFunc;
+        }
+
+        public void ClearVelocityOverride()
+        {
+            _velocityOverride = null;
+        }
+
         public bool IsMoving()
         {
             return _moveInputVector.magnitude > MinInputThreshold;
@@ -461,6 +511,21 @@ namespace Player
         public bool IsGrounded()
         {
             return _motor != null && _motor.GroundingStatus.IsStableOnGround;
+        }
+
+        public void ForceUnground()
+        {
+            _motor?.ForceUnground();
+        }
+
+        public void SetPosition(Vector3 position)
+        {
+            _motor?.SetPosition(position);
+        }
+
+        public void SetPositionAndRotation(Vector3 position, Quaternion rotation)
+        {
+            _motor?.SetPositionAndRotation(position, rotation);
         }
 
         public void SetLookDirection(Vector3 direction)

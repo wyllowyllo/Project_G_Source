@@ -1,4 +1,7 @@
 namespace Player
 {
-    public interface IRootMotionRequester { }
+    public interface IRootMotionRequester
+    {
+        bool ForwardOnly { get; }
+    }
 }
