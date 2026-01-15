@@ -9,6 +9,16 @@ namespace Boss.Core
     // HP 구간별로 페이즈 전환 및 스탯 변경 적용
     public class BossPhaseManager
     {
+        // 보스 공격 패턴 
+        public enum EBossPattern
+        {
+            MeleeAttack,
+            Charge,
+            Breath,
+            Projectile,
+            Summon
+        }
+        
         private readonly BossPhaseData[] _phases;
         private readonly Combatant _combatant;
         private int _currentPhaseIndex;
@@ -140,13 +150,5 @@ namespace Boss.Core
         }
     }
 
-    // 보스 공격 패턴 열거형
-    public enum EBossPattern
-    {
-        MeleeAttack,
-        Charge,
-        Breath,
-        Projectile,
-        Summon
-    }
+   
 }

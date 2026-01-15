@@ -132,12 +132,22 @@ namespace Boss.AI
         {
             _stateMachine = new BossStateMachine(this);
 
-            // 상태 등록은 Phase 3에서 구현
-            // 임시로 Idle 상태만 등록
-            // _stateMachine.RegisterState(EBossState.Idle, new BossIdleState(this, _stateMachine));
+            // Phase 3: 기본 상태 등록
+            _stateMachine.RegisterState(EBossState.Idle, new BossIdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Hit, new BossHitState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Stagger, new BossStaggerState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Dead, new BossDeadState(this));
+            _stateMachine.RegisterState(EBossState.PhaseTransition, new BossPhaseTransitionState(this, _stateMachine));
 
-            // 초기 상태 설정
-            // _stateMachine.Initialize(EBossState.Idle);
+            // TODO: Phase 4에서 공격 상태 등록
+            // _stateMachine.RegisterState(EBossState.MeleeAttack, new BossMeleeAttackState(this, _stateMachine));
+            // _stateMachine.RegisterState(EBossState.Charge, new BossChargeState(this, _stateMachine));
+            // _stateMachine.RegisterState(EBossState.Breath, new BossBreathState(this, _stateMachine));
+            // _stateMachine.RegisterState(EBossState.Projectile, new BossProjectileState(this, _stateMachine));
+            // _stateMachine.RegisterState(EBossState.Summon, new BossSummonState(this, _stateMachine));
+
+            // 초기 상태: Idle
+            _stateMachine.Initialize(EBossState.Idle);
         }
 
         private void InitializeAbilities()
