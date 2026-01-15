@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using Progression;
 
+using SkillSlotUI = UI.UISkill.SkillSlotUI;
+
 public class SkillUIManager : MonoBehaviour
 {
     [Header("Prefabs")]
