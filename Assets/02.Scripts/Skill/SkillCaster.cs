@@ -27,6 +27,7 @@ namespace Skill
         private PlayerVFXController _vfxController;
         private SkillHitbox _skillHitbox;
         private GlideController _glideController;
+        private PlayerCombat _playerCombat;
 
         private readonly Dictionary<SkillSlot, int> _skillLevels = new()
         {
@@ -73,6 +74,7 @@ namespace Skill
             _playerMovement = GetComponent<PlayerMovement>();
             _vfxController = GetComponent<PlayerVFXController>();
             _glideController = GetComponent<GlideController>();
+            _playerCombat = GetComponent<PlayerCombat>();
 
             if (_progression != null)
                 _progression.OnSkillEnhanced += HandleSkillEnhanced;
@@ -117,6 +119,7 @@ namespace Skill
         {
             if (!IsSkillReady(slot)) return false;
             if (_isCasting) return false;
+            if (_playerCombat != null && _playerCombat.IsDodging) return false;
 
             if (slot == SkillSlot.E && _glideController != null)
             {
