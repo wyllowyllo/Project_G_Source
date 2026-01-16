@@ -252,6 +252,7 @@ namespace Skill
                     transform.rotation,
                     tier.Range,
                     tier.Angle,
+                    tier.ConeHeight,
                     tier.BoxWidth,
                     tier.BoxHeight,
                     tier.PositionOffset

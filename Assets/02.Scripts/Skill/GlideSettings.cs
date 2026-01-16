@@ -30,6 +30,9 @@ namespace Skill
         [Header("Cooldown")]
         [SerializeField] private float _cooldown = 10f;
 
+        [Header("Landing")]
+        [SerializeField] private float _landingTimeout = 1.5f;
+
         public float JumpForce => _jumpForce;
         public float JumpDuration => _jumpDuration;
         public float GlideGravity => _glideGravity;
@@ -43,5 +46,6 @@ namespace Skill
         public float ParabolicDiveSpeedFactor => _parabolicDiveSpeedFactor;
         public float ParabolicArcHeight => _parabolicArcHeight;
         public float Cooldown => _cooldown;
+        public float LandingTimeout => _landingTimeout;
     }
 }

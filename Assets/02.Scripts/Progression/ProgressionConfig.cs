@@ -1,3 +1,4 @@
+using System;
 using Skill;
 using UnityEngine;
 
@@ -17,9 +18,7 @@ namespace Progression
         [SerializeField] private float _attackPerLevel = 5f;
 
         [Header("Skill Enhancement Levels")]
-        [SerializeField] private int _qSkillLevel = 11;
-        [SerializeField] private int _eSkillLevel = 21;
-        [SerializeField] private int _rSkillLevel = 30;
+        [SerializeField] private int[] _skillEnhancementLevels = { 10, 20, 30 };
 
         private int[] _xpThresholds;
 
@@ -48,19 +47,16 @@ namespace Progression
         public float GetAttackBonus(int level) =>
             _attackPerLevel * (level - 1);
 
-        public SkillSlot GetSkillEnhancement(int level) => level switch
-        {
-            var l when l == _qSkillLevel => SkillSlot.Q,
-            var l when l == _eSkillLevel => SkillSlot.E,
-            var l when l == _rSkillLevel => SkillSlot.R,
-            _ => SkillSlot.None
-        };
+        private static readonly SkillSlot[] AllSkills = { SkillSlot.Q, SkillSlot.E, SkillSlot.R };
+
+        public SkillSlot[] GetSkillEnhancements(int level) =>
+            Array.Exists(_skillEnhancementLevels, l => l == level) ? AllSkills : Array.Empty<SkillSlot>();
 
         public static HunterRank GetRank(int level) => level switch
         {
             >= 30 => HunterRank.S,
-            >= 21 => HunterRank.A,
-            >= 11 => HunterRank.B,
+            >= 20 => HunterRank.A,
+            >= 10 => HunterRank.B,
             _ => HunterRank.C
         };
 
@@ -70,18 +66,14 @@ namespace Progression
             int baseXp = 100,
             float exponent = 1.5f,
             float attackPerLevel = 5f,
-            int qSkillLevel = 11,
-            int eSkillLevel = 21,
-            int rSkillLevel = 30)
+            int[] skillEnhancementLevels = null)
         {
             var config = CreateInstance<ProgressionConfig>();
             config._maxLevel = maxLevel;
             config._baseXp = baseXp;
             config._exponent = exponent;
             config._attackPerLevel = attackPerLevel;
-            config._qSkillLevel = qSkillLevel;
-            config._eSkillLevel = eSkillLevel;
-            config._rSkillLevel = rSkillLevel;
+            config._skillEnhancementLevels = skillEnhancementLevels ?? new[] { 10, 20, 30 };
             config.CacheXpThresholds();
             return config;
         }
