@@ -117,15 +117,21 @@ namespace Player
 
         private void HandleInput()
         {
+            if (!_movementEnabled)
+            {
+                _moveInputVector = Vector3.zero;
+                return;
+            }
+
             float horizontal = Input.GetAxisRaw("Horizontal");
             float vertical = Input.GetAxisRaw("Vertical");
-            
+
             Vector3 inputVector = new Vector3(horizontal, 0f, vertical);
-            
+
             if (_useCameraForward && _cameraTransform != null)
             {
                 _moveInputVector = GetCameraRelativeMovement(inputVector);
-           
+
             }
             else
             {

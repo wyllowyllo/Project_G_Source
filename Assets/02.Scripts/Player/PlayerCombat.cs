@@ -227,6 +227,7 @@ namespace Player
         {
             _animationController?.PlayDeath();
             _inputHandler?.SetEnabled(false);
+            _playerMovement?.SetMovementEnabled(false);
 
             EndDodge();
 
