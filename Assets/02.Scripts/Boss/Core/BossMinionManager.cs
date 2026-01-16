@@ -120,12 +120,8 @@ namespace Boss.Core
             // MonsterGroupDirector에 등록
             _minionGroup?.RegisterMonster(minion);
 
-            // GroupCommandProvider 설정
-            var groupProvider = minion.GetComponent<GroupCommandProvider>();
-            if (groupProvider != null)
-            {
-                groupProvider.SetEnemyGroup(_minionGroup);
-            }
+            // GroupCommandProvider 설정 (MonsterController의 프로퍼티로 접근)
+            minion.GroupCommandProvider?.SetEnemyGroup(_minionGroup);
 
             // 즉시 전투 상태로 전환 (순찰 스킵)
             minion.ForceEnterCombat();
