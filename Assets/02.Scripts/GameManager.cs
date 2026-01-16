@@ -1,4 +1,5 @@
 using System.Collections;
+using Dungeon;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -32,7 +33,12 @@ public class GameManager : MonoBehaviour
     private IEnumerator GameOver_Coroutine()
     {
         _state = EGameState.GameOver;
-        Debug.Log("Game Over");
+
+        if (DungeonManager.Instance != null && DungeonManager.Instance.IsInDungeon)
+        {
+            DungeonManager.Instance.FailDungeon();
+        }
+
         yield return null;
     }
 }
