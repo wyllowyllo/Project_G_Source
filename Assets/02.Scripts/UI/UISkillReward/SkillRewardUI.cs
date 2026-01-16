@@ -11,6 +11,7 @@ public class SkillRewardUI : MonoBehaviour
     [SerializeField] private Transform itemContainer;
     [SerializeField] private SkillRewardItem itemPrefab;
     [SerializeField] private TMPro.TextMeshProUGUI titleText;
+    [SerializeField] private TMPro.TextMeshProUGUI subText;
 
     [Header("중앙 확장 패널")]
     [SerializeField] private RectTransform centerPanel;
@@ -21,6 +22,13 @@ public class SkillRewardUI : MonoBehaviour
     [SerializeField] private float itemDelayBetween = 0.2f;
     [SerializeField] private AnimationCurve panelExpandCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("자동 닫기 설정")]
+    [Tooltip("UI가 나타난 후 자동으로 닫히기까지의 시간 (초)")]
+    [SerializeField] private float autoCloseDelay = 2f;
+
+    [Tooltip("자동 닫기 기능 사용")]
+    [SerializeField] private bool useAutoClose = true;
+
     [Header("사운드 (옵션)")]
     [SerializeField] private AudioClip openSound;
     [SerializeField] private AudioClip itemAppearSound;
@@ -29,6 +37,7 @@ public class SkillRewardUI : MonoBehaviour
     private List<SkillRewardItem> activeItems = new List<SkillRewardItem>();
     private bool isShowing = false;
     private bool isInitialized = false;
+    private Coroutine autoCloseCoroutine;
 
     private void Awake()
     {
@@ -56,6 +65,11 @@ public class SkillRewardUI : MonoBehaviour
             titleText.gameObject.SetActive(false);
         }
 
+        if (subText != null)
+        {
+            subText.gameObject.SetActive(false);
+        }
+
         isInitialized = true;
     }
 
@@ -74,6 +88,13 @@ public class SkillRewardUI : MonoBehaviour
         if (!gameObject.activeInHierarchy)
         {
             return;
+        }
+
+        // 기존 자동 닫기 코루틴 취소
+        if (autoCloseCoroutine != null)
+        {
+            StopCoroutine(autoCloseCoroutine);
+            autoCloseCoroutine = null;
         }
 
         StartCoroutine(ShowRewardsCoroutine(rewards));
@@ -96,6 +117,11 @@ public class SkillRewardUI : MonoBehaviour
             StartCoroutine(ShowTitleText());
         }
 
+        if (subText != null)
+        {
+            StartCoroutine(ShowSubText());
+        }
+
         PlaySound(openSound);
 
         for (int i = 0; i < rewards.Length; i++)
@@ -108,9 +134,23 @@ public class SkillRewardUI : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(panelExpandDuration + rewards.Length * itemDelayBetween + 1f);
+        // 모든 애니메이션 완료 대기
+        float totalAnimationTime = panelExpandDuration + rewards.Length * itemDelayBetween + 1f;
+        yield return new WaitForSeconds(totalAnimationTime);
 
         isShowing = false;
+
+        // 자동 닫기 시작
+        if (useAutoClose)
+        {
+            autoCloseCoroutine = StartCoroutine(AutoCloseCoroutine());
+        }
+    }
+
+    private IEnumerator AutoCloseCoroutine()
+    {
+        yield return new WaitForSeconds(autoCloseDelay);
+        CloseRewardUI();
     }
 
     private IEnumerator ExpandCenterPanel()
@@ -138,6 +178,33 @@ public class SkillRewardUI : MonoBehaviour
 
         // 최종 높이 설정
         centerPanel.sizeDelta = new Vector2(centerPanel.sizeDelta.x, targetPanelHeight);
+    }
+
+    private IEnumerator ShowSubText()
+    {
+        if (subText == null) yield break;
+
+        subText.gameObject.SetActive(true);
+
+        Color subtextColor = subText.color;
+        subtextColor.a = 0f;
+        subText.color = subtextColor;
+
+        yield return new WaitForSeconds(0.5f);
+
+        float elapsed = 0f;
+        float duration = 0.5f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            subtextColor.a = Mathf.Lerp(0f, 1f, t);
+            subText.color = subtextColor;
+
+            yield return null;
+        }
     }
 
     private IEnumerator ShowTitleText()
@@ -191,6 +258,13 @@ public class SkillRewardUI : MonoBehaviour
 
     public void CloseRewardUI()
     {
+        // 자동 닫기 코루틴 취소
+        if (autoCloseCoroutine != null)
+        {
+            StopCoroutine(autoCloseCoroutine);
+            autoCloseCoroutine = null;
+        }
+
         if (!gameObject.activeInHierarchy)
         {
             HideRewardPanelImmediate();
@@ -207,6 +281,11 @@ public class SkillRewardUI : MonoBehaviour
         if (titleText != null)
         {
             StartCoroutine(HideTitleText());
+        }
+
+        if (subText != null)
+        {
+            StartCoroutine(HideSubText());
         }
 
         List<SkillRewardItem> itemsToRemove = new List<SkillRewardItem>(activeItems);
@@ -267,6 +346,29 @@ public class SkillRewardUI : MonoBehaviour
         titleText.gameObject.SetActive(false);
     }
 
+    private IEnumerator HideSubText()
+    {
+        if (subText == null || !subText.gameObject.activeSelf) yield break;
+
+        float elapsed = 0f;
+        float duration = 0.3f;
+        Color subtextColor = subText.color;
+        float startAlpha = subtextColor.a;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            subtextColor.a = Mathf.Lerp(startAlpha, 0f, t);
+            subText.color = subtextColor;
+
+            yield return null;
+        }
+
+        subText.gameObject.SetActive(false);
+    }
+
     private IEnumerator CollapseCenterPanel()
     {
         if (centerPanel == null) yield break;
@@ -325,6 +427,11 @@ public class SkillRewardUI : MonoBehaviour
         if (titleText != null)
         {
             titleText.gameObject.SetActive(false);
+        }
+
+        if (subText != null)
+        {
+            subText.gameObject.SetActive(false);
         }
 
         isShowing = false;

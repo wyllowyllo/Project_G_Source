@@ -55,17 +55,7 @@ public class SkillRewardItem : MonoBehaviour
         if (levelText != null)
         {
             levelText.text = $"Lv.{data.previousLevel} → Lv.{data.newLevel}";
-        }
-        
-        if (backgroundImage != null)
-        {
-            backgroundImage.color = data.rarityColor;
-        }
-        
-        if (glowImage != null)
-        {
-            glowImage.color = data.glowColor;
-        }
+        }      
         
         // 초기 상태 설정
         rectTransform.localScale = Vector2.zero;
