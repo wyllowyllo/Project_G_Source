@@ -86,6 +86,7 @@ namespace Progression
                 Level++;
 
                 ApplyLevelStats();
+                RestoreHealthToFull();
                 OnLevelUp?.Invoke(previousLevel, Level);
 
                 foreach (var skill in _config.GetSkillEnhancements(Level))
@@ -102,6 +103,11 @@ namespace Progression
         {
             float bonus = _config.GetAttackBonus(Level);
             _combatant.Stats.AttackDamage.BaseValue = _initialAttackDamage + bonus;
+        }
+
+        private void RestoreHealthToFull()
+        {
+            _combatant.Heal(_combatant.MaxHealth);
         }
 
         [Conditional("UNITY_EDITOR")]

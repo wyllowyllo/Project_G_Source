@@ -8,6 +8,7 @@ namespace Interaction
         [Header("Outline Settings")]
         [SerializeField] private Color _outlineColor = Color.yellow;
         [SerializeField] private float _outlineWidth = 5f;
+        [SerializeField] private QuickOutline.Mode _outlineMode = QuickOutline.Mode.OutlineAll;
 
         private QuickOutline _outline;
 
@@ -22,7 +23,7 @@ namespace Interaction
                 _outline = gameObject.AddComponent<QuickOutline>();
             }
 
-            _outline.OutlineMode = QuickOutline.Mode.OutlineAll;
+            _outline.OutlineMode = _outlineMode;
             _outline.OutlineColor = _outlineColor;
             _outline.OutlineWidth = _outlineWidth;
             _outline.enabled = false;

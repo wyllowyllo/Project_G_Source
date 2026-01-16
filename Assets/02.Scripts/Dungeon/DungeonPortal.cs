@@ -21,7 +21,8 @@ namespace Dungeon
             _dungeonManager = DungeonManager.Instance;
             if (_dungeonManager != null)
             {
-                _dungeonManager.DungeonCleared += UpdateVisuals;
+                _dungeonManager.DungeonCleared += OnDungeonCleared;
+                _dungeonManager.DungeonUnlocked += OnDungeonUnlocked;
             }
         }
 
@@ -29,20 +30,23 @@ namespace Dungeon
         {
             if (_dungeonManager != null)
             {
-                _dungeonManager.DungeonCleared -= UpdateVisuals;
+                _dungeonManager.DungeonCleared -= OnDungeonCleared;
+                _dungeonManager.DungeonUnlocked -= OnDungeonUnlocked;
             }
         }
 
         private void Start()
         {
-            UpdateVisuals();
+            UpdateVisibility();
+            UpdateClearedIndicator();
         }
 
         public override bool CanInteract()
         {
             if (_dungeonData == null) return false;
             if (DungeonManager.Instance == null) return false;
-            return !DungeonManager.Instance.IsInDungeon;
+            if (DungeonManager.Instance.IsInDungeon) return false;
+            return DungeonManager.Instance.IsDungeonUnlocked(_dungeonData);
         }
 
         public override void Interact()
@@ -51,7 +55,28 @@ namespace Dungeon
             DungeonManager.Instance.EnterDungeon(_dungeonData);
         }
 
-        private void UpdateVisuals(int _ = 0)
+        private void OnDungeonCleared(int xp)
+        {
+            UpdateClearedIndicator();
+        }
+
+        private void OnDungeonUnlocked(DungeonData unlockedDungeon)
+        {
+            if (unlockedDungeon == _dungeonData)
+            {
+                UpdateVisibility();
+            }
+        }
+
+        private void UpdateVisibility()
+        {
+            if (_dungeonData == null || DungeonManager.Instance == null) return;
+
+            bool isUnlocked = DungeonManager.Instance.IsDungeonUnlocked(_dungeonData);
+            gameObject.SetActive(isUnlocked);
+        }
+
+        private void UpdateClearedIndicator()
         {
             if (_dungeonData == null || DungeonManager.Instance == null) return;
 

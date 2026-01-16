@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace Dungeon
 {
-    public class PlayerDeathHandler : MonoBehaviour
+    public class DungeonFailHandler : MonoBehaviour
     {
         [Header("Settings")]
         [SerializeField] private float _autoReturnDelay = 10f;
         [SerializeField] private float _inputAcceptDelay = 1f;
 
-        public event Action OnDeathSequenceStarted;
+        public event Action OnFailSequenceStarted;
         public event Action OnInputAccepted;
         public event Action OnReturnToTown;
 
@@ -52,13 +52,13 @@ namespace Dungeon
         private void HandleDungeonFailed()
         {
             StopReturnCoroutine();
-            _returnCoroutine = StartCoroutine(DeathSequence());
+            _returnCoroutine = StartCoroutine(FailSequence());
         }
 
-        private IEnumerator DeathSequence()
+        private IEnumerator FailSequence()
         {
             _canAcceptInput = false;
-            OnDeathSequenceStarted?.Invoke();
+            OnFailSequenceStarted?.Invoke();
 
             yield return new WaitForSeconds(_inputAcceptDelay);
             _canAcceptInput = true;
