@@ -479,13 +479,9 @@ namespace Skill
 
         private void RequestDiveBombDamage()
         {
-            var context = new SkillAreaContext(
-                SkillAreaType.Sphere,
+            var context = SkillAreaContext.CreateSphere(
                 _settings.DiveRadius,
-                angle: 0f,
-                boxWidth: 0f,
-                boxHeight: 0f,
-                positionOffset: Vector3.zero,
+                Vector3.zero,
                 _enemyLayer,
                 _combatant.Team
             );
