@@ -367,12 +367,8 @@ namespace Player
             var target = _orbitalFollow != null ? _orbitalFollow.FollowTarget : null;
             if (target == null) return;
 
-            var brain = CinemachineCore.FindPotentialTargetBrain(_cinemachineCamera);
-            if (brain != null)
-            {
-                _cinemachineCamera.OnTargetObjectWarped(target, Vector3.zero);
-                brain.ManualUpdate();
-            }
+            _cinemachineCamera.OnTargetObjectWarped(target, Vector3.zero);
+            _cinemachineCamera.PreviousStateIsValid = false;
         }
 
         #endregion

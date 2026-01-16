@@ -1,6 +1,7 @@
 using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
+using Dungeon;
 using Skill;
 using UnityEngine;
 using UnityEngine.Events;
@@ -47,6 +48,13 @@ namespace Player
         private void Start()
         {
             SubscribeEvents();
+            InitializeCombatState();
+        }
+
+        private void InitializeCombatState()
+        {
+            bool inDungeon = DungeonManager.Instance != null && DungeonManager.Instance.IsInDungeon;
+            SetCombatEnabled(inDungeon);
         }
 
         private void OnDestroy()
@@ -110,6 +118,12 @@ namespace Player
                 _attacker.OnComboReset += HandleComboReset;
                 _attacker.OnHit += HandleHit;
             }
+
+            if (DungeonManager.Instance != null)
+            {
+                DungeonManager.Instance.DungeonEntered += HandleDungeonEntered;
+                DungeonManager.Instance.DungeonExited += HandleDungeonExited;
+            }
         }
 
         private void UnsubscribeEvents()
@@ -133,6 +147,22 @@ namespace Player
                 _attacker.OnComboReset -= HandleComboReset;
                 _attacker.OnHit -= HandleHit;
             }
+
+            if (DungeonManager.Instance != null)
+            {
+                DungeonManager.Instance.DungeonEntered -= HandleDungeonEntered;
+                DungeonManager.Instance.DungeonExited -= HandleDungeonExited;
+            }
+        }
+
+        private void HandleDungeonEntered()
+        {
+            SetCombatEnabled(true);
+        }
+
+        private void HandleDungeonExited()
+        {
+            SetCombatEnabled(false);
         }
 
         private void HandleAttackInput()

@@ -1,3 +1,4 @@
+using Dialogue;
 using UnityEngine;
 
 namespace Dungeon
@@ -17,6 +18,10 @@ namespace Dungeon
         [Header("Rewards")]
         [SerializeField] private int _clearXpReward;
 
+        [Header("Dialogue")]
+        [Tooltip("던전 클리어 후 대화")]
+        [SerializeField] private DialogueData _clearDialogue;
+
         public string DungeonId => name;
         public string DisplayName => _displayName;
         public string SceneName => _sceneName;
@@ -24,6 +29,7 @@ namespace Dungeon
         public int ClearXpReward => _clearXpReward;
         public DungeonData RequiredDungeon => _requiredDungeon;
         public bool IsFirstDungeon => _requiredDungeon == null;
+        public DialogueData ClearDialogue => _clearDialogue;
 
 #if UNITY_EDITOR
         private void OnValidate()

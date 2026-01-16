@@ -20,6 +20,8 @@ namespace Dungeon
         public event Action DungeonFailed;
         public event Action GameCompleted;
         public event Action<DungeonData> DungeonUnlocked;
+        public event Action DungeonEntered;
+        public event Action DungeonExited;
 
         public DungeonData CurrentDungeon => _currentDungeon;
         public bool IsInDungeon => _currentDungeon != null;
@@ -76,6 +78,7 @@ namespace Dungeon
             }
 
             _currentDungeon = dungeon;
+            DungeonEntered?.Invoke();
             SceneLoader.LoadScene(dungeon.SceneName);
         }
 
@@ -121,6 +124,7 @@ namespace Dungeon
         public void ReturnToTown()
         {
             _currentDungeon = null;
+            DungeonExited?.Invoke();
             SceneLoader.LoadScene(_townSceneName);
         }
 

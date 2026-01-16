@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Core;
+using Dialogue;
 using Monster.Manager;
 using UnityEngine;
 
@@ -107,6 +108,13 @@ namespace Dungeon
         {
             _canAcceptInput = false;
             OnClearSequenceStarted?.Invoke();
+
+            // 클리어 대화를 마을 도착 시 표시하도록 예약
+            var clearDialogue = _dungeonManager?.CurrentDungeon?.ClearDialogue;
+            if (clearDialogue != null && DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.QueueDialogueOnTownLoad(clearDialogue);
+            }
 
             yield return new WaitForSeconds(_inputAcceptDelay);
             _canAcceptInput = true;

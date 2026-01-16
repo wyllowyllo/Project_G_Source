@@ -35,6 +35,8 @@ namespace Core
             DontDestroyOnLoad(gameObject);
 
             SetAlpha(0f);
+            if (_fadeCanvasGroup != null)
+                _fadeCanvasGroup.gameObject.SetActive(false);
         }
 
         private void OnEnable()
@@ -130,6 +132,7 @@ namespace Core
         {
             if (_fadeCanvasGroup == null) yield break;
 
+            _fadeCanvasGroup.gameObject.SetActive(true);
             _fadeCanvasGroup.blocksRaycasts = true;
             float startAlpha = _fadeCanvasGroup.alpha;
             float elapsed = 0f;
@@ -159,6 +162,7 @@ namespace Core
             }
 
             SetAlpha(0f);
+            _fadeCanvasGroup.gameObject.SetActive(false);
         }
 
         private void SetAlpha(float alpha)
