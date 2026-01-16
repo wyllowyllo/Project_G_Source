@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Combat.Editor
+namespace ProjectG.Editor
 {
     // 전투 시스템 초기 설정 유틸리티.
     // 레이어 추가 및 Physics 충돌 매트릭스를 자동으로 설정합니다.
