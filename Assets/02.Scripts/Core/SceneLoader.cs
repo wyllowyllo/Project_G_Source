@@ -6,6 +6,9 @@ namespace Core
 {
     public class SceneLoader : MonoBehaviour
     {
+        private const float SCENE_STABILIZATION_WAIT_TIME = 0.1f;
+        private const float RAYCAST_BLOCK_THRESHOLD = 0.5f;
+
         public static SceneLoader Instance { get; private set; }
 
         [Header("Settings")]
@@ -115,7 +118,7 @@ namespace Core
             // 4. Wait frames for scene to stabilize
             yield return null;
             yield return null;
-            yield return new WaitForSecondsRealtime(0.1f);
+            yield return new WaitForSecondsRealtime(SCENE_STABILIZATION_WAIT_TIME);
 
             // 5. Fade from black
             yield return StartCoroutine(FadeFromBlack());
@@ -162,7 +165,7 @@ namespace Core
         {
             if (_fadeCanvasGroup == null) return;
             _fadeCanvasGroup.alpha = alpha;
-            _fadeCanvasGroup.blocksRaycasts = alpha > 0.5f;
+            _fadeCanvasGroup.blocksRaycasts = alpha > RAYCAST_BLOCK_THRESHOLD;
         }
     }
 }

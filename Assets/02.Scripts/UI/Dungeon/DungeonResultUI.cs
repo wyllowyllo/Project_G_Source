@@ -51,12 +51,12 @@ namespace UI.Dungeon
             _returnButton?.onClick.RemoveListener(OnReturnClicked);
         }
 
-        private void ShowClearPanel()
+        private void ShowClearPanel(int xpReward)
         {
             _clearPanel?.SetActive(true);
-            if (_xpRewardText != null && _dungeonManager?.CurrentDungeon != null)
+            if (_xpRewardText != null)
             {
-                _xpRewardText.text = $"+{_dungeonManager.CurrentDungeon.ClearXpReward} XP";
+                _xpRewardText.text = $"+{xpReward} XP";
             }
         }
 

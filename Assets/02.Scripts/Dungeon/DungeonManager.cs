@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Core;
-using Progression;
 using UnityEngine;
 
 namespace Dungeon
@@ -17,7 +16,7 @@ namespace Dungeon
         private DungeonData _currentDungeon;
         private HashSet<string> _clearedDungeons = new();
 
-        public event Action DungeonCleared;
+        public event Action<int> DungeonCleared;
         public event Action DungeonFailed;
         public event Action GameCompleted;
 
@@ -78,9 +77,7 @@ namespace Dungeon
             PlayerPrefs.SetInt($"Dungeon_{_currentDungeon.DungeonId}_Cleared", 1);
             PlayerPrefs.Save();
 
-            FindFirstObjectByType<PlayerProgression>()?.AddExperience(_currentDungeon.ClearXpReward);
-
-            DungeonCleared?.Invoke();
+            DungeonCleared?.Invoke(_currentDungeon.ClearXpReward);
 
             if (_clearedDungeons.Count >= _allDungeons.Length)
             {

@@ -51,7 +51,7 @@ namespace Dungeon
             DungeonManager.Instance.EnterDungeon(_dungeonData);
         }
 
-        private void UpdateVisuals()
+        private void UpdateVisuals(int _ = 0)
         {
             if (_dungeonData == null || DungeonManager.Instance == null) return;
 
