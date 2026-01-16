@@ -110,7 +110,7 @@ namespace Dungeon
             OnClearSequenceStarted?.Invoke();
 
             // 클리어 대화를 마을 도착 시 표시하도록 예약
-            var clearDialogue = _dungeonManager?.CurrentDungeon?.ClearDialogue;
+            var clearDialogue = _dungeonManager?.GetCurrentDungeonClearDialogue();
             if (clearDialogue != null && DialogueManager.Instance != null)
             {
                 DialogueManager.Instance.QueueDialogueOnTownLoad(clearDialogue);

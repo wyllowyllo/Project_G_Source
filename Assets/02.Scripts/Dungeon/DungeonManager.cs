@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Core;
+using Dialogue;
 using UnityEngine;
 
 namespace Dungeon
@@ -46,6 +47,8 @@ namespace Dungeon
         }
 
         public bool IsDungeonCleared(string dungeonId) => _clearedDungeons.Contains(dungeonId);
+
+        public DialogueData GetCurrentDungeonClearDialogue() => _currentDungeon?.ClearDialogue;
 
         public bool IsDungeonUnlocked(DungeonData dungeon)
         {
@@ -138,5 +141,15 @@ namespace Dungeon
                 }
             }
         }
+
+#if UNITY_EDITOR
+        public void Editor_SetDungeonCleared(string dungeonId, bool cleared)
+        {
+            if (cleared)
+                _clearedDungeons.Add(dungeonId);
+            else
+                _clearedDungeons.Remove(dungeonId);
+        }
+#endif
     }
 }

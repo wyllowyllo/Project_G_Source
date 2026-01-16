@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text;
 using Monster.Feedback;
 using TMPro;
 using UnityEngine;
@@ -34,6 +35,16 @@ namespace Dialogue
                 _canvasGroup.alpha = 0f;
                 _canvasGroup.blocksRaycasts = false;
             }
+        }
+
+        public void Show()
+        {
+            gameObject.SetActive(true);
+        }
+
+        public void Hide()
+        {
+            gameObject.SetActive(false);
         }
 
         private void Update()
@@ -118,11 +129,13 @@ namespace Dialogue
         private IEnumerator TypeText(string text)
         {
             _isTyping = true;
+            var builder = new StringBuilder(text.Length);
             _dialogueText.text = "";
 
             foreach (char c in text)
             {
-                _dialogueText.text += c;
+                builder.Append(c);
+                _dialogueText.text = builder.ToString();
                 yield return new WaitForSeconds(_typeSpeed);
             }
 

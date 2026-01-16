@@ -111,14 +111,14 @@ namespace Dialogue
 
             _onComplete = onComplete;
             IsDialogueActive = true;
-            _dialogueUI.gameObject.SetActive(true);
+            _dialogueUI.Show();
             _dialogueUI.ShowDialogue(dialogue);
         }
 
         private void HandleDialogueComplete()
         {
             IsDialogueActive = false;
-            _dialogueUI.gameObject.SetActive(false);
+            _dialogueUI.Hide();
 
             var callback = _onComplete;
             _onComplete = null;
