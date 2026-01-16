@@ -19,6 +19,8 @@ namespace Skill
     public class GlideController : MonoBehaviour, IGlideAnimationReceiver
     {
         private const float SuperJumpGravity = 30f;
+        private const float GroundCheckOriginOffset = 0.5f;
+        private const float GroundCheckDistance = 10f;
 
         [SerializeField] private GlideSettings _settings;
         [SerializeField] private LayerMask _enemyLayer;
@@ -175,6 +177,12 @@ namespace Skill
                 case GlideState.DiveBomb:
                     UpdateDiveBomb();
                     break;
+                case GlideState.Landing:
+                    UpdateLanding();
+                    break;
+                case GlideState.DiveBombLanding:
+                    UpdateDiveBombLanding();
+                    break;
             }
         }
 
@@ -199,6 +207,22 @@ namespace Skill
             if (_playerMovement.IsGrounded())
             {
                 TransitionToLanding();
+            }
+        }
+
+        private void UpdateLanding()
+        {
+            if (_stateTimer > _settings.LandingTimeout)
+            {
+                EndGlide();
+            }
+        }
+
+        private void UpdateDiveBombLanding()
+        {
+            if (_stateTimer > _settings.LandingTimeout)
+            {
+                EndGlide();
             }
         }
 
@@ -249,7 +273,7 @@ namespace Skill
             if (_diveProgress >= 1f)
             {
                 _diveProgress = 1f;
-                _playerMovement.SetPosition(_aimTargetPosition);
+                _playerMovement.SetPosition(GetGroundPosition(_aimTargetPosition));
                 RequestDiveBombDamage();
                 _isParabolicDive = false;
                 TransitionToDiveBombLanding();
@@ -272,6 +296,17 @@ namespace Skill
             Vector3 linear = Vector3.Lerp(start, end, t);
             float arc = Mathf.Sin(t * Mathf.PI) * _settings.ParabolicArcHeight;
             return linear + Vector3.up * arc;
+        }
+
+        private Vector3 GetGroundPosition(Vector3 targetPosition)
+        {
+            Vector3 rayOrigin = new Vector3(targetPosition.x, targetPosition.y + GroundCheckOriginOffset, targetPosition.z);
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, GroundCheckDistance, _settings.GroundLayer))
+            {
+                return hit.point;
+            }
+
+            return targetPosition;
         }
 
         private void HandleAttackInput()
@@ -349,13 +384,20 @@ namespace Skill
             Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
             Vector3 targetXZ = playerPosXZ + directionXZ * _settings.MaxAimDistance;
 
-            Vector3 rayOrigin = new Vector3(targetXZ.x, transform.position.y + 100f, targetXZ.z);
-            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit groundHit, 200f, _settings.GroundLayer))
+            Vector3 rayOrigin = new Vector3(targetXZ.x, 1000f, targetXZ.z);
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit groundHit, float.MaxValue, _settings.GroundLayer))
             {
                 return groundHit.point;
             }
 
-            return new Vector3(targetXZ.x, 0f, targetXZ.z);
+            // GroundLayer를 못 찾으면 플레이어 아래 지형 높이 사용
+            Vector3 playerRayOrigin = new Vector3(targetXZ.x, 1000f, targetXZ.z);
+            if (Physics.Raycast(playerRayOrigin, Vector3.down, out RaycastHit fallbackHit, float.MaxValue))
+            {
+                return fallbackHit.point;
+            }
+
+            return new Vector3(targetXZ.x, transform.position.y, targetXZ.z);
         }
 
         private void StartParabolicDive()

@@ -20,7 +20,7 @@ namespace Interaction
             var interactable = other.GetComponent<IInteractable>();
             if (interactable != null)
             {
-                _interaction.SetTarget(interactable);
+                _interaction.AddCandidate(interactable);
             }
         }
 
@@ -29,7 +29,7 @@ namespace Interaction
             var interactable = other.GetComponent<IInteractable>();
             if (interactable != null)
             {
-                _interaction.ClearTarget(interactable);
+                _interaction.RemoveCandidate(interactable);
             }
         }
     }

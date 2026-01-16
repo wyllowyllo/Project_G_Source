@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Core;
 using Progression;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Dungeon
 {
@@ -59,13 +59,7 @@ namespace Dungeon
             }
 
             _currentDungeon = dungeon;
-
-            var asyncLoad = SceneManager.LoadSceneAsync(dungeon.SceneName);
-            if (asyncLoad == null)
-            {
-                Debug.LogError($"[DungeonManager] Failed to load scene: {dungeon.SceneName}");
-                _currentDungeon = null;
-            }
+            SceneLoader.LoadScene(dungeon.SceneName);
         }
 
         public void CompleteDungeon()
@@ -102,7 +96,7 @@ namespace Dungeon
         public void ReturnToTown()
         {
             _currentDungeon = null;
-            SceneManager.LoadScene(_townSceneName);
+            SceneLoader.LoadScene(_townSceneName);
         }
 
         private void LoadProgress()

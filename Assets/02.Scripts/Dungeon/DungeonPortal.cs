@@ -3,8 +3,7 @@ using UnityEngine;
 
 namespace Dungeon
 {
-    [RequireComponent(typeof(Collider))]
-    public class DungeonPortal : MonoBehaviour, IInteractable
+    public class DungeonPortal : InteractableBase
     {
         [Header("Configuration")]
         [SerializeField] private DungeonData _dungeonData;
@@ -14,7 +13,7 @@ namespace Dungeon
 
         private DungeonManager _dungeonManager;
 
-        public string InteractionPrompt =>
+        public override string InteractionPrompt =>
             _dungeonData != null ? $"[F] Enter {_dungeonData.DisplayName}" : "[F] Enter Dungeon";
 
         private void OnEnable()
@@ -39,14 +38,14 @@ namespace Dungeon
             UpdateVisuals();
         }
 
-        public bool CanInteract()
+        public override bool CanInteract()
         {
             if (_dungeonData == null) return false;
             if (DungeonManager.Instance == null) return false;
             return !DungeonManager.Instance.IsInDungeon;
         }
 
-        public void Interact()
+        public override void Interact()
         {
             if (!CanInteract()) return;
             DungeonManager.Instance.EnterDungeon(_dungeonData);

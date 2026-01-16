@@ -1,5 +1,6 @@
-using UnityEngine;
+using System.Collections;
 using Unity.Cinemachine;
+using UnityEngine;
 
 namespace Player
 {
@@ -100,6 +101,18 @@ namespace Player
         private void Start()
         {
             InitializeState();
+            ForceSnapToTarget();
+        }
+
+        private void OnEnable()
+        {
+            StartCoroutine(SnapAfterFrame());
+        }
+
+        private System.Collections.IEnumerator SnapAfterFrame()
+        {
+            yield return null;
+            ForceSnapToTarget();
         }
 
         private void InitializeState()
@@ -342,9 +355,24 @@ namespace Player
         public Vector3 GetTargetRight()
         {
             if (_orbitalFollow == null) return Vector3.right;
-            
+
             float yawAngle = _orbitalFollow.HorizontalAxis.Value;
             return Quaternion.Euler(0f, yawAngle, 0f) * Vector3.right;
+        }
+
+        public void ForceSnapToTarget()
+        {
+            if (_cinemachineCamera == null) return;
+
+            var target = _orbitalFollow != null ? _orbitalFollow.FollowTarget : null;
+            if (target == null) return;
+
+            var brain = CinemachineCore.FindPotentialTargetBrain(_cinemachineCamera);
+            if (brain != null)
+            {
+                _cinemachineCamera.OnTargetObjectWarped(target, Vector3.zero);
+                brain.ManualUpdate();
+            }
         }
 
         #endregion

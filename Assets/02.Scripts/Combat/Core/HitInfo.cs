@@ -5,6 +5,8 @@ namespace Combat.Core
 {
     public readonly struct HitInfo
     {
+        private const float HitPointCenterBlend = 0.3f;
+
         public IDamageable Target { get; }
         public ICombatant TargetCombatant { get; }
         public IHealthProvider TargetHealth { get; }
@@ -32,7 +34,7 @@ namespace Combat.Core
         {
             Vector3 surface = GetClosestHitPoint(attackerPosition);
             Vector3 center = TargetCollider.bounds.center;
-            return Vector3.Lerp(surface, center, 0.3f);
+            return Vector3.Lerp(surface, center, HitPointCenterBlend);
         }
     }
 }
