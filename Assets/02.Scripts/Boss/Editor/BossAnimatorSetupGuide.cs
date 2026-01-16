@@ -96,7 +96,7 @@ Base Layer:
         {
             // AnimatorController 생성
             var controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(
-                "Assets/Animations/Boss/BossAnimatorController.controller"
+                "Assets/06.Animations/Boss/BossAnimatorController.controller"
             );
 
             // 파라미터 추가
