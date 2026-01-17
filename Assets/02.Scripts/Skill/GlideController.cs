@@ -42,6 +42,8 @@ namespace Skill
         private bool _hasValidTarget;
         private bool _canDiveBomb;
         private Vector3 _aimTargetPosition;
+        private Vector3 _aimForwardDirection;
+        private Vector3 _aimRightDirection;
         private Vector3 _diveStartPosition;
         private float _diveProgress;
         private float _diveDuration;
@@ -300,8 +302,8 @@ namespace Skill
 
         private Vector3 GetGroundPosition(Vector3 targetPosition)
         {
-            Vector3 rayOrigin = new Vector3(targetPosition.x, targetPosition.y + GroundCheckOriginOffset, targetPosition.z);
-            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, GroundCheckDistance, _settings.GroundLayer))
+            Vector3 rayOrigin = new Vector3(targetPosition.x, transform.position.y, targetPosition.z);
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, Mathf.Infinity, _settings.GroundLayer))
             {
                 return hit.point;
             }
@@ -331,8 +333,24 @@ namespace Skill
 
             _isAiming = true;
             Time.timeScale = _settings.AimSlowMotionScale;
+
+            InitializeAimPosition();
+
             _aimVisualizer?.Show();
             _cameraController?.SetAimMode(true);
+        }
+
+        private void InitializeAimPosition()
+        {
+            Vector3 cameraForward = _mainCamera.transform.forward;
+            Vector3 cameraRight = _mainCamera.transform.right;
+
+            _aimForwardDirection = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
+            _aimRightDirection = new Vector3(cameraRight.x, 0f, cameraRight.z).normalized;
+
+            Vector3 initialXZ = transform.position + _aimForwardDirection * _settings.AimInitialDistance;
+            _aimTargetPosition = GetGroundPosition(initialXZ);
+            _hasValidTarget = true;
         }
 
         private void HandleAimInputReleased()
@@ -350,54 +368,32 @@ namespace Skill
         {
             if (_mainCamera == null) return;
 
-            Ray ray = _mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-            Vector3 hitPoint;
+            float mouseX = Input.GetAxisRaw("Mouse X");
+            float mouseY = Input.GetAxisRaw("Mouse Y");
 
-            if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, _settings.GroundLayer))
-            {
-                hitPoint = hit.point;
-            }
-            else
-            {
-                hitPoint = CalculateFallbackAimPoint(ray);
-            }
+            Vector3 cameraForward = _mainCamera.transform.forward;
+            Vector3 cameraRight = _mainCamera.transform.right;
+            Vector3 forwardXZ = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
+            Vector3 rightXZ = new Vector3(cameraRight.x, 0f, cameraRight.z).normalized;
+
+            Vector3 movement = (rightXZ * mouseX + forwardXZ * mouseY) * _settings.AimMouseSensitivity;
+            Vector3 newPosition = _aimTargetPosition + movement;
 
             Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
-            Vector3 hitPosXZ = new Vector3(hitPoint.x, 0f, hitPoint.z);
-            float distanceXZ = Vector3.Distance(playerPosXZ, hitPosXZ);
+            Vector3 newPosXZ = new Vector3(newPosition.x, 0f, newPosition.z);
+            float distanceXZ = Vector3.Distance(playerPosXZ, newPosXZ);
 
             if (distanceXZ > _settings.MaxAimDistance)
             {
-                Vector3 direction = (hitPosXZ - playerPosXZ).normalized;
-                Vector3 clampedXZ = playerPosXZ + direction * _settings.MaxAimDistance;
-                hitPoint = new Vector3(clampedXZ.x, hitPoint.y, clampedXZ.z);
+                Vector3 direction = (newPosXZ - playerPosXZ).normalized;
+                newPosXZ = playerPosXZ + direction * _settings.MaxAimDistance;
+                newPosition = new Vector3(newPosXZ.x, newPosition.y, newPosXZ.z);
             }
 
+            _aimTargetPosition = GetGroundPosition(newPosition);
             _hasValidTarget = true;
-            _aimTargetPosition = hitPoint;
             _aimVisualizer?.UpdateTarget(_aimTargetPosition, transform.position, _settings.ParabolicArcHeight);
-        }
-
-        private Vector3 CalculateFallbackAimPoint(Ray cameraRay)
-        {
-            Vector3 directionXZ = new Vector3(cameraRay.direction.x, 0f, cameraRay.direction.z).normalized;
-            Vector3 playerPosXZ = new Vector3(transform.position.x, 0f, transform.position.z);
-            Vector3 targetXZ = playerPosXZ + directionXZ * _settings.MaxAimDistance;
-
-            Vector3 rayOrigin = new Vector3(targetXZ.x, 1000f, targetXZ.z);
-            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit groundHit, float.MaxValue, _settings.GroundLayer))
-            {
-                return groundHit.point;
-            }
-
-            // GroundLayer를 못 찾으면 플레이어 아래 지형 높이 사용
-            Vector3 playerRayOrigin = new Vector3(targetXZ.x, 1000f, targetXZ.z);
-            if (Physics.Raycast(playerRayOrigin, Vector3.down, out RaycastHit fallbackHit, float.MaxValue))
-            {
-                return fallbackHit.point;
-            }
-
-            return new Vector3(targetXZ.x, transform.position.y, targetXZ.z);
+            _cameraController?.SetAimTarget(_aimTargetPosition);
         }
 
         private void StartParabolicDive()
@@ -449,15 +445,33 @@ namespace Skill
 
                 case GlideState.Gliding:
                     _verticalVelocity = _settings.GlideGravity;
-                    Vector3 inputDir = _playerMovement.GetCurrentInputDirection();
-                    Vector3 moveDir = inputDir.sqrMagnitude > 0.1f ? inputDir : transform.forward;
-                    _horizontalVelocity = moveDir * _settings.GlideMoveSpeed;
-                    result = _horizontalVelocity + new Vector3(0f, _verticalVelocity, 0f);
 
-                    if (inputDir.sqrMagnitude > 0.1f)
+                    if (_isAiming)
                     {
-                        _playerMovement.RotateSmooth(inputDir);
+                        _horizontalVelocity = Vector3.Lerp(
+                            _horizontalVelocity,
+                            Vector3.zero,
+                            _settings.GlideAcceleration * deltaTime
+                        );
                     }
+                    else
+                    {
+                        Vector3 inputDir = _playerMovement.GetCurrentInputDirection();
+                        Vector3 moveDir = inputDir.sqrMagnitude > 0.1f ? inputDir : transform.forward;
+                        Vector3 targetVelocity = moveDir * _settings.GlideMoveSpeed;
+                        _horizontalVelocity = Vector3.Lerp(
+                            _horizontalVelocity,
+                            targetVelocity,
+                            _settings.GlideAcceleration * deltaTime
+                        );
+
+                        if (inputDir.sqrMagnitude > 0.1f)
+                        {
+                            _playerMovement.RotateSmooth(inputDir, _settings.GlideRotationSpeed);
+                        }
+                    }
+
+                    result = _horizontalVelocity + new Vector3(0f, _verticalVelocity, 0f);
                     break;
 
                 case GlideState.DiveBomb:

@@ -11,6 +11,8 @@ namespace Player
         [SerializeField] private CinemachineOrbitalFollow _orbitalFollow;
         [SerializeField] private CinemachineRotationComposer _rotationComposer;
 
+        private CinemachineBrain _brain;
+
         [Header("Zoom Settings")]
         [SerializeField] private float _minScale = 0.5f;
         [SerializeField] private float _maxScale = 2f;
@@ -34,6 +36,7 @@ namespace Player
         [Header("Aim Mode")]
         [SerializeField] private Vector3 _aimTargetOffset = new Vector3(1.5f, 0f, 0f);
         [SerializeField] private float _aimOffsetSmoothTime = 0.15f;
+        [SerializeField] private float _aimVerticalAngle = 50f;
 
         [Header("DiveBomb Camera")]
         [SerializeField] private CinemachineInputAxisController _inputAxisController;
@@ -78,6 +81,13 @@ namespace Player
         private Vector3 _currentTargetOffset;
         private Vector3 _targetOffsetVelocity;
         private bool _isAiming;
+        private Vector3? _aimWorldTarget;
+
+        private float _aimHorizontalAngle;
+        private float _aimHorizontalVelocity;
+        private float _aimVerticalVelocity;
+        private float _preAimVerticalAngle;
+        private Vector3 _aimCameraRight;
 
         private Vector3 _initialRotationComposerDamping;
         
@@ -100,6 +110,7 @@ namespace Player
 
         private void Start()
         {
+            _brain = CinemachineBrain.GetActiveBrain(0);
             InitializeState();
             ForceSnapToTarget();
         }
@@ -155,6 +166,7 @@ namespace Player
             UpdateZoom();
             UpdateFOV();
             UpdateAimOffset();
+            UpdateAimVertical();
         }
 
         #region Zoom
@@ -215,7 +227,17 @@ namespace Player
         {
             if (_rotationComposer == null) return;
 
-            Vector3 targetOffset = _isAiming ? _aimTargetOffset : _initialTargetOffset;
+            Vector3 targetOffset;
+
+            if (_isAiming && _aimWorldTarget.HasValue && _orbitalFollow != null)
+            {
+                targetOffset = CalculateAimBasedOffset();
+            }
+            else
+            {
+                targetOffset = _isAiming ? _aimTargetOffset : _initialTargetOffset;
+            }
+
             _currentTargetOffset = Vector3.SmoothDamp(
                 _currentTargetOffset,
                 targetOffset,
@@ -226,6 +248,70 @@ namespace Player
             );
 
             _rotationComposer.TargetOffset = _currentTargetOffset;
+        }
+
+        private Vector3 CalculateAimBasedOffset()
+        {
+            Transform followTarget = _orbitalFollow.FollowTarget;
+            if (followTarget == null) return _aimTargetOffset;
+
+            Vector3 toAim = _aimWorldTarget.Value - followTarget.position;
+            Vector3 cameraRight = GetTargetRight();
+
+            float rightDot = Vector3.Dot(toAim.normalized, cameraRight);
+            Vector3 worldOffset = cameraRight * (rightDot * _aimTargetOffset.x);
+
+            Vector3 localOffset = followTarget.InverseTransformDirection(worldOffset);
+
+            return new Vector3(localOffset.x, _aimTargetOffset.y, localOffset.z);
+        }
+
+        private void UpdateAimCamera()
+        {
+            if (_orbitalFollow == null) return;
+            if (!_isAiming || !_aimWorldTarget.HasValue) return;
+
+            Transform followTarget = _orbitalFollow.FollowTarget;
+            if (followTarget == null) return;
+
+            Vector3 toAim = _aimWorldTarget.Value - followTarget.position;
+            toAim.y = 0f;
+
+            if (toAim.sqrMagnitude < 0.01f) return;
+
+            float targetAngle = Mathf.Atan2(toAim.x, toAim.z) * Mathf.Rad2Deg + 180f;
+
+            _aimHorizontalAngle = Mathf.SmoothDampAngle(
+                _aimHorizontalAngle,
+                targetAngle,
+                ref _aimHorizontalVelocity,
+                _aimOffsetSmoothTime,
+                Mathf.Infinity,
+                Time.unscaledDeltaTime
+            );
+
+            var horizontalAxis = _orbitalFollow.HorizontalAxis;
+            horizontalAxis.Value = _aimHorizontalAngle;
+            _orbitalFollow.HorizontalAxis = horizontalAxis;
+        }
+
+        private void UpdateAimVertical()
+        {
+            if (_orbitalFollow == null) return;
+            if (!_isAiming) return;
+
+            float currentAngle = Mathf.SmoothDamp(
+                _orbitalFollow.VerticalAxis.Value,
+                _aimVerticalAngle,
+                ref _aimVerticalVelocity,
+                _aimOffsetSmoothTime,
+                Mathf.Infinity,
+                Time.unscaledDeltaTime
+            );
+
+            var verticalAxis = _orbitalFollow.VerticalAxis;
+            verticalAxis.Value = currentAngle;
+            _orbitalFollow.VerticalAxis = verticalAxis;
         }
 
         #endregion
@@ -331,9 +417,35 @@ namespace Player
         {
             _isAiming = isAiming;
 
+            if (isAiming && _orbitalFollow != null)
+            {
+                _preAimVerticalAngle = _orbitalFollow.VerticalAxis.Value;
+                _aimVerticalVelocity = 0f;
+            }
+
+            if (!isAiming)
+            {
+                _aimWorldTarget = null;
+            }
+
+            if (_inputAxisController != null)
+            {
+                _inputAxisController.enabled = !isAiming;
+            }
+
+            if (_brain != null)
+            {
+                _brain.IgnoreTimeScale = isAiming;
+            }
+
             if (_rotationComposer == null) return;
 
             _rotationComposer.Damping = isAiming ? Vector3.zero : _initialRotationComposerDamping;
+        }
+
+        public void SetAimTarget(Vector3 worldPosition)
+        {
+            _aimWorldTarget = worldPosition;
         }
 
         public void SetDiveBombMode(bool isDiveBombing)
