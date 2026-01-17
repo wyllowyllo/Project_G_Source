@@ -171,6 +171,7 @@ namespace Boss.AI
         /// </summary>
         public void OnSummonComplete()
         {
+            Debug.Log("[BossAnimationEventReceiver] SummonComplete");
             _controller?.OnSummonAnimationComplete();
         }
 
@@ -207,6 +208,7 @@ namespace Boss.AI
         /// </summary>
         public void OnPhaseTransitionComplete()
         {
+            Debug.Log("[BossAnimationEventReceiver] PhaseTransitionComplete");
             _controller?.OnPhaseTransitionAnimationComplete();
         }
 

@@ -33,6 +33,9 @@ namespace Boss.AI.States
             // 전환 중 슈퍼아머 활성화 (포이즈 무한)
             _controller.SetSuperArmorInfinite(true);
 
+            // 다른 패턴 트리거 리셋 (PhaseTransition 중 다른 모션 실행 방지)
+            _animatorAbility?.ResetAllAttackTriggers();
+
             // 페이즈 전환 애니메이션 (Taunting/Victory)
             _animatorAbility?.TriggerPhaseTransition(OnTransitionAnimationComplete);
 

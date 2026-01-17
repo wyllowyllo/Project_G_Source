@@ -255,6 +255,22 @@ namespace Boss.Ability
             _onPhaseTransitionComplete = null;
         }
 
+        /// <summary>
+        /// 모든 공격/상태 트리거 리셋 (PhaseTransition 진입 시 사용)
+        /// </summary>
+        public void ResetAllAttackTriggers()
+        {
+            if (!IsActive) return;
+
+            _animator.ResetTrigger(MeleeAttackHash);
+            _animator.ResetTrigger(ChargeHash);
+            _animator.ResetTrigger(BreathHash);
+            _animator.ResetTrigger(ProjectileHash);
+            _animator.ResetTrigger(SummonHash);
+            _animator.ResetTrigger(StaggerHash);
+            _animator.ResetTrigger(HitHash);
+        }
+
         // 유틸리티
         public bool IsInState(string stateName, int layer = 0)
         {
