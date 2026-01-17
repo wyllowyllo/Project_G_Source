@@ -188,11 +188,11 @@ namespace Boss.Core
         /// </summary>
         public void DespawnAllMinions()
         {
-            foreach (var minion in _activeMinions)
+            for (int i = _activeMinions.Count - 1; i >= 0; i--)
             {
+                var minion = _activeMinions[i];
                 if (minion != null && minion.gameObject != null)
                 {
-                    // 잡졸 즉시 사망 처리 (큰 데미지로 처리)
                     var combatant = minion.GetComponent<Combatant>();
                     if (combatant != null && combatant.IsAlive)
                     {
