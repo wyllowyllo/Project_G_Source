@@ -24,6 +24,7 @@ namespace Boss.Combat
         private float _damage;
         private float _spawnTime;
         private bool _hasHit;
+        private ParticleSystem _trailEffectInstance;
 
         public event Action<IDamageable, DamageInfo> OnHit;
 
@@ -38,10 +39,11 @@ namespace Boss.Combat
 
             transform.rotation = Quaternion.LookRotation(_direction);
 
-            // 트레일 이펙트 시작
+            // 트레일 이펙트 인스턴스 생성 및 시작
             if (_trailEffect != null)
             {
-                _trailEffect.Play();
+                _trailEffectInstance = Instantiate(_trailEffect, transform);
+                _trailEffectInstance.Play();
             }
         }
 
@@ -114,21 +116,21 @@ namespace Boss.Combat
         {
             if (_hitEffect != null)
             {
-                // 이펙트를 분리하여 재생
-                _hitEffect.transform.SetParent(null);
-                _hitEffect.Play();
-                Destroy(_hitEffect.gameObject, _hitEffect.main.duration + 0.5f);
+                // 이펙트 복사본 생성 후 재생
+                var hitEffectInstance = Instantiate(_hitEffect, transform.position, transform.rotation);
+                hitEffectInstance.Play();
+                Destroy(hitEffectInstance.gameObject, hitEffectInstance.main.duration + 0.5f);
             }
         }
 
         private void DestroyProjectile()
         {
-            // 트레일 이펙트 분리
-            if (_trailEffect != null)
+            // 트레일 이펙트 분리 후 자연 소멸
+            if (_trailEffectInstance != null)
             {
-                _trailEffect.transform.SetParent(null);
-                _trailEffect.Stop();
-                Destroy(_trailEffect.gameObject, 2f);
+                _trailEffectInstance.transform.SetParent(null);
+                _trailEffectInstance.Stop();
+                Destroy(_trailEffectInstance.gameObject, 2f);
             }
 
             Destroy(gameObject);
