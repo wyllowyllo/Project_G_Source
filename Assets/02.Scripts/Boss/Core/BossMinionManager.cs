@@ -188,11 +188,12 @@ namespace Boss.Core
         /// </summary>
         public void DespawnAllMinions()
         {
-            for (int i = _activeMinions.Count - 1; i >= 0; i--)
-            {
-                var minion = _activeMinions[i];
-                _activeMinions.RemoveAt(i);
+            var minions = _activeMinions.ToArray();
+            _activeMinions.Clear();
 
+            for (int i = 0; i < minions.Length; i++)
+            {
+                var minion = minions[i];
                 if (minion != null && minion.gameObject != null)
                 {
                     var combatant = minion.GetComponent<Combatant>();

@@ -83,8 +83,10 @@ namespace Boss.Combat
 
             if (_playerTransform != null)
             {
-                Vector3 targetPos = _playerTransform.position + Vector3.up * 1f;
-                baseDirection = (targetPos - _firePoint.position).normalized;
+                // 수평 방향으로만 발사 (Y 성분 제거)
+                Vector3 targetPos = _playerTransform.position;
+                Vector3 firePos = _firePoint.position;
+                baseDirection = new Vector3(targetPos.x - firePos.x, 0f, targetPos.z - firePos.z).normalized;
             }
             else
             {

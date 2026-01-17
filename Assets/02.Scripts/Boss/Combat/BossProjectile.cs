@@ -68,7 +68,7 @@ namespace Boss.Combat
                 return;
 
             // 환경 충돌
-            if (other.gameObject.layer == LayerMask.NameToLayer("Environment") ||
+            if (other.gameObject.layer == LayerMask.NameToLayer("Ground") ||
                 other.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
             {
                 PlayHitEffect();
