@@ -191,6 +191,8 @@ namespace Boss.Core
             for (int i = _activeMinions.Count - 1; i >= 0; i--)
             {
                 var minion = _activeMinions[i];
+                _activeMinions.RemoveAt(i);
+
                 if (minion != null && minion.gameObject != null)
                 {
                     var combatant = minion.GetComponent<Combatant>();
@@ -204,8 +206,6 @@ namespace Boss.Core
                     }
                 }
             }
-
-            _activeMinions.Clear();
         }
 
         /// <summary>
