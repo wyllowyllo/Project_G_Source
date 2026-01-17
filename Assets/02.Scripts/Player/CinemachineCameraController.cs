@@ -266,35 +266,6 @@ namespace Player
             return new Vector3(localOffset.x, _aimTargetOffset.y, localOffset.z);
         }
 
-        private void UpdateAimCamera()
-        {
-            if (_orbitalFollow == null) return;
-            if (!_isAiming || !_aimWorldTarget.HasValue) return;
-
-            Transform followTarget = _orbitalFollow.FollowTarget;
-            if (followTarget == null) return;
-
-            Vector3 toAim = _aimWorldTarget.Value - followTarget.position;
-            toAim.y = 0f;
-
-            if (toAim.sqrMagnitude < 0.01f) return;
-
-            float targetAngle = Mathf.Atan2(toAim.x, toAim.z) * Mathf.Rad2Deg + 180f;
-
-            _aimHorizontalAngle = Mathf.SmoothDampAngle(
-                _aimHorizontalAngle,
-                targetAngle,
-                ref _aimHorizontalVelocity,
-                _aimOffsetSmoothTime,
-                Mathf.Infinity,
-                Time.unscaledDeltaTime
-            );
-
-            var horizontalAxis = _orbitalFollow.HorizontalAxis;
-            horizontalAxis.Value = _aimHorizontalAngle;
-            _orbitalFollow.HorizontalAxis = horizontalAxis;
-        }
-
         private void UpdateAimVertical()
         {
             if (_orbitalFollow == null) return;

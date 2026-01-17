@@ -46,8 +46,7 @@ namespace Player
 
             for (int i = 0; i < count; i++)
             {
-                var combatant = _targetBuffer[i].GetComponent<Combatant>();
-                if (combatant != null && !combatant.IsAlive)
+                if (_targetBuffer[i].TryGetComponent<Combatant>(out var combatant) && !combatant.IsAlive)
                 {
                     continue;
                 }

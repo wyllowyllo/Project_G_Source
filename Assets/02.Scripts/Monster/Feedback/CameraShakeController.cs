@@ -71,10 +71,8 @@ namespace Monster.Feedback
             Vector3 velocity = shakeDirection * config.Force;
             _impulseSource.GenerateImpulse(velocity);
         }
-
-        /// <summary>
-        /// 지속적인 카메라 쉐이크 시작 (지진 효과)
-        /// </summary>
+        
+        // 지속적인 카메라 쉐이크 시작 (지진 효과)
         public void StartContinuousShake(CameraShakeConfig config)
         {
             StopContinuousShake();
@@ -83,10 +81,8 @@ namespace Monster.Feedback
 
             _continuousShakeCoroutine = StartCoroutine(ContinuousShakeRoutine(config));
         }
-
-        /// <summary>
-        /// 지속적인 카메라 쉐이크 중지
-        /// </summary>
+        
+        // 지속적인 카메라 쉐이크 중지
         public void StopContinuousShake()
         {
             if (_continuousShakeCoroutine != null)
@@ -119,10 +115,8 @@ namespace Monster.Feedback
 
             _continuousShakeCoroutine = null;
         }
-
-        /// <summary>
-        /// 환경 카메라 쉐이크 시작 (Perlin Noise 기반, 무한 지속)
-        /// </summary>
+        
+        // 환경 카메라 쉐이크 시작 (Perlin Noise 기반, 무한 지속)
         public void StartAmbientShake(AmbientShakeConfig config)
         {
             StopAmbientShake();
@@ -133,24 +127,14 @@ namespace Monster.Feedback
             _targetAmbientIntensity = config.Intensity;
             _ambientShakeCoroutine = StartCoroutine(AmbientShakeRoutine(config));
         }
-
-        /// <summary>
-        /// 환경 카메라 쉐이크 중지 (페이드 아웃)
-        /// </summary>
+        
+        // 환경 카메라 쉐이크 중지 (페이드 아웃)
         public void StopAmbientShake()
         {
             _targetAmbientIntensity = 0f;
-
-            if (_ambientShakeCoroutine != null && _currentAmbientIntensity <= 0.001f)
-            {
-                StopCoroutine(_ambientShakeCoroutine);
-                _ambientShakeCoroutine = null;
-            }
         }
-
-        /// <summary>
-        /// 환경 쉐이크 강도 배율 설정 (0~1, 조준 시 약하게 등)
-        /// </summary>
+        
+        // 환경 쉐이크 강도 배율 설정 (0~1, 조준 시 약하게 등)
         public void SetAmbientShakeIntensityMultiplier(float multiplier)
         {
             _ambientIntensityMultiplier = Mathf.Clamp01(multiplier);

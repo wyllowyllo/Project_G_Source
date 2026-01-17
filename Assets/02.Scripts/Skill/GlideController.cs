@@ -230,7 +230,6 @@ namespace Skill
             if (_windParticle != null)
             {
                 _windParticle.Play(withChildren: true);
-                Debug.Log($"[GlideController] WindParticle - isPlaying: {_windParticle.isPlaying}, particleCount: {_windParticle.particleCount}, isEmitting: {_windParticle.isEmitting}");
             }
         }
 
