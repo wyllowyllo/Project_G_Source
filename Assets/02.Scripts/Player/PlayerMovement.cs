@@ -237,7 +237,7 @@ namespace Player
             
             if (_smoothTargetRotation.HasValue)
             {
-                float rotSpeed = Mathf.Lerp(10f, 50f, _smoothRotationSpeed);
+                float rotSpeed = Mathf.Lerp(2f, 50f, _smoothRotationSpeed);
 
                 currentRotation = Quaternion.Slerp(
                     currentRotation,

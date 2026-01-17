@@ -1,5 +1,7 @@
 using System;
 using Combat.Core;
+using Monster.Feedback;
+using Monster.Feedback.Data;
 using Player;
 using UnityEngine;
 
@@ -25,6 +27,21 @@ namespace Skill
         [SerializeField] private GlideSettings _settings;
         [SerializeField] private LayerMask _enemyLayer;
         [SerializeField] private CinemachineCameraController _cameraController;
+
+        [Header("Camera Shake")]
+        [SerializeField] private AmbientShakeConfig _glideShakeConfig = AmbientShakeConfig.Glide;
+        [SerializeField] private CameraShakeConfig _diveBombImpactShake = new CameraShakeConfig
+        {
+            Enabled = true,
+            Force = 1.2f,
+            Duration = 0.15f,
+            Direction = new Vector3(0f, -1f, 0f)
+        };
+        [SerializeField] private float _aimShakeMultiplier = 0.3f;
+
+        [Header("Wind Effect")]
+        [Tooltip("루트 파티클 시스템 (자식 파티클도 함께 제어됨)")]
+        [SerializeField] private ParticleSystem _windParticle;
 
         private PlayerMovement _playerMovement;
         private PlayerAnimationController _animationController;
@@ -202,6 +219,25 @@ namespace Skill
             _stateTimer = 0f;
             _canDiveBomb = false;
             _animationController?.PlayGlide(GlideState.Gliding);
+
+            StartGlideEffects();
+        }
+
+        private void StartGlideEffects()
+        {
+            CameraShakeController.Instance?.StartAmbientShake(_glideShakeConfig);
+
+            if (_windParticle != null)
+            {
+                _windParticle.Play(withChildren: true);
+                Debug.Log($"[GlideController] WindParticle - isPlaying: {_windParticle.isPlaying}, particleCount: {_windParticle.particleCount}, isEmitting: {_windParticle.isEmitting}");
+            }
+        }
+
+        private void StopGlideEffects()
+        {
+            CameraShakeController.Instance?.StopAmbientShake();
+            _windParticle?.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         private void UpdateGliding()
@@ -233,6 +269,8 @@ namespace Skill
             _currentState = GlideState.Landing;
             _playerMovement.ClearSmoothRotation();
             _animationController?.PlayGlide(GlideState.Landing);
+
+            StopGlideEffects();
         }
 
         private void TransitionToDiveBombLanding()
@@ -241,6 +279,9 @@ namespace Skill
             _playerMovement.ClearSmoothRotation();
             _cameraController?.SetDiveBombMode(false);
             _animationController?.PlayGlide(GlideState.DiveBombLanding);
+
+            StopGlideEffects();
+            CameraShakeController.Instance?.TriggerShake(_diveBombImpactShake);
         }
 
         private void UpdateDiveBomb()
@@ -338,6 +379,8 @@ namespace Skill
 
             _aimVisualizer?.Show();
             _cameraController?.SetAimMode(true);
+
+            CameraShakeController.Instance?.SetAmbientShakeIntensityMultiplier(_aimShakeMultiplier);
         }
 
         private void InitializeAimPosition()
@@ -362,6 +405,8 @@ namespace Skill
             Time.timeScale = 1f;
             _aimVisualizer?.Hide();
             _cameraController?.SetAimMode(false);
+
+            CameraShakeController.Instance?.SetAmbientShakeIntensityMultiplier(1f);
         }
 
         private void UpdateAiming()
@@ -526,6 +571,9 @@ namespace Skill
 
             _isParabolicDive = false;
             _canDiveBomb = false;
+
+            StopGlideEffects();
+            CameraShakeController.Instance?.SetAmbientShakeIntensityMultiplier(1f);
 
             OnGlideEnded?.Invoke();
         }

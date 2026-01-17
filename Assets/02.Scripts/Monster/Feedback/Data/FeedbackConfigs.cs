@@ -84,6 +84,53 @@ namespace Monster.Feedback.Data
         };
     }
 
+    // 환경 카메라 쉐이크 설정 (활공, 달리기 등 지속적인 흔들림)
+    [Serializable]
+    public struct AmbientShakeConfig
+    {
+        [Tooltip("환경 쉐이크 활성화 여부")]
+        public bool Enabled;
+
+        [Tooltip("쉐이크 강도")]
+        [Range(0f, 1f)]
+        public float Intensity;
+
+        [Tooltip("쉐이크 주파수 (낮을수록 느리고 부드러움)")]
+        [Range(0.1f, 5f)]
+        public float Frequency;
+
+        [Tooltip("페이드 인 시간 (초)")]
+        [Range(0f, 2f)]
+        public float FadeInDuration;
+
+        [Tooltip("페이드 아웃 시간 (초)")]
+        [Range(0f, 2f)]
+        public float FadeOutDuration;
+
+        [Tooltip("슬로모션 영향 무시 여부")]
+        public bool UnscaledTime;
+
+        public static AmbientShakeConfig Default => new AmbientShakeConfig
+        {
+            Enabled = true,
+            Intensity = 0.15f,
+            Frequency = 1.5f,
+            FadeInDuration = 0.5f,
+            FadeOutDuration = 0.3f,
+            UnscaledTime = true
+        };
+
+        public static AmbientShakeConfig Glide => new AmbientShakeConfig
+        {
+            Enabled = true,
+            Intensity = 0.12f,
+            Frequency = 1.2f,
+            FadeInDuration = 0.8f,
+            FadeOutDuration = 0.4f,
+            UnscaledTime = true
+        };
+    }
+
     // 화면 효과 설정
     [Serializable]
     public struct ScreenEffectConfig
