@@ -1,3 +1,4 @@
+using Combat.Core;
 using UnityEngine;
 
 namespace Player
@@ -45,6 +46,12 @@ namespace Player
 
             for (int i = 0; i < count; i++)
             {
+                var combatant = _targetBuffer[i].GetComponent<Combatant>();
+                if (combatant != null && !combatant.IsAlive)
+                {
+                    continue;
+                }
+
                 float distance = Vector3.Distance(transform.position, _targetBuffer[i].transform.position);
                 if (distance < minDistance)
                 {
