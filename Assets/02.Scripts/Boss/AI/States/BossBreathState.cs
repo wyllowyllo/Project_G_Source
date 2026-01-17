@@ -108,8 +108,7 @@ namespace Boss.AI.States
             // 예고 숨기기
             _controller.Telegraph?.HideAll();
 
-            // 브레스 이펙트 및 데미지 시작
-            _controller.StartBreathAttack();
+            // 브레스 이펙트 및 데미지는 애니메이션 이벤트(StartBreath)에서 시작
         }
 
         private void UpdateBreathing()
@@ -133,7 +132,7 @@ namespace Boss.AI.States
         private void EndBreathing()
         {
             _currentPhase = EBreathPhase.Ending;
-            _controller.StopBreathAttack();
+            // 브레스 종료는 애니메이션 이벤트(StopBreath)에서 처리
         }
 
         private void UpdateEnding()

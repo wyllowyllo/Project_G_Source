@@ -295,6 +295,19 @@ namespace Boss.AI
             _stateMachine?.ChangeState(EBossState.Dead);
         }
 
+        private void HandleDamaged(DamageInfo damageInfo)
+        {
+            // 포이즈 데미지 적용
+            _superArmor?.TakePoiseDamage(damageInfo.Amount);
+
+            // 슈퍼아머가 무한 모드가 아니고, 포이즈가 아직 남아있으면 Hit 상태로 전환
+            // (포이즈가 깨지면 HandlePoiseBroken에서 Stagger로 전환됨)
+            if (!_superArmor.IsInfinite && !_superArmor.IsBroken)
+            {
+                _stateMachine?.ChangeState(EBossState.Hit);
+            }
+        }
+
         private void HandlePoiseBroken()
         {
             // 슈퍼아머가 활성화된 상태(무한 포이즈)가 아닐 때만 그로기
@@ -426,6 +439,7 @@ namespace Boss.AI
             if (_combatant != null)
             {
                 _combatant.OnDeath += HandleDeath;
+                _combatant.OnDamaged += HandleDamaged;
             }
         }
 
@@ -434,6 +448,7 @@ namespace Boss.AI
             if (_combatant != null)
             {
                 _combatant.OnDeath -= HandleDeath;
+                _combatant.OnDamaged -= HandleDamaged;
             }
 
             // 이벤트 해제
