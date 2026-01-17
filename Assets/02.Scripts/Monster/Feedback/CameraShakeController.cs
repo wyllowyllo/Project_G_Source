@@ -18,7 +18,15 @@ namespace Monster.Feedback
         [Header("Continuous Shake")]
         [SerializeField] private float _shakeInterval = 0.05f;
 
+        [Header("Ambient Shake")]
+        [SerializeField] private float _ambientShakeInterval = 0.02f;
+
         private Coroutine _continuousShakeCoroutine;
+        private Coroutine _ambientShakeCoroutine;
+        private float _ambientIntensityMultiplier = 1f;
+        private float _currentAmbientIntensity;
+        private float _targetAmbientIntensity;
+        private AmbientShakeConfig _currentAmbientConfig;
 
         private void Awake()
         {
@@ -63,10 +71,8 @@ namespace Monster.Feedback
             Vector3 velocity = shakeDirection * config.Force;
             _impulseSource.GenerateImpulse(velocity);
         }
-
-        /// <summary>
-        /// 지속적인 카메라 쉐이크 시작 (지진 효과)
-        /// </summary>
+        
+        // 지속적인 카메라 쉐이크 시작 (지진 효과)
         public void StartContinuousShake(CameraShakeConfig config)
         {
             StopContinuousShake();
@@ -75,10 +81,8 @@ namespace Monster.Feedback
 
             _continuousShakeCoroutine = StartCoroutine(ContinuousShakeRoutine(config));
         }
-
-        /// <summary>
-        /// 지속적인 카메라 쉐이크 중지
-        /// </summary>
+        
+        // 지속적인 카메라 쉐이크 중지
         public void StopContinuousShake()
         {
             if (_continuousShakeCoroutine != null)
@@ -110,6 +114,87 @@ namespace Monster.Feedback
             }
 
             _continuousShakeCoroutine = null;
+        }
+        
+        // 환경 카메라 쉐이크 시작 (Perlin Noise 기반, 무한 지속)
+        public void StartAmbientShake(AmbientShakeConfig config)
+        {
+            StopAmbientShake();
+
+            if (!config.Enabled || _impulseSource == null) return;
+
+            _currentAmbientConfig = config;
+            _targetAmbientIntensity = config.Intensity;
+            _ambientShakeCoroutine = StartCoroutine(AmbientShakeRoutine(config));
+        }
+        
+        // 환경 카메라 쉐이크 중지 (페이드 아웃)
+        public void StopAmbientShake()
+        {
+            _targetAmbientIntensity = 0f;
+        }
+        
+        // 환경 쉐이크 강도 배율 설정 (0~1, 조준 시 약하게 등)
+        public void SetAmbientShakeIntensityMultiplier(float multiplier)
+        {
+            _ambientIntensityMultiplier = Mathf.Clamp01(multiplier);
+        }
+
+        private IEnumerator AmbientShakeRoutine(AmbientShakeConfig config)
+        {
+            float noiseOffsetX = Random.Range(0f, 100f);
+            float noiseOffsetY = Random.Range(0f, 100f);
+            float time = 0f;
+            _currentAmbientIntensity = 0f;
+
+            while (true)
+            {
+                float deltaTime = config.UnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                time += deltaTime;
+
+                // 페이드 처리
+                float effectiveTarget = _targetAmbientIntensity * _ambientIntensityMultiplier;
+                float fadeDuration = effectiveTarget > _currentAmbientIntensity
+                    ? config.FadeInDuration
+                    : config.FadeOutDuration;
+
+                if (fadeDuration > 0f)
+                {
+                    float fadeSpeed = config.Intensity / fadeDuration;
+                    _currentAmbientIntensity = Mathf.MoveTowards(
+                        _currentAmbientIntensity,
+                        effectiveTarget,
+                        fadeSpeed * deltaTime
+                    );
+                }
+                else
+                {
+                    _currentAmbientIntensity = effectiveTarget;
+                }
+
+                // 완전히 페이드 아웃되면 종료
+                if (_targetAmbientIntensity <= 0f && _currentAmbientIntensity <= 0.001f)
+                {
+                    _ambientShakeCoroutine = null;
+                    yield break;
+                }
+
+                // Perlin Noise 기반 부드러운 흔들림
+                float noiseX = Mathf.PerlinNoise(time * config.Frequency + noiseOffsetX, 0f) * 2f - 1f;
+                float noiseY = Mathf.PerlinNoise(0f, time * config.Frequency + noiseOffsetY) * 2f - 1f;
+
+                Vector3 velocity = new Vector3(noiseX, noiseY, 0f) * _currentAmbientIntensity;
+                _impulseSource.GenerateImpulse(velocity);
+
+                if (config.UnscaledTime)
+                {
+                    yield return new WaitForSecondsRealtime(_ambientShakeInterval);
+                }
+                else
+                {
+                    yield return new WaitForSeconds(_ambientShakeInterval);
+                }
+            }
         }
 
         private void OnDestroy()

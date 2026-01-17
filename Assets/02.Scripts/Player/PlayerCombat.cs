@@ -53,8 +53,13 @@ namespace Player
 
         private void InitializeCombatState()
         {
-            bool inDungeon = DungeonManager.Instance != null && DungeonManager.Instance.IsInDungeon;
-            SetCombatEnabled(inDungeon);
+            if (DungeonManager.Instance == null)
+            {
+                SetCombatEnabled(true);
+                return;
+            }
+
+            SetCombatEnabled(DungeonManager.Instance.IsInDungeon);
         }
 
         private void OnDestroy()
