@@ -16,13 +16,15 @@ namespace Boss.Ability
         private static readonly int MoveYHash = Animator.StringToHash("MoveY");
         private static readonly int InCombatHash = Animator.StringToHash("InCombat");
 
+        // Bool 파라미터 해시
+        private static readonly int IsStaggeredHash = Animator.StringToHash("IsStaggered");
+
         // 트리거 해시
         private static readonly int MeleeAttackHash = Animator.StringToHash("MeleeAttack");
         private static readonly int ChargeHash = Animator.StringToHash("Charge");
         private static readonly int BreathHash = Animator.StringToHash("Breath");
         private static readonly int ProjectileHash = Animator.StringToHash("Projectile");
         private static readonly int SummonHash = Animator.StringToHash("Summon");
-        private static readonly int StaggerHash = Animator.StringToHash("Stagger");
         private static readonly int HitHash = Animator.StringToHash("Hit");
         private static readonly int DeathHash = Animator.StringToHash("Death");
         private static readonly int PhaseTransitionHash = Animator.StringToHash("PhaseTransition");
@@ -33,7 +35,6 @@ namespace Boss.Ability
         private System.Action _onBreathComplete;
         private System.Action _onProjectileComplete;
         private System.Action _onSummonComplete;
-        private System.Action _onStaggerComplete;
         private System.Action _onHitComplete;
         private System.Action _onDeathComplete;
         private System.Action _onPhaseTransitionComplete;
@@ -144,17 +145,11 @@ namespace Boss.Ability
             }
         }
 
-        public void TriggerStagger(System.Action onComplete)
+        public void SetStagger(bool isStaggered)
         {
-            _onStaggerComplete = onComplete;
-
             if (IsActive)
             {
-                _animator.SetTrigger(StaggerHash);
-            }
-            else
-            {
-                onComplete?.Invoke();
+                _animator.SetBool(IsStaggeredHash, isStaggered);
             }
         }
 
@@ -164,6 +159,8 @@ namespace Boss.Ability
 
             if (IsActive)
             {
+                // 재진입 가능하도록 리셋 후 트리거
+                _animator.ResetTrigger(HitHash);
                 _animator.SetTrigger(HitHash);
             }
             else
@@ -231,12 +228,6 @@ namespace Boss.Ability
             _onSummonComplete = null;
         }
 
-        public void OnStaggerComplete()
-        {
-            _onStaggerComplete?.Invoke();
-            _onStaggerComplete = null;
-        }
-
         public void OnHitComplete()
         {
             _onHitComplete?.Invoke();
@@ -267,7 +258,6 @@ namespace Boss.Ability
             _animator.ResetTrigger(BreathHash);
             _animator.ResetTrigger(ProjectileHash);
             _animator.ResetTrigger(SummonHash);
-            _animator.ResetTrigger(StaggerHash);
             _animator.ResetTrigger(HitHash);
         }
 

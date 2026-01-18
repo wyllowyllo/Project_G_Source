@@ -37,8 +37,8 @@ namespace Boss.AI.States
             _staggerTimer = _controller.Data.StaggerDuration;
             _isRecovering = false;
 
-            // 그로기 애니메이션 트리거 (Dizzy)
-            _animatorAbility?.TriggerStagger(OnStaggerAnimationComplete);
+            // 그로기 상태 진입
+            _animatorAbility?.SetStagger(true);
         }
 
         public void Update()
@@ -56,6 +56,9 @@ namespace Boss.AI.States
 
         public void Exit()
         {
+            // 그로기 상태 종료
+            _animatorAbility?.SetStagger(false);
+
             // 포이즈 완전 회복
             _controller.RecoverPoise();
 

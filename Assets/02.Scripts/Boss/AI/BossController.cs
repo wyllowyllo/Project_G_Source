@@ -270,11 +270,6 @@ namespace Boss.AI
             GetAbility<BossAnimatorAbility>()?.OnSummonComplete();
         }
 
-        public void OnStaggerAnimationComplete()
-        {
-            GetAbility<BossAnimatorAbility>()?.OnStaggerComplete();
-        }
-
         public void OnHitAnimationComplete()
         {
             GetAbility<BossAnimatorAbility>()?.OnHitComplete();
@@ -297,22 +292,13 @@ namespace Boss.AI
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
-            // 포이즈 데미지 적용
+            // 포이즈 데미지 적용 (Stagger 진입 조건)
             _superArmor?.TakePoiseDamage(damageInfo.Amount);
 
-            // 슈퍼아머가 무한 모드가 아니고, 포이즈가 아직 남아있으면 Hit 상태로 전환
-            // (포이즈가 깨지면 HandlePoiseBroken에서 Stagger로 전환됨)
-            if (!_superArmor.IsInfinite && !_superArmor.IsBroken)
+            // Stagger 상태에서만 Hit 애니메이션 재생 (FSM 상태는 유지)
+            if (_stateMachine?.CurrentStateType == EBossState.Stagger)
             {
-                // 이미 Hit 상태면 ReEnter로 애니메이션 재시작
-                if (_stateMachine?.CurrentStateType == EBossState.Hit)
-                {
-                    _stateMachine.TryReEnterCurrentState();
-                }
-                else
-                {
-                    _stateMachine?.ChangeState(EBossState.Hit);
-                }
+                GetAbility<BossAnimatorAbility>()?.TriggerHit();
             }
         }
 
