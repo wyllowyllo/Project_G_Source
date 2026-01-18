@@ -192,7 +192,6 @@ namespace Boss.AI
 
             // Phase 3: 기본 상태 등록
             _stateMachine.RegisterState(EBossState.Idle, new BossIdleState(this, _stateMachine));
-            _stateMachine.RegisterState(EBossState.Hit, new BossHitState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Stagger, new BossStaggerState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Dead, new BossDeadState(this));
             _stateMachine.RegisterState(EBossState.PhaseTransition, new BossPhaseTransitionState(this, _stateMachine));

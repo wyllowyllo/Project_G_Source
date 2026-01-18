@@ -9,7 +9,6 @@ namespace Boss.AI.States
         Projectile,         // 투사체 발사 (Attack02)
         Summon,             // 잡졸 소환
         Stagger,            // 그로기 (포이즈 붕괴)
-        Hit,                // 피격 경직
         Dead,               // 사망
         PhaseTransition     // 페이즈 전환 연출
     }
