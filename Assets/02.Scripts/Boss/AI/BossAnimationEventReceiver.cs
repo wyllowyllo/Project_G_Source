@@ -180,14 +180,6 @@ namespace Boss.AI
         #region 상태 변화 이벤트
 
         /// <summary>
-        /// Animation Event: 그로기 애니메이션 완료
-        /// </summary>
-        public void OnStaggerComplete()
-        {
-            _controller?.OnStaggerAnimationComplete();
-        }
-
-        /// <summary>
         /// Animation Event: 피격 애니메이션 완료
         /// </summary>
         public void OnHitComplete()
@@ -241,6 +233,14 @@ namespace Boss.AI
         {
             // CameraManager 연동 시 구현
             Debug.Log($"[BossAnimationEvent] CameraShake: {intensity}");
+        }
+
+        /// <summary>
+        /// Animation Event: 미사용 이벤트 (에러 방지용)
+        /// </summary>
+        public void NewEvent()
+        {
+            // 애니메이션에 남아있는 미사용 이벤트 처리
         }
 
         #endregion
