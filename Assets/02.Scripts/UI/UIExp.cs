@@ -121,7 +121,7 @@ public class UIExp : MonoBehaviour
             }
             else
             {
-                _expText.text = $"{Mathf.FloorToInt(_displayExp)}/{maxXp}";
+                _expText.text = $"{Mathf.FloorToInt(_displayExp)} / {maxXp}";
             }
         }
     }
