@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Boss.Core
@@ -19,6 +20,7 @@ namespace Boss.Core
 
         private GameObject _activeDecal;
         private GameObject _activeEffect;
+        private List<GameObject> _activeMarkers = new();
 
         public event Action OnTelegraphStart;
         public event Action OnTelegraphEnd;
@@ -95,6 +97,7 @@ namespace Boss.Core
             if (_markerPrefab != null)
             {
                 GameObject marker = Instantiate(_markerPrefab, position, Quaternion.identity);
+                _activeMarkers.Add(marker);
 
                 if (duration > 0f)
                 {
@@ -192,6 +195,16 @@ namespace Boss.Core
                 Destroy(_activeDecal);
                 _activeDecal = null;
             }
+
+            // 마커 정리
+            foreach (var marker in _activeMarkers)
+            {
+                if (marker != null)
+                {
+                    Destroy(marker);
+                }
+            }
+            _activeMarkers.Clear();
 
             HideEffect();
             OnTelegraphEnd?.Invoke();

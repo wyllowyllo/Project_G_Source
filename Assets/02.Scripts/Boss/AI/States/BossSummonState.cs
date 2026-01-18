@@ -17,7 +17,6 @@ namespace Boss.AI.States
         private readonly NavAgentAbility _navAgentAbility;
         private readonly BossAnimatorAbility _animatorAbility;
 
-        private bool _hasSummoned;
         private bool _isAnimationComplete;
 
         public EBossState StateType => EBossState.Summon;
@@ -34,7 +33,6 @@ namespace Boss.AI.States
         public void Enter()
         {
             _navAgentAbility?.Stop();
-            _hasSummoned = false;
             _isAnimationComplete = false;
 
             // 슈퍼아머 활성화 (소환 중 경직 방지)
@@ -82,29 +80,11 @@ namespace Boss.AI.States
             _controller.Telegraph?.ShowSummonWarning(positions);
         }
 
-        /// <summary>
-        /// 애니메이션 이벤트에서 호출: 실제 소환 시점
-        /// </summary>
-        public void OnSummonTrigger()
-        {
-            if (_hasSummoned) return;
-            _hasSummoned = true;
-
-            // 예고 숨기기
-            _controller.Telegraph?.HideAll();
-
-            // 잡졸 소환
-            _controller.SpawnMinions();
-        }
-
         private void OnSummonAnimationComplete()
         {
-            // 애니메이션 완료 전에 소환이 안 됐으면 여기서 소환
-            if (!_hasSummoned)
-            {
-                OnSummonTrigger();
-            }
-
+            // 소환은 애니메이션 이벤트(SpawnMinions)에서 처리됨
+            // 예고 숨기기
+            _controller.Telegraph?.HideAll();
             _isAnimationComplete = true;
         }
     }

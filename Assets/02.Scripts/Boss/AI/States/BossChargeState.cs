@@ -27,7 +27,6 @@ namespace Boss.AI.States
         private float _chargedDistance;
         private float _windupTimer;
         private bool _isAttackComplete;
-        private bool _hasHitTarget;
 
         private const float WINDUP_DURATION = 0.8f; // 준비 시간
 
@@ -50,7 +49,6 @@ namespace Boss.AI.States
             _currentPhase = EChargePhase.Windup;
             _windupTimer = 0f;
             _isAttackComplete = false;
-            _hasHitTarget = false;
 
             // 슈퍼아머 활성화
             _controller.SetSuperArmorInfinite(true);
@@ -190,19 +188,6 @@ namespace Boss.AI.States
         private void OnAttackComplete()
         {
             _isAttackComplete = true;
-        }
-
-        /// <summary>
-        /// 돌진 중 타겟 충돌 시 호출
-        /// </summary>
-        public void OnChargeHit()
-        {
-            if (_hasHitTarget) return;
-            _hasHitTarget = true;
-
-            // 데미지는 Hitbox에서 처리
-            // 선택적: 충돌 후 즉시 종료
-            // EndCharge();
         }
     }
 }

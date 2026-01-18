@@ -22,7 +22,6 @@ namespace Boss.AI.States
         private EProjectilePhase _currentPhase;
 
         private float _aimTimer;
-        private int _firedCount;
         private bool _isAnimationComplete;
 
         private const float AIM_DURATION = 0.5f;
@@ -44,7 +43,6 @@ namespace Boss.AI.States
             _navAgentAbility?.Stop();
             _currentPhase = EProjectilePhase.Aiming;
             _aimTimer = 0f;
-            _firedCount = 0;
             _isAnimationComplete = false;
 
             // 슈퍼아머 활성화
@@ -128,31 +126,6 @@ namespace Boss.AI.States
         private void OnProjectileAnimationComplete()
         {
             _isAnimationComplete = true;
-        }
-
-        /// <summary>
-        /// 애니메이션 이벤트에서 호출: 실제 투사체 발사
-        /// </summary>
-        public void OnFireProjectile()
-        {
-            if (_firedCount >= _controller.Data.ProjectileCount) return;
-            _firedCount++;
-
-            // 투사체 발사
-            _controller.FireProjectile();
-        }
-
-        /// <summary>
-        /// 다중 투사체 동시 발사 (애니메이션 이벤트용)
-        /// </summary>
-        public void OnFireAllProjectiles()
-        {
-            int count = _controller.Data.ProjectileCount;
-            for (int i = 0; i < count; i++)
-            {
-                _controller.FireProjectile(i, count);
-            }
-            _firedCount = count;
         }
     }
 }
