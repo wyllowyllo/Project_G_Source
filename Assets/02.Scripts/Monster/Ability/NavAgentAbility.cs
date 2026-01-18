@@ -37,7 +37,7 @@ namespace Monster.Ability
         // 이동 정지/재개
         public void Stop()
         {
-            if (_navAgent != null)
+            if (IsActive && _navAgent.isOnNavMesh)
             {
                 _navAgent.isStopped = true;
             }
@@ -45,7 +45,7 @@ namespace Monster.Ability
 
         public void Resume()
         {
-            if (_navAgent != null)
+            if (IsActive && _navAgent.isOnNavMesh)
             {
                 _navAgent.isStopped = false;
             }
