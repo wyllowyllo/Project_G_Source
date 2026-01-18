@@ -18,7 +18,8 @@ namespace Boss.AI.States
 
         // 타이머 기반 그로기 (애니메이션 이벤트 대체용)
         private float _staggerTimer;
-        private bool _isRecovering;
+        private float _invincibilityTimer;
+        private bool _isInvincibilityPhase;
 
         public EBossState StateType => EBossState.Stagger;
 
@@ -35,7 +36,8 @@ namespace Boss.AI.States
         {
             _navAgentAbility?.Stop();
             _staggerTimer = _controller.Data.StaggerDuration;
-            _isRecovering = false;
+            _invincibilityTimer = _controller.Data.PostStaggerInvincibilityDuration;
+            _isInvincibilityPhase = false;
 
             // 그로기 상태 진입
             _animatorAbility?.SetStagger(true);
@@ -43,44 +45,51 @@ namespace Boss.AI.States
 
         public void Update()
         {
-            // 애니메이션 이벤트가 없을 경우 타이머로 처리
-            if (!_isRecovering)
+            if (!_isInvincibilityPhase)
             {
+                // 그로기 페이즈: 타이머로 처리
                 _staggerTimer -= Time.deltaTime;
                 if (_staggerTimer <= 0f)
                 {
-                    OnStaggerAnimationComplete();
+                    OnStaggerComplete();
+                }
+            }
+            else
+            {
+                // 무적 페이즈: 무적 시간이 끝나면 상태 전환
+                _invincibilityTimer -= Time.deltaTime;
+                if (_invincibilityTimer <= 0f)
+                {
+                    _stateMachine.ChangeState(EBossState.Idle);
                 }
             }
         }
 
         public void Exit()
         {
-            // 그로기 상태 종료
-            _animatorAbility?.SetStagger(false);
-
-            // 포이즈 완전 회복
-            _controller.RecoverPoise();
-
-            // 짧은 무적 시간 부여
-            GrantPostStaggerInvincibility();
+            // 무적 페이즈를 거치지 않고 Exit될 경우 대비
+            if (!_isInvincibilityPhase)
+            {
+                _animatorAbility?.SetStagger(false);
+                _controller.RecoverPoise();
+            }
 
             _navAgentAbility?.Resume();
         }
 
-        private void OnStaggerAnimationComplete()
+        private void OnStaggerComplete()
         {
-            if (_isRecovering) return;
-            _isRecovering = true;
+            if (_isInvincibilityPhase) return;
+            _isInvincibilityPhase = true;
 
-            _stateMachine.ChangeState(EBossState.Idle);
-        }
+            // 그로기 애니메이션 종료
+            _animatorAbility?.SetStagger(false);
 
-        private void GrantPostStaggerInvincibility()
-        {
-            // Combatant의 무적 시간 설정
-            float invincibilityDuration = _controller.Data.PostStaggerInvincibilityDuration;
-            _controller.Combatant?.SetInvincible(invincibilityDuration);
+            // 포이즈 회복
+            _controller.RecoverPoise();
+
+            // 무적 시간 부여
+            _controller.Combatant?.SetInvincible(_invincibilityTimer);
         }
     }
 }
