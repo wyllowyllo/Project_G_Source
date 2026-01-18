@@ -159,9 +159,9 @@ namespace Boss.Ability
 
             if (IsActive)
             {
-                // 재진입 가능하도록 리셋 후 트리거
-                _animator.ResetTrigger(HitHash);
-                _animator.SetTrigger(HitHash);
+                // CrossFade로 즉시 Hit 애니메이션 재생 (연타 대응)
+                // 0.05초의 짧은 블렌딩으로 자연스러우면서도 빠른 반응
+                _animator.CrossFadeInFixedTime("Hit", 0.05f, 0);
             }
             else
             {
