@@ -49,7 +49,7 @@ namespace Skill
             {
                 SkillAreaType.Sphere => GetTargetsInSphere(origin, context.Range, context.EnemyLayer),
                 SkillAreaType.Box => GetTargetsInBox(origin, context.Range, context.BoxWidth, context.BoxHeight, context.EnemyLayer),
-                SkillAreaType.Cone => GetTargetsInCone(origin, context.Range, context.Angle, context.EnemyLayer),
+                SkillAreaType.Cone => GetTargetsInCone(origin, context.Range, context.Angle, context.ConeHeight, context.EnemyLayer),
                 _ => 0
             };
         }
@@ -67,18 +67,25 @@ namespace Skill
                 center, halfExtents, _hitBuffer, transform.rotation, enemyLayer);
         }
 
-        private int GetTargetsInCone(Vector3 origin, float range, float angle, LayerMask enemyLayer)
+        private int GetTargetsInCone(Vector3 origin, float range, float angle, float coneHeight, LayerMask enemyLayer)
         {
             int count = Physics.OverlapSphereNonAlloc(origin, range, _hitBuffer, enemyLayer);
 
-            Vector3 forward = transform.forward;
+            Vector3 forwardXZ = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
             float cosHalfAngle = Mathf.Cos(angle * 0.5f * Mathf.Deg2Rad);
+            float halfHeight = coneHeight * 0.5f;
 
             int validCount = 0;
             for (int i = 0; i < count; i++)
             {
-                Vector3 dirToTarget = (_hitBuffer[i].transform.position - origin).normalized;
-                float dot = Vector3.Dot(forward, dirToTarget);
+                Vector3 targetPos = _hitBuffer[i].transform.position;
+                float heightDiff = targetPos.y - origin.y;
+
+                if (Mathf.Abs(heightDiff) > halfHeight)
+                    continue;
+
+                Vector3 toTargetXZ = new Vector3(targetPos.x - origin.x, 0f, targetPos.z - origin.z).normalized;
+                float dot = Vector3.Dot(forwardXZ, toTargetXZ);
 
                 if (dot >= cosHalfAngle)
                 {
@@ -116,6 +123,7 @@ namespace Skill
         [SerializeField] private SkillAreaType _debugAreaType;
         [SerializeField] private float _debugRange = 5f;
         [SerializeField] private float _debugAngle = 180f;
+        [SerializeField] private float _debugConeHeight = 2f;
         [SerializeField] private float _debugBoxWidth = 2f;
         [SerializeField] private float _debugBoxHeight = 2f;
 
@@ -141,19 +149,36 @@ namespace Skill
                     break;
 
                 case SkillAreaType.Cone:
-                    DrawConeGizmo(_debugRange, _debugAngle);
+                    DrawConeGizmo(_debugRange, _debugAngle, _debugConeHeight);
                     break;
             }
         }
 
-        private void DrawConeGizmo(float range, float angle)
+        private void DrawConeGizmo(float range, float angle, float coneHeight)
         {
             int segments = 20;
             float halfAngle = angle * 0.5f * Mathf.Deg2Rad;
+            float halfHeight = coneHeight * 0.5f;
 
             Vector3 origin = transform.position;
             Vector3 forward = transform.forward;
             Vector3 right = transform.right;
+            Vector3 up = Vector3.up;
+
+            Vector3 bottomOrigin = origin - up * halfHeight;
+            Vector3 topOrigin = origin + up * halfHeight;
+
+            Vector3 leftDir = (forward * Mathf.Cos(-halfAngle) + right * Mathf.Sin(-halfAngle)).normalized;
+            Vector3 rightDir = (forward * Mathf.Cos(halfAngle) + right * Mathf.Sin(halfAngle)).normalized;
+
+            Gizmos.DrawLine(bottomOrigin, bottomOrigin + leftDir * range);
+            Gizmos.DrawLine(bottomOrigin, bottomOrigin + rightDir * range);
+            Gizmos.DrawLine(topOrigin, topOrigin + leftDir * range);
+            Gizmos.DrawLine(topOrigin, topOrigin + rightDir * range);
+
+            Gizmos.DrawLine(bottomOrigin, topOrigin);
+            Gizmos.DrawLine(bottomOrigin + leftDir * range, topOrigin + leftDir * range);
+            Gizmos.DrawLine(bottomOrigin + rightDir * range, topOrigin + rightDir * range);
 
             for (int i = 0; i < segments; i++)
             {
@@ -166,8 +191,8 @@ namespace Skill
                 Vector3 dir1 = (forward * Mathf.Cos(a1) + right * Mathf.Sin(a1)).normalized;
                 Vector3 dir2 = (forward * Mathf.Cos(a2) + right * Mathf.Sin(a2)).normalized;
 
-                Gizmos.DrawLine(origin, origin + dir1 * range);
-                Gizmos.DrawLine(origin + dir1 * range, origin + dir2 * range);
+                Gizmos.DrawLine(bottomOrigin + dir1 * range, bottomOrigin + dir2 * range);
+                Gizmos.DrawLine(topOrigin + dir1 * range, topOrigin + dir2 * range);
             }
         }
 #endif

@@ -1,6 +1,6 @@
 {
     "name": "ProjectG.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "ProjectG",
     "references": [
         "ProjectG"
     ],

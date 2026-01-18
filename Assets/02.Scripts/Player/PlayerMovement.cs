@@ -117,15 +117,21 @@ namespace Player
 
         private void HandleInput()
         {
+            if (!_movementEnabled)
+            {
+                _moveInputVector = Vector3.zero;
+                return;
+            }
+
             float horizontal = Input.GetAxisRaw("Horizontal");
             float vertical = Input.GetAxisRaw("Vertical");
-            
+
             Vector3 inputVector = new Vector3(horizontal, 0f, vertical);
-            
+
             if (_useCameraForward && _cameraTransform != null)
             {
                 _moveInputVector = GetCameraRelativeMovement(inputVector);
-           
+
             }
             else
             {
@@ -231,7 +237,7 @@ namespace Player
             
             if (_smoothTargetRotation.HasValue)
             {
-                float rotSpeed = Mathf.Lerp(10f, 50f, _smoothRotationSpeed);
+                float rotSpeed = Mathf.Lerp(2f, 50f, _smoothRotationSpeed);
 
                 currentRotation = Quaternion.Slerp(
                     currentRotation,

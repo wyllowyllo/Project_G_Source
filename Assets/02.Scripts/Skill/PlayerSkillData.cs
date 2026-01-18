@@ -23,6 +23,8 @@ namespace Skill
         [SerializeField] private Vector3 _positionOffset;
         [Tooltip("Cone 타입 전용: 부채꼴 각도")]
         [SerializeField] private float _angle = 180f;
+        [Tooltip("Cone 타입 전용: 수직 높이")]
+        [SerializeField] private float _coneHeight = 2f;
         [Tooltip("Box 타입 전용: 좌우 너비")]
         [SerializeField] private float _boxWidth = 2f;
         [Tooltip("Box 타입 전용: 상하 높이")]
@@ -40,6 +42,7 @@ namespace Skill
         public float Cooldown => _cooldown;
         public Vector3 PositionOffset => _positionOffset;
         public float Angle => _angle;
+        public float ConeHeight => _coneHeight;
         public float BoxWidth => _boxWidth;
         public float BoxHeight => _boxHeight;
         public bool AllowMovement => _allowMovement;

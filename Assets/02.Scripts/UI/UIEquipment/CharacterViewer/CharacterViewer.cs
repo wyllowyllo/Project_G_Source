@@ -1,4 +1,6 @@
+using Combat.Core;
 using Equipment;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +14,7 @@ public class CharacterViewer : MonoBehaviour
     [SerializeField] private PlayerEquipment _playerEquipment;
     [SerializeField] private Player.PlayerMovement _playerMovement;
     [SerializeField] private Player.PlayerCombat _playerCombat;
+    [SerializeField] private Combatant _playerCombatant;
 
     [Header("컴포넌트")]
     [SerializeField] private CharacterViewerInput _inputHandler;
@@ -108,6 +111,11 @@ private void Start()
             if (_playerCombat == null)
             {
                 _playerCombat = _player.GetComponent<Player.PlayerCombat>();
+            }
+
+            if (_playerCombatant == null)
+            {
+                _playerCombatant = _player.GetComponent<Combatant>();
             }
         }
     }
@@ -272,6 +280,13 @@ private void Start()
                 component.OnCloneDisable(); // 정리 작업 수행
                 mb.enabled = false;
             }
+        }
+
+        // Cinemachine 컴포넌트 비활성화 (CinemachineBrain 간섭 방지)
+        var cinemachineCameras = _characterClone.GetComponentsInChildren<CinemachineCamera>(true);
+        foreach (var cam in cinemachineCameras)
+        {
+            cam.enabled = false;
         }
 
         if (_characterClone.TryGetComponent<CharacterController>(out var characterController))
@@ -443,9 +458,13 @@ private void OpenViewer()
             _inputHandler.SetActive(false);
         }
 
-        SetPlayerMovementEnabled(true);
-
-        SetPlayerCombatEnabled(true);
+        // 플레이어가 살아있을 때만 이동/전투 활성화
+        bool isPlayerAlive = _playerCombatant == null || _playerCombatant.IsAlive;
+        if (isPlayerAlive)
+        {
+            SetPlayerMovementEnabled(true);
+            SetPlayerCombatEnabled(true);
+        }
 
         SetCursorState(false);
     }

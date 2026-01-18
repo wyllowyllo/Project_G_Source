@@ -28,6 +28,7 @@ namespace Skill
             Quaternion rotation,
             float range,
             float angle,
+            float coneHeight,
             float boxWidth,
             float boxHeight,
             Vector3 positionOffset)
@@ -44,7 +45,7 @@ namespace Skill
                     SpawnSphere(origin, range);
                     break;
                 case SkillAreaType.Cone:
-                    SpawnCone(origin, rotation, range, angle);
+                    SpawnCone(origin, rotation, range, angle, coneHeight);
                     break;
             }
 #endif
@@ -77,7 +78,7 @@ namespace Skill
             SetupVisual(go);
         }
 
-        private static void SpawnCone(Vector3 position, Quaternion rotation, float range, float angle)
+        private static void SpawnCone(Vector3 position, Quaternion rotation, float range, float angle, float coneHeight)
         {
             var go = new GameObject("[Debug] SkillArea_Cone");
             go.transform.position = position;
@@ -86,40 +87,104 @@ namespace Skill
             var meshFilter = go.AddComponent<MeshFilter>();
             var meshRenderer = go.AddComponent<MeshRenderer>();
 
-            meshFilter.mesh = CreateConeMesh(range, angle);
+            meshFilter.mesh = CreateConeMesh(range, angle, coneHeight);
             meshRenderer.material = DebugMaterial;
 
             go.AddComponent<SkillDebugVisual>();
         }
 
-        private static Mesh CreateConeMesh(float range, float angle)
+        private static Mesh CreateConeMesh(float range, float angle, float coneHeight)
         {
             var mesh = new Mesh();
             int segments = 20;
             float halfAngle = angle * 0.5f * Mathf.Deg2Rad;
+            float halfHeight = coneHeight * 0.5f;
 
-            var vertices = new Vector3[segments + 2];
-            var triangles = new int[segments * 3];
+            int vertexCount = (segments + 2) * 2;
+            int triangleCount = segments * 3 * 2 + segments * 6 + 6 * 2;
 
-            vertices[0] = Vector3.zero;
+            var vertices = new Vector3[vertexCount];
+            var triangles = new int[triangleCount];
 
+            int vi = 0;
+            int ti = 0;
+
+            int bottomCenterIndex = vi++;
+            vertices[bottomCenterIndex] = new Vector3(0, -halfHeight, 0);
+
+            int bottomArcStart = vi;
             for (int i = 0; i <= segments; i++)
             {
                 float t = (float)i / segments;
                 float currentAngle = Mathf.Lerp(-halfAngle, halfAngle, t);
-
                 float x = Mathf.Sin(currentAngle) * range;
                 float z = Mathf.Cos(currentAngle) * range;
-
-                vertices[i + 1] = new Vector3(x, 0, z);
+                vertices[vi++] = new Vector3(x, -halfHeight, z);
             }
 
             for (int i = 0; i < segments; i++)
             {
-                triangles[i * 3] = 0;
-                triangles[i * 3 + 1] = i + 1;
-                triangles[i * 3 + 2] = i + 2;
+                triangles[ti++] = bottomCenterIndex;
+                triangles[ti++] = bottomArcStart + i + 1;
+                triangles[ti++] = bottomArcStart + i;
             }
+
+            int topCenterIndex = vi++;
+            vertices[topCenterIndex] = new Vector3(0, halfHeight, 0);
+
+            int topArcStart = vi;
+            for (int i = 0; i <= segments; i++)
+            {
+                float t = (float)i / segments;
+                float currentAngle = Mathf.Lerp(-halfAngle, halfAngle, t);
+                float x = Mathf.Sin(currentAngle) * range;
+                float z = Mathf.Cos(currentAngle) * range;
+                vertices[vi++] = new Vector3(x, halfHeight, z);
+            }
+
+            for (int i = 0; i < segments; i++)
+            {
+                triangles[ti++] = topCenterIndex;
+                triangles[ti++] = topArcStart + i;
+                triangles[ti++] = topArcStart + i + 1;
+            }
+
+            for (int i = 0; i < segments; i++)
+            {
+                int bl = bottomArcStart + i;
+                int br = bottomArcStart + i + 1;
+                int tl = topArcStart + i;
+                int tr = topArcStart + i + 1;
+
+                triangles[ti++] = bl;
+                triangles[ti++] = br;
+                triangles[ti++] = tl;
+
+                triangles[ti++] = br;
+                triangles[ti++] = tr;
+                triangles[ti++] = tl;
+            }
+
+            int bottomFirst = bottomArcStart;
+            int bottomLast = bottomArcStart + segments;
+            int topFirst = topArcStart;
+            int topLast = topArcStart + segments;
+
+            triangles[ti++] = bottomCenterIndex;
+            triangles[ti++] = bottomFirst;
+            triangles[ti++] = topFirst;
+
+            triangles[ti++] = bottomCenterIndex;
+            triangles[ti++] = topFirst;
+            triangles[ti++] = topCenterIndex;
+
+            triangles[ti++] = bottomCenterIndex;
+            triangles[ti++] = topLast;
+            triangles[ti++] = bottomLast;
+
+            triangles[ti++] = bottomCenterIndex;
+            triangles[ti++] = topCenterIndex;
+            triangles[ti++] = topLast;
 
             mesh.vertices = vertices;
             mesh.triangles = triangles;

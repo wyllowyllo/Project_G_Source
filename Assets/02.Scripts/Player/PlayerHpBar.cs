@@ -66,24 +66,27 @@ namespace Player
 
         private void Start()
         {
-            _level = _firstLevel;
-
-            if (_playerCombatant != null)
+            if (!ValidateDependencies())
             {
-                InitializeHpBar();
-
-                HpSlider.value = 0.5f;
-                BackSlider.value = 0.5f;
+                enabled = false;
+                return;
             }
+
+            _level = _firstLevel;
+            InitializeHpBar();
+        }
+
+        private bool ValidateDependencies()
+        {
+            if (_playerCombatant == null || HpSlider == null || BackSlider == null)
+            {
+                return false;
+            }
+            return true;
         }
 
         private void Update()
         {
-            if (_playerCombatant == null)
-            {
-                return;
-            }
-
             UpdateHpBarSmooth();
             UpdateBackSlider();
         }

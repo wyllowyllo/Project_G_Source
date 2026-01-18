@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Combat.Core;
+using Dungeon;
 using Skill;
 using UnityEngine;
 
@@ -40,6 +41,23 @@ namespace Progression
             EnsureInitialized();
         }
 
+        private void OnEnable()
+        {
+            if (DungeonManager.Instance != null)
+                DungeonManager.Instance.DungeonCleared += OnDungeonCleared;
+        }
+
+        private void OnDisable()
+        {
+            if (DungeonManager.Instance != null)
+                DungeonManager.Instance.DungeonCleared -= OnDungeonCleared;
+        }
+
+        private void OnDungeonCleared(int xpReward)
+        {
+            AddExperience(xpReward);
+        }
+
         private void EnsureInitialized()
         {
             if (_initialized) return;
@@ -68,10 +86,10 @@ namespace Progression
                 Level++;
 
                 ApplyLevelStats();
+                RestoreHealthToFull();
                 OnLevelUp?.Invoke(previousLevel, Level);
 
-                var skill = _config.GetSkillEnhancement(Level);
-                if (skill != SkillSlot.None)
+                foreach (var skill in _config.GetSkillEnhancements(Level))
                     OnSkillEnhanced?.Invoke(skill);
 
                 requiredXp = _config.GetRequiredXp(Level + 1);
@@ -85,6 +103,11 @@ namespace Progression
         {
             float bonus = _config.GetAttackBonus(Level);
             _combatant.Stats.AttackDamage.BaseValue = _initialAttackDamage + bonus;
+        }
+
+        private void RestoreHealthToFull()
+        {
+            _combatant.Heal(_combatant.MaxHealth);
         }
 
         [Conditional("UNITY_EDITOR")]
