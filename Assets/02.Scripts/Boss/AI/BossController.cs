@@ -5,6 +5,7 @@ using Boss.Core;
 using Boss.Data;
 using Combat.Attack;
 using Combat.Core;
+using Combat.Damage;
 using Common;
 using Monster.Ability;
 using System.Collections.Generic;
@@ -427,12 +428,36 @@ namespace Boss.AI
             // 분노 이펙트 표시 등 추가 연출 가능
         }
 
+        private void HandleMeleeHit(HitInfo hitInfo)
+        {
+            var context = AttackContext.Fixed(_combatant, _bossData.MeleeDamage);
+            var damageInfo = DamageProcessor.Process(context, hitInfo, transform.position);
+            hitInfo.Target.TakeDamage(damageInfo);
+        }
+
+        private void HandleChargeHit(HitInfo hitInfo)
+        {
+            var context = AttackContext.Fixed(_combatant, _bossData.ChargeDamage);
+            var damageInfo = DamageProcessor.Process(context, hitInfo, transform.position);
+            hitInfo.Target.TakeDamage(damageInfo);
+        }
+
         private void OnEnable()
         {
             if (_combatant != null)
             {
                 _combatant.OnDeath += HandleDeath;
                 _combatant.OnDamaged += HandleDamaged;
+            }
+
+            if (_meleeHitbox != null)
+            {
+                _meleeHitbox.OnHit += HandleMeleeHit;
+            }
+
+            if (_chargeHitbox != null)
+            {
+                _chargeHitbox.OnHit += HandleChargeHit;
             }
         }
 
@@ -442,6 +467,16 @@ namespace Boss.AI
             {
                 _combatant.OnDeath -= HandleDeath;
                 _combatant.OnDamaged -= HandleDamaged;
+            }
+
+            if (_meleeHitbox != null)
+            {
+                _meleeHitbox.OnHit -= HandleMeleeHit;
+            }
+
+            if (_chargeHitbox != null)
+            {
+                _chargeHitbox.OnHit -= HandleChargeHit;
             }
 
             // 이벤트 해제
