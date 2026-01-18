@@ -304,7 +304,15 @@ namespace Boss.AI
             // (포이즈가 깨지면 HandlePoiseBroken에서 Stagger로 전환됨)
             if (!_superArmor.IsInfinite && !_superArmor.IsBroken)
             {
-                _stateMachine?.ChangeState(EBossState.Hit);
+                // 이미 Hit 상태면 ReEnter로 애니메이션 재시작
+                if (_stateMachine?.CurrentStateType == EBossState.Hit)
+                {
+                    _stateMachine.TryReEnterCurrentState();
+                }
+                else
+                {
+                    _stateMachine?.ChangeState(EBossState.Hit);
+                }
             }
         }
 

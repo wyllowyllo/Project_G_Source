@@ -34,8 +34,8 @@ namespace Boss.AI.States
             // 사망 애니메이션 재생
             _animatorAbility?.TriggerDeath(OnDeathAnimationComplete);
 
-            // TODO: 소환된 잡졸 전체 제거 (Phase 4에서 BossMinionManager 연동)
-            // _controller.MinionManager?.DespawnAllMinions();
+            // 소환된 잡졸 전체 제거
+            _controller.MinionManager?.DespawnAllMinions();
 
             // TODO: 보상 드롭 처리 (경험치, 골드, 아이템)
         }

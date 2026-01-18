@@ -23,6 +23,7 @@ namespace Boss.Core
         private BossController _owner;
         private MonsterGroupDirector _minionGroup;
         private List<MonsterController> _activeMinions = new();
+        private Dictionary<Combatant, Action> _deathHandlers = new();
         private Transform _playerTransform;
 
         public int AliveMinionCount => GetAliveMinionCount();
@@ -105,11 +106,13 @@ namespace Boss.Core
             // 그룹에 등록
             RegisterMinion(minionController);
 
-            // 사망 이벤트 구독
+            // 사망 이벤트 구독 (해제 가능하도록 delegate 저장)
             var combatant = minionObj.GetComponent<Combatant>();
             if (combatant != null)
             {
-                combatant.OnDeath += () => HandleMinionDeath(minionController);
+                Action deathHandler = () => HandleMinionDeath(minionController, combatant);
+                _deathHandlers[combatant] = deathHandler;
+                combatant.OnDeath += deathHandler;
             }
         }
 
@@ -127,10 +130,17 @@ namespace Boss.Core
             minion.ForceEnterCombat();
         }
 
-        private void HandleMinionDeath(MonsterController minion)
+        private void HandleMinionDeath(MonsterController minion, Combatant combatant)
         {
             _activeMinions.Remove(minion);
             _minionGroup?.UnregisterMonster(minion);
+
+            // 이벤트 구독 해제
+            if (combatant != null && _deathHandlers.TryGetValue(combatant, out var handler))
+            {
+                combatant.OnDeath -= handler;
+                _deathHandlers.Remove(combatant);
+            }
 
             // 모든 잡졸 사망 체크
             if (_activeMinions.Count == 0 || GetAliveMinionCount() == 0)
@@ -188,6 +198,16 @@ namespace Boss.Core
         /// </summary>
         public void DespawnAllMinions()
         {
+            // 모든 이벤트 구독 해제
+            foreach (var kvp in _deathHandlers)
+            {
+                if (kvp.Key != null)
+                {
+                    kvp.Key.OnDeath -= kvp.Value;
+                }
+            }
+            _deathHandlers.Clear();
+
             var minions = _activeMinions.ToArray();
             _activeMinions.Clear();
 
