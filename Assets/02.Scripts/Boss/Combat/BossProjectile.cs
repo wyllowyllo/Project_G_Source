@@ -15,7 +15,7 @@ namespace Boss.Combat
         [Header("Settings")]
         [SerializeField] private float _lifeTime = 5f;
         [SerializeField] private LayerMask _hitLayers;
-        [SerializeField] private ParticleSystem _hitEffect;
+        [SerializeField] private GameObject _hitEffect;
         [SerializeField] private ParticleSystem _trailEffect;
 
         private AttackContext _attackContext;
@@ -116,10 +116,7 @@ namespace Boss.Combat
         {
             if (_hitEffect != null)
             {
-                // 이펙트 복사본 생성 후 재생
-                var hitEffectInstance = Instantiate(_hitEffect, transform.position, transform.rotation);
-                hitEffectInstance.Play();
-                Destroy(hitEffectInstance.gameObject, hitEffectInstance.main.duration + 0.5f);
+                Instantiate(_hitEffect, transform.position, transform.rotation);
             }
         }
 
