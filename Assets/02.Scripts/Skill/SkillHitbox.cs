@@ -14,10 +14,15 @@ namespace Skill
         private readonly HashSet<IDamageable> _hitTargets = new HashSet<IDamageable>();
 
         public event Action<HitInfo> OnHit;
+        public event Action<SkillVFXRequest> OnVFXRequested;
 
         public int PerformCheck(SkillAreaContext context)
         {
             _hitTargets.Clear();
+
+            Vector3 origin = transform.position + transform.TransformDirection(context.PositionOffset);
+            var vfxRequest = SkillVFXRequest.FromContext(context, origin , transform.rotation);
+            OnVFXRequested?.Invoke(vfxRequest);
 
             int hitCount = GetTargetsInArea(context);
             int validHits = 0;

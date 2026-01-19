@@ -3,6 +3,7 @@ using Combat.Attack;
 using Combat.Core;
 using Combat.Damage;
 using Drakkar.GameUtils;
+using Pool.Core;
 using UnityEngine;
 
 namespace Player
@@ -93,8 +94,7 @@ namespace Player
                 return;
             }
 
-            GameObject vfx = Instantiate(_damagedVFX, position, Quaternion.identity);
-            Destroy(vfx, _vfxLifetime);
+            PoolSpawner.SpawnVFX(_damagedVFX, position, Quaternion.identity, _vfxLifetime);
         }
 
         public void SpawnAttackVFX(int comboStep)
@@ -112,9 +112,7 @@ namespace Player
                 return;
             }
 
-            GameObject vfx = Instantiate(vfxPrefab, _attackVFXSpawnPoint.position, _attackVFXSpawnPoint.rotation);
-
-            Destroy(vfx, _vfxLifetime);
+            PoolSpawner.SpawnVFX(vfxPrefab, _attackVFXSpawnPoint.position, _attackVFXSpawnPoint.rotation, _vfxLifetime);
         }
 
         public void SpawnHitVFX(Vector3 position, int comboStep)
@@ -132,9 +130,7 @@ namespace Player
                 return;
             }
 
-            GameObject vfx = Instantiate(vfxPrefab, position, Quaternion.identity);
-
-            Destroy(vfx, _vfxLifetime);
+            PoolSpawner.SpawnVFX(vfxPrefab, position, Quaternion.identity, _vfxLifetime);
         }
         
         public void Spawn(GameObject vfxPrefab, Vector3 position, Quaternion rotation)
@@ -143,9 +139,8 @@ namespace Player
             {
                 return;
             }
-        
-            GameObject vfx = Instantiate(vfxPrefab, position, rotation);
-            Destroy(vfx, _vfxLifetime);
+
+            PoolSpawner.SpawnVFX(vfxPrefab, position, rotation, _vfxLifetime);
         }
         
         public void SetAttackVFX(GameObject[] vfxArray)
