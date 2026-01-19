@@ -266,6 +266,7 @@ namespace Skill
         private void TransitionToLanding()
         {
             _currentState = GlideState.Landing;
+            _stateTimer = 0f;
             _playerMovement.ClearSmoothRotation();
             _animationController?.PlayGlide(GlideState.Landing);
 
@@ -275,6 +276,7 @@ namespace Skill
         private void TransitionToDiveBombLanding()
         {
             _currentState = GlideState.DiveBombLanding;
+            _stateTimer = 0f;
             _playerMovement.ClearSmoothRotation();
             _cameraController?.SetDiveBombMode(false);
             _animationController?.PlayGlide(GlideState.DiveBombLanding);
