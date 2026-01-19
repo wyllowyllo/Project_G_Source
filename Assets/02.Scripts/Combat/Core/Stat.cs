@@ -1,15 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Combat.Core
 {
+    [Serializable]
     public class Stat
     {
-        private float _baseValue;
+        [SerializeField] private float _baseValue;
         private readonly float _minValue;
         private readonly float _maxValue;
-        private readonly List<StatModifier> _modifiers = new();
+        [SerializeField] private List<StatModifier> _modifiers = new();
 
         public float BaseValue
         {
@@ -49,7 +51,7 @@ namespace Combat.Core
             if (source == null)
                 return false;
 
-            return _modifiers.RemoveAll(m => m.Source == source) > 0;
+            return _modifiers.RemoveAll(m => m.SourceId == source.Id) > 0;
         }
 
         public void ClearModifiers()

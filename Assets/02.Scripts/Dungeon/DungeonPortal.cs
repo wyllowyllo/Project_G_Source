@@ -49,7 +49,7 @@ namespace Dungeon
             return DungeonManager.Instance.IsDungeonUnlocked(_dungeonData);
         }
 
-        public override void Interact()
+        public override void Interact(IInteractor interactor)
         {
             if (!CanInteract()) return;
             DungeonManager.Instance.EnterDungeon(_dungeonData);

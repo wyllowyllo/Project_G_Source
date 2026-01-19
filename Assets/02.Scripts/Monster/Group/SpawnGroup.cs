@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Dungeon;
+using Equipment;
 using Monster.AI;
 using Monster.Manager;
 using UnityEngine;
@@ -105,6 +107,9 @@ namespace Monster.Group
                     // MonsterTracker에 등록
                     MonsterTracker.Instance?.RegisterMonster(monster);
 
+                    // 던전 드랍테이블 주입 (몬스터가 자체 테이블 없을 시에만 적용)
+                    InjectDropTable(monsterObj);
+
                     Debug.Log($"SpawnGroup [{gameObject.name}]: 몬스터 스폰 - {monsterObj.name}");
                 }
                
@@ -112,7 +117,17 @@ namespace Monster.Group
             
         }
 
-       
+        private void InjectDropTable(GameObject monsterObj)
+        {
+            var dropTable = DungeonManager.Instance?.CurrentDungeon?.DropTable;
+            if (dropTable == null)
+                return;
+
+            var dropOnDeath = monsterObj.GetComponent<EquipmentDropOnDeath>();
+            if (dropOnDeath != null)
+                dropOnDeath.SetDropTable(dropTable);
+        }
+
         private List<MonsterController> GetAliveMonsters()
         {
             _spawnedMonsters.RemoveAll(m => m == null || !m.IsAlive);

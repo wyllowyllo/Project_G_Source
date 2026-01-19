@@ -3,6 +3,7 @@ using Equipment;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.UI;
+using Common;
 
 public class CharacterViewer : MonoBehaviour
 {
@@ -511,8 +512,14 @@ private void OpenViewer()
 
     private void SetCursorState(bool visible)
     {
-        Cursor.visible = visible;
-        Cursor.lockState = visible ? CursorLockMode.None : CursorLockMode.Locked;
+        if (visible)
+        {
+            Common.CursorManager.Instance?.UnlockCursor();
+        }
+        else
+        {
+            Common.CursorManager.Instance?.LockCursor();
+        }
     }
 
     // Update에서 실시간 동기화
