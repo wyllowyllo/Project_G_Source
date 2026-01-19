@@ -1,4 +1,5 @@
 using Dialogue;
+using Equipment;
 using UnityEngine;
 
 namespace Dungeon
@@ -17,6 +18,8 @@ namespace Dungeon
 
         [Header("Rewards")]
         [SerializeField] private int _clearXpReward;
+        [Tooltip("던전 기본 드랍 테이블 (몬스터가 자체 테이블 없을 시 적용)")]
+        [SerializeField] private DropTableData _dropTable;
 
         [Header("Dialogue")]
         [Tooltip("던전 클리어 후 대화")]
@@ -27,6 +30,7 @@ namespace Dungeon
         public string SceneName => _sceneName;
         public int RecommendedLevel => _recommendedLevel;
         public int ClearXpReward => _clearXpReward;
+        public DropTableData DropTable => _dropTable;
         public DungeonData RequiredDungeon => _requiredDungeon;
         public bool IsFirstDungeon => _requiredDungeon == null;
         public DialogueData ClearDialogue => _clearDialogue;

@@ -1,17 +1,24 @@
+using System;
 using System.Collections.Generic;
 using Combat.Data;
 using UnityEngine;
 
 namespace Combat.Core
 {
+    [Serializable]
     public class CombatStats
     {
-        public Stat AttackDamage { get; }
-        public Stat CriticalChance { get; }
-        public Stat CriticalMultiplier { get; }
-        public Stat Defense { get; }
+        public Stat AttackDamage => _attackDamage;
+        public Stat CriticalChance => _criticalChance;
+        public Stat CriticalMultiplier => _criticalMultiplier;
+        public Stat Defense => _defense;
 
         private readonly IEnumerable<Stat> _allStats;
+        
+        private Stat _attackDamage;
+        private Stat _criticalChance;
+        private Stat _criticalMultiplier;
+        private Stat _defense;
 
         public static CombatStats FromData(CombatStatsData data)
         {
@@ -36,10 +43,10 @@ namespace Combat.Core
 
         public CombatStats(float baseAttackDamage, float criticalChance, float criticalMultiplier, float defense)
         {
-            AttackDamage = new Stat(baseAttackDamage, minValue: 0f);
-            CriticalChance = new Stat(criticalChance, minValue: 0f, maxValue: 1f);
-            CriticalMultiplier = new Stat(criticalMultiplier, minValue: 1f);
-            Defense = new Stat(defense, minValue: 0f);
+            _attackDamage = new Stat(baseAttackDamage, minValue: 0f);
+            _criticalChance = new Stat(criticalChance, minValue: 0f, maxValue: 1f);
+            _criticalMultiplier = new Stat(criticalMultiplier, minValue: 1f);
+            _defense = new Stat(defense, minValue: 0f);
             _allStats = new[]
             {
                 AttackDamage,
