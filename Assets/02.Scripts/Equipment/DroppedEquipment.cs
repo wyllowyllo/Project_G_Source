@@ -4,7 +4,8 @@ namespace Equipment
 {
     public class DroppedEquipment : MonoBehaviour
     {
-        private EquipmentData _equipmentData;
+        [Header("Equipment Data")]
+        [SerializeField] private EquipmentData _equipmentData;
 
         public EquipmentData EquipmentData => _equipmentData;
 

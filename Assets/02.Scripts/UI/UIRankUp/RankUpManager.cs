@@ -20,6 +20,17 @@ public class RankUpManager : MonoBehaviour
     [SerializeField] private ParticleSystem _rankParticleEffect;
     [SerializeField] private ParticleSystem _rankParticleSubEffect;
 
+    [Header("스킬 보상 UI")]
+    [Tooltip("랭크업 후 표시할 스킬 보상 UI")]
+    [SerializeField] private SkillRewardUI _skillRewardUI;
+
+    [Tooltip("스킬 보상 UI 표시 여부")]
+    [SerializeField] private bool _showSkillRewardUI = true;
+
+    [SerializeField] private Sprite _attackSkillIcon;
+    [SerializeField] private Sprite _defenseSkillIcon;
+    [SerializeField] private Sprite _specialSkillIcon;
+
     [Header("UI 참조 (선택사항)")]
     [SerializeField] private TextMeshProUGUI _currentRankText;
     [SerializeField] private TextMeshProUGUI _nextRankText;
@@ -70,6 +81,17 @@ public class RankUpManager : MonoBehaviour
             return;
         }
 
+        if (_skillRewardUI == null)
+        {
+            _skillRewardUI = FindObjectOfType<SkillRewardUI>();
+        }
+
+        // 랭크 애니메이터 완료 이벤트 구독
+        if (_rankAnimator != null)
+        {
+            _rankAnimator.OnAnimationComplete += OnRankAnimationComplete;
+        }
+
         // 초기 랭크 설정
         _currentRank = _rankConfig.GetRankForLevel(_playerProgression.Level);
         ApplyRankColors(_currentRank);
@@ -90,6 +112,11 @@ public class RankUpManager : MonoBehaviour
         {
             _playerProgression.OnLevelUp -= HandleLevelUp;
         }
+
+        if (_rankAnimator != null)
+        {
+            _rankAnimator.OnAnimationComplete -= OnRankAnimationComplete;
+        }
     }
 
     private void Update()
@@ -100,31 +127,100 @@ public class RankUpManager : MonoBehaviour
         }
     }
 
+private void OnRankAnimationComplete()
+    {
+        if (_enableDebugLogs)
+        {
+            Debug.Log("[RankUpManager] 랭크 애니메이션 완료! 스킬 보상 UI 표시 시작");
+        }
+
+        // 스킬 보상 UI 표시
+        if (_showSkillRewardUI && _skillRewardUI != null)
+        {
+            // 테스트용 스킬 데이터 생성 (실제로는 랭크에 따른 스킬 데이터를 가져와야 함)
+            SkillRewardData[] rewards = GetSkillRewardsForCurrentRank();
+            
+            if (rewards != null && rewards.Length > 0)
+            {
+                _skillRewardUI.ShowRewards(rewards);
+                
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[RankUpManager] {rewards.Length}개의 스킬 보상 표시");
+                }
+            }
+            else
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning("[RankUpManager] 표시할 스킬 보상이 없습니다.");
+                }
+            }
+        }
+    }
+
+private SkillRewardData[] GetSkillRewardsForCurrentRank()
+    {
+        int currentPlayerLevel = _playerProgression.Level;
+        int skillLevel = currentPlayerLevel / 10 + 1;  // 스킬 레벨은 1부터 시작하고 10레벨마다 +1
+
+        int previousSkillLevel = skillLevel - 1;  // 랭크업 전 스킬 레벨
+        int newSkillLevel = skillLevel;
+
+        return new SkillRewardData[]
+        {
+            new SkillRewardData
+            {
+                SkillName = "직선공격 스킬",
+                SkillIcon = _attackSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(1f, 0.8f, 0f, 1f), // 황금색
+                RarityColor = new Color(0.8f, 0.2f, 0.2f, 0.5f) // 빨간색 배경
+            },
+            new SkillRewardData
+            {
+                SkillName = "활공 스킬",
+                SkillIcon = _defenseSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색
+                RarityColor = new Color(0.2f, 0.4f, 0.8f, 0.5f) // 파란색 배경
+            },
+            new SkillRewardData
+            {
+                SkillName = "궁극기",
+                SkillIcon = _specialSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(1f, 0.2f, 0.8f, 1f), // 보라색
+                RarityColor = new Color(0.6f, 0.2f, 0.8f, 0.5f) // 보라색 배경
+            }
+        };
+    }
+
+
     // 레벨업 이벤트 핸들러
     private void HandleLevelUp(int previousLevel, int newLevel)
     {
         // 랭크가 변경되었는지 확인
         if (_rankConfig.IsRankUp(previousLevel, newLevel, out string newRank))
         {
-            if (_enableDebugLogs)
-            {
-                Debug.Log($"[RankUpManager] 랭크 상승! {_currentRank} → {newRank} (레벨 {previousLevel} → {newLevel})");
-            }
-
             // 랭크 업 애니메이션 실행
             PlayRankUpAnimation(newRank);
             
             _currentRank = newRank;
         }
-        else
-        {
-            if (_enableDebugLogs)
-            {
-                Debug.Log($"[RankUpManager] 레벨 상승 (랭크 유지: {_currentRank}) (레벨 {previousLevel} → {newLevel})");
-            }
-        }
 
         UpdateRankUI();
+    }
+
+    public void ShowSkillRewards(SkillRewardData[] skillRewards)
+    {
+        if (_skillRewardUI != null && skillRewards != null && skillRewards.Length > 0)
+        {
+            _skillRewardUI.ShowRewards(skillRewards);
+        }
     }
 
     // 랭크 업 애니메이션 실행

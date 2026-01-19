@@ -2,11 +2,8 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
-/// <summary>
-/// 랭크업 UI 애니메이션을 담당하는 메인 컨트롤러
-/// 단일 책임: 다이아몬드 및 텍스트 애니메이션 연출
-/// </summary>
 public class RankAnimator : MonoBehaviour
 {
     [Header("필수 컴포넌트 참조")]
@@ -39,14 +36,17 @@ public class RankAnimator : MonoBehaviour
     [SerializeField] private bool _autoActivateUI = true;
 
     [Tooltip("애니메이션 종료 시 UI 자동 비활성화")]
-    [SerializeField] private bool _autoDeactivateUI = false;
+    [SerializeField] private bool _autoDeactivateUI = true;
 
     [Tooltip("UI 비활성화 딜레이 (초)")]
-    [SerializeField] private float _deactivateDelay = 4f;
+    [SerializeField] private float _deactivateDelay = 2f;
 
     [Header("애니메이션 설정")]
     [Tooltip("애니메이션 지속 시간")]
     [SerializeField] private float _duration = 1.5f;
+
+    // 애니메이션 완료 이벤트
+    public event Action OnAnimationComplete;
 
     private void Awake()
     {
@@ -56,30 +56,15 @@ public class RankAnimator : MonoBehaviour
 
         if (_effectsController == null)
             _effectsController = GetComponent<RankEffectsController>();
-
-        // 필수 컴포넌트 체크
-        if (_colorController == null)
-        {
-            Debug.LogError("[RankAnimator] RankColorController가 없습니다!");
-        }
-
-        if (_effectsController == null)
-        {
-            Debug.LogError("[RankAnimator] RankEffectsController가 없습니다!");
-        }
     }
 
-    /// <summary>
-    /// 애니메이션 설정 적용
-    /// </summary>
+    // 애니메이션 설정 적용
     public void ApplyAnimationSettings(float duration)
     {
         _duration = duration;
     }
 
-    /// <summary>
-    /// 랭크업 애니메이션 재생 (메인 진입점)
-    /// </summary>
+    // 랭크업 애니메이션 재생
     public void PlayRankUpAnimation(string newRank, string customMessage = null)
     {
         // UI 활성화
@@ -96,9 +81,7 @@ public class RankAnimator : MonoBehaviour
         StartCoroutine(PlayAnimationSequence(newRank));
     }
 
-    /// <summary>
-    /// UI 텍스트 및 색상 설정
-    /// </summary>
+    // UI 텍스트 및 색상 설정
     private void SetupUI(string newRank, string customMessage)
     {
         // 랭크 색상 스킴 가져오기
@@ -137,9 +120,7 @@ public class RankAnimator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 애니메이션 시퀀스 실행
-    /// </summary>
+    // 애니메이션 시퀀스 실행
     private IEnumerator PlayAnimationSequence(string rank)
     {
         // 이펙트 재생 (파티클, 사운드, 카메라 쉐이크)
@@ -151,6 +132,9 @@ public class RankAnimator : MonoBehaviour
         // 마름모와 텍스트 애니메이션
         yield return StartCoroutine(AnimateDiamond());
 
+        // 애니메이션 완료 이벤트 발생
+        OnAnimationComplete?.Invoke();
+
         // 자동 비활성화
         if (_autoDeactivateUI)
         {
@@ -159,9 +143,7 @@ public class RankAnimator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 마름모 애니메이션
-    /// </summary>
+    // 마름모 애니메이션
     private IEnumerator AnimateDiamond()
     {
         if (_diamondBackground == null) yield break;
@@ -186,8 +168,8 @@ public class RankAnimator : MonoBehaviour
             // 회전
             float rotation = Mathf.Lerp(0f, 360f, t);
             diamondTransform.localEulerAngles = new Vector3(
-                originalRotation.x, 
-                originalRotation.y, 
+                originalRotation.x,
+                originalRotation.y,
                 originalRotation.z + rotation
             );
 
@@ -214,9 +196,7 @@ public class RankAnimator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 텍스트 펄스 애니메이션
-    /// </summary>
+    // 텍스트 펄스 애니메이션
     private IEnumerator PulseText(Transform textTransform, float duration)
     {
         Vector3 originalScale = textTransform.localScale;
@@ -237,9 +217,8 @@ public class RankAnimator : MonoBehaviour
         textTransform.localScale = originalScale;
     }
 
-    /// <summary>
-    /// UI 비활성화
-    /// </summary>
+
+    //UI비활성화
     private void DeactivateUI()
     {
         if (_rankUpPanel != null)
