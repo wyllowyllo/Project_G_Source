@@ -13,7 +13,7 @@ namespace Boss.Combat
     {
         [Header("References")]
         [SerializeField] private Transform _breathOrigin;
-        [SerializeField] private GameObject _beamPrefab;
+        [SerializeField] private GameObject _beamObject;
         [SerializeField] private GameObject _impactPrefab;
 
         [Header("Settings")]
@@ -28,7 +28,8 @@ namespace Boss.Combat
         private float _damagePerTick;
         private float _tickTimer;
 
-        private GameObject _beamInstance;
+        private Component _beamScript;
+        private System.Reflection.FieldInfo _beamLengthField;
         private GameObject _impactInstance;
         private HashSet<IDamageable> _hitTargetsThisTick = new();
 
@@ -41,6 +42,17 @@ namespace Boss.Combat
             if (_breathOrigin == null)
             {
                 _breathOrigin = transform;
+            }
+
+            // 빔 스크립트 캐싱
+            if (_beamObject != null)
+            {
+                _beamScript = _beamObject.GetComponent("MagicBeamStatic");
+                if (_beamScript != null)
+                {
+                    _beamLengthField = _beamScript.GetType().GetField("beamLength");
+                }
+                _beamObject.SetActive(false);
             }
         }
 
@@ -63,9 +75,10 @@ namespace Boss.Combat
             _tickTimer = 0f;
             _isBreathing = true;
 
-            if (_beamPrefab != null)
+            if (_beamObject != null)
             {
-                _beamInstance = Instantiate(_beamPrefab, _breathOrigin.position, _breathOrigin.rotation, _breathOrigin);
+                _beamLengthField?.SetValue(_beamScript, range);
+                _beamObject.SetActive(true);
             }
         }
 
@@ -73,16 +86,14 @@ namespace Boss.Combat
         {
             _isBreathing = false;
 
-            if (_beamInstance != null)
+            if (_beamObject != null)
             {
-                Destroy(_beamInstance);
-                _beamInstance = null;
+                _beamObject.SetActive(false);
             }
 
             if (_impactInstance != null)
             {
-                Destroy(_impactInstance);
-                _impactInstance = null;
+                _impactInstance.SetActive(false);
             }
         }
 
@@ -98,15 +109,13 @@ namespace Boss.Combat
             if (Physics.Raycast(origin, direction, out RaycastHit obstacleHit, _range, _obstacleLayer))
             {
                 beamLength = obstacleHit.distance;
-                UpdateImpactEffect(obstacleHit.point);
-            }
-            else
-            {
-                UpdateImpactEffect(null);
             }
 
             // 전방으로 SphereCast하여 대상 검색
             RaycastHit[] hits = Physics.SphereCastAll(origin, _beamRadius, direction, beamLength, _targetLayers);
+
+            Vector3? closestHitPoint = null;
+            float closestDistance = float.MaxValue;
 
             foreach (var hit in hits)
             {
@@ -121,8 +130,20 @@ namespace Boss.Combat
                 if (_combatant != null && combatant.Team == _combatant.Team) continue;
 
                 _hitTargetsThisTick.Add(damageable);
+
+                // 가장 가까운 히트 포인트 추적
+                float distance = hit.distance;
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestHitPoint = hit.point;
+                }
+
                 ApplyBreathDamage(damageable, hit.point);
             }
+
+            // 대상에게 맞았을 때만 임팩트 표시
+            UpdateImpactEffect(closestHitPoint);
         }
 
         private void ApplyBreathDamage(IDamageable target, Vector3 hitPoint)
