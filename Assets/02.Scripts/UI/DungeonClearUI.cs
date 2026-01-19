@@ -6,63 +6,62 @@ using TMPro;
 public class DungeonClearUI : MonoBehaviour
 {
     [Header("UI 요소")]
-    [SerializeField] private GameObject completePanel;
-    [SerializeField] private Image completeImage;
-    [SerializeField] private TextMeshProUGUI dungeonNameText;
+    [SerializeField] private GameObject _completePanel;
+    [SerializeField] private Image _completeImage;
+    [SerializeField] private TextMeshProUGUI _dungeonNameText;
 
     [Header("애니메이션 설정")]
-    [SerializeField] private float slideSpeed = 1000f;
-    [SerializeField] private float displayDuration = 3f;
-    [SerializeField] private float fadeSpeed = 2f;
+    [SerializeField] private float _slideSpeed = 1000f;
+    [SerializeField] private float _displayDuration = 2f;
+    [SerializeField] private float _fadeSpeed = 1f;
 
     [Header("위치 설정")]
-    [SerializeField] private float startOffsetX = 1518f;
-    [SerializeField] private float completeTargetOffsetX = 518f; // Complete 이미지는 살짝 오른쪽
-    [SerializeField] private float backgroundTargetOffsetX = 0f; // Background는 중앙
+    [SerializeField] private float _startOffsetX = 1518f;
+    [SerializeField] private float _completeTargetOffsetX = 518f;
+    [SerializeField] private float _backgroundTargetOffsetX = 0f;
 
     [Header("배경 및 텍스트")]
-    [SerializeField] private Image backgroundImage; // 배경 이미지
-    [SerializeField] private float backgroundSlideSpeed = 800f; // 배경 슬라이드 속도
+    [SerializeField] private Image _backgroundImage;
+    [SerializeField] private float _backgroundSlideSpeed = 800f;
 
-    private RectTransform completeRectTransform;
-    private RectTransform backgroundRectTransform;
-    private RectTransform dungeonNameRectTransform;
-    private CanvasGroup canvasGroup;
-    private CanvasGroup completeCanvasGroup; // Complete 이미지용 CanvasGroup
-    private CanvasGroup backgroundCanvasGroup;
-    private CanvasGroup dungeonNameCanvasGroup;
-    private Vector2 startPosition;
-    private Vector2 targetPosition;
+    private RectTransform _completeRectTransform;
+    private RectTransform _backgroundRectTransform;
+    private RectTransform _dungeonNameRectTransform;
+    private CanvasGroup _canvasGroup;
+    private CanvasGroup _completeCanvasGroup; // Complete 이미지용 CanvasGroup
+    private CanvasGroup _backgroundCanvasGroup;
+    private CanvasGroup _dungeonNameCanvasGroup;
+    private Vector2 _startPosition;
+    private Vector2 _targetPosition;
 
     private void Awake()
     {
-        // 컴포넌트 초기화
-        if (completeImage != null)
-        {
-            completeRectTransform = completeImage.GetComponent<RectTransform>();
-        }
-
-        // CanvasGroup 가져오기 또는 추가
-        if (completePanel != null)
-        {
-            canvasGroup = completePanel.GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
-            {
-                canvasGroup = completePanel.AddComponent<CanvasGroup>();
-            }
-        }
+        InitializeComponents();
 
         // 초기에는 패널 비활성화
-        if (completePanel != null)
+        if (_completePanel != null)
         {
-            completePanel.SetActive(false);
+            _completePanel.SetActive(false);
         }
     }
 
-    /// <summary>
-    /// 던전 클리어 시 호출되는 메서드
-    /// </summary>
-    /// <param name="dungeonName">던전 이름 (선택사항)</param>
+    private void InitializeComponents()
+    {
+        if (_completeImage != null)
+        {
+            _completeRectTransform = _completeImage.GetComponent<RectTransform>();
+        }
+
+        if (_completePanel != null)
+        {
+            _canvasGroup = _completePanel.GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = _completePanel.AddComponent<CanvasGroup>();
+            }
+        }
+    }
+
     public void ShowDungeonClear(string dungeonName = "")
     {
         StartCoroutine(DungeonClearAnimation(dungeonName));
@@ -70,74 +69,106 @@ public class DungeonClearUI : MonoBehaviour
 
     private IEnumerator DungeonClearAnimation(string dungeonName)
     {
-        // 패널 활성화
-        if (completePanel != null)
+        InitializeUI(dungeonName);
+
+        // 인트로 애니메이션 (배경과 텍스트)
+        yield return StartCoroutine(AnimateIntro());
+
+        // Complete 이미지 애니메이션
+        yield return StartCoroutine(AnimateCompleteImage());
+
+        yield return new WaitForSeconds(_displayDuration);
+
+        yield return StartCoroutine(AnimateOutro());
+
+        if (_completePanel != null)
         {
-            completePanel.SetActive(true);
-            canvasGroup.alpha = 1f;
+            _completePanel.SetActive(false);
+        }
+    }
+
+    // UI 요소 초기화 및 초기 상태 설정
+    private void InitializeUI(string dungeonName)
+    {
+        // 패널 활성화
+        if (_completePanel != null)
+        {
+            _completePanel.SetActive(true);
+            _canvasGroup.alpha = 1f;
         }
 
         // 던전 이름 설정
-        if (dungeonNameText != null && !string.IsNullOrEmpty(dungeonName))
+        if (_dungeonNameText != null && !string.IsNullOrEmpty(dungeonName))
         {
-            dungeonNameText.text = dungeonName;
+            _dungeonNameText.text = dungeonName;
         }
 
-        // Complete 이미지 CanvasGroup 초기화 및 알파값 0 설정
-        if (completeImage != null)
+        // Complete 이미지 CanvasGroup 초기화
+        InitializeCanvasGroup(_completeImage.gameObject, ref _completeCanvasGroup);
+
+        // Background 이미지 초기화
+        if (_backgroundImage != null)
         {
-            completeCanvasGroup = completeImage.GetComponent<CanvasGroup>();
-            if (completeCanvasGroup == null)
-            {
-                completeCanvasGroup = completeImage.gameObject.AddComponent<CanvasGroup>();
-            }
-            completeCanvasGroup.alpha = 0f; // 처음에는 보이지 않음
+            _backgroundRectTransform = _backgroundImage.GetComponent<RectTransform>();
+            InitializeCanvasGroup(_backgroundImage.gameObject, ref _backgroundCanvasGroup);
         }
 
-        // RectTransform 및 CanvasGroup 초기화
-        if (backgroundImage != null)
+        // 던전 이름 텍스트 초기화
+        if (_dungeonNameText != null)
         {
-            backgroundRectTransform = backgroundImage.GetComponent<RectTransform>();
-            backgroundCanvasGroup = backgroundImage.GetComponent<CanvasGroup>();
-            if (backgroundCanvasGroup == null)
-            {
-                backgroundCanvasGroup = backgroundImage.gameObject.AddComponent<CanvasGroup>();
-            }
-            backgroundCanvasGroup.alpha = 0f;
+            _dungeonNameRectTransform = _dungeonNameText.GetComponent<RectTransform>();
+            InitializeCanvasGroup(_dungeonNameText.gameObject, ref _dungeonNameCanvasGroup);
         }
+    }
 
-        if (dungeonNameText != null)
+    // CanvasGroup을 추가하고 알파값 0으로 초기화
+    private void InitializeCanvasGroup(GameObject gameObject, ref CanvasGroup canvasGroup)
+    {
+        if (gameObject == null) return;
+
+        canvasGroup = gameObject.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
         {
-            dungeonNameRectTransform = dungeonNameText.GetComponent<RectTransform>();
-            dungeonNameCanvasGroup = dungeonNameText.GetComponent<CanvasGroup>();
-            if (dungeonNameCanvasGroup == null)
-            {
-                dungeonNameCanvasGroup = dungeonNameText.gameObject.AddComponent<CanvasGroup>();
-            }
-            dungeonNameCanvasGroup.alpha = 0f;
+            canvasGroup = gameObject.gameObject.AddComponent<CanvasGroup>();
         }
+        canvasGroup.alpha = 0f;
+    }
 
-        // 배경 및 텍스트 슬라이딩 시작 (오른쪽에서 왼쪽으로 + 페이드 인)
-        StartCoroutine(SlideAndFadeIn(backgroundRectTransform, backgroundCanvasGroup, backgroundSlideSpeed, backgroundTargetOffsetX));
-        StartCoroutine(SlideAndFadeIn(dungeonNameRectTransform, dungeonNameCanvasGroup, backgroundSlideSpeed, backgroundTargetOffsetX));
+    // 배경과 텍스트가 나타나는 인트로 애니메이션
+    private IEnumerator AnimateIntro()
+    {
+        // 배경 및 텍스트 슬라이딩 시작 (병렬 실행)
+        Coroutine backgroundAnim = StartCoroutine(
+            SlideAndFadeIn(_backgroundRectTransform, _backgroundCanvasGroup, _backgroundSlideSpeed, _backgroundTargetOffsetX)
+        );
 
-        // 2초 대기 후 Complete 이미지 슬라이딩 시작
+        Coroutine textAnim = StartCoroutine(
+            SlideAndFadeIn(_dungeonNameRectTransform, _dungeonNameCanvasGroup, _backgroundSlideSpeed, _backgroundTargetOffsetX)
+        );
+
+        // Complete 이미지 나타나기 전 짧은 대기
         yield return new WaitForSeconds(0.5f);
+    }
 
-        // Complete 이미지 시작 위치와 목표 위치 설정
-        if (completeRectTransform != null)
+    // Complete 이미지가 나타나는 애니메이션
+    private IEnumerator AnimateCompleteImage()
+    {
+        if (_completeRectTransform == null || _completeCanvasGroup == null)
         {
-            startPosition = completeRectTransform.anchoredPosition;
-            startPosition.x = startOffsetX; // 화면 오른쪽 밖에서 시작
-            targetPosition = startPosition;
-            targetPosition.x = completeTargetOffsetX; // 살짝 오른쪽으로 이동
-
-            completeRectTransform.anchoredPosition = startPosition;
+            yield break;
         }
 
-        // Complete 이미지 슬라이드 애니메이션 (오른쪽에서 왼쪽으로 + 페이드 인)
+        // 시작 위치와 목표 위치 설정
+        _startPosition = _completeRectTransform.anchoredPosition;
+        _startPosition.x = _startOffsetX;
+        _targetPosition = _startPosition;
+        _targetPosition.x = _completeTargetOffsetX;
+
+        _completeRectTransform.anchoredPosition = _startPosition;
+
+        // 슬라이드 애니메이션
         float elapsedTime = 0f;
-        float duration = Mathf.Abs(startOffsetX - completeTargetOffsetX) / slideSpeed;
+        float duration = Mathf.Abs(_startOffsetX - _completeTargetOffsetX) / _slideSpeed;
 
         while (elapsedTime < duration)
         {
@@ -147,75 +178,56 @@ public class DungeonClearUI : MonoBehaviour
             // Ease-out 효과 적용
             t = 1f - Mathf.Pow(1f - t, 3f);
 
-            if (completeRectTransform != null)
-            {
-                Vector2 newPosition = Vector2.Lerp(startPosition, targetPosition, t);
-                completeRectTransform.anchoredPosition = newPosition;
-            }
+            // 위치 업데이트
+            _completeRectTransform.anchoredPosition = Vector2.Lerp(_startPosition, _targetPosition, t);
 
-            // Complete 이미지 페이드 인 (0 -> 1)
-            if (completeCanvasGroup != null)
-            {
-                completeCanvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
-            }
+            // 페이드 인
+            _completeCanvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
 
             yield return null;
         }
 
         // 최종 위치 및 알파값 보정
-        if (completeRectTransform != null)
-        {
-            completeRectTransform.anchoredPosition = targetPosition;
-        }
+        _completeRectTransform.anchoredPosition = _targetPosition;
+        _completeCanvasGroup.alpha = 1f;
+    }
 
-        if (completeCanvasGroup != null)
-        {
-            completeCanvasGroup.alpha = 1f;
-        }
-
-        // 화면에 표시
-        yield return new WaitForSeconds(displayDuration);
-
-        // 페이드 아웃
+    // 모든 요소가 사라지는 아웃트로 페이드 아웃 애니메이션
+    private IEnumerator AnimateOutro()
+    {
         float fadeElapsed = 0f;
-        while (fadeElapsed < fadeSpeed)
+
+        while (fadeElapsed < _fadeSpeed)
         {
             fadeElapsed += Time.deltaTime;
-            float alpha = 1f - (fadeElapsed / fadeSpeed);
+            float alpha = 1f - (fadeElapsed / _fadeSpeed);
 
-            if (canvasGroup != null)
-            {
-                canvasGroup.alpha = alpha;
-            }
-
-            if (completeCanvasGroup != null)
-            {
-                completeCanvasGroup.alpha = alpha;
-            }
-
-            if (backgroundCanvasGroup != null)
-            {
-                backgroundCanvasGroup.alpha = alpha;
-            }
-
-            if (dungeonNameCanvasGroup != null)
-            {
-                dungeonNameCanvasGroup.alpha = alpha;
-            }
+            // 모든 UI 요소 페이드 아웃
+            SetAlpha(_canvasGroup, alpha);
+            SetAlpha(_completeCanvasGroup, alpha);
+            SetAlpha(_backgroundCanvasGroup, alpha);
+            SetAlpha(_dungeonNameCanvasGroup, alpha);
 
             yield return null;
         }
 
-        // 패널 비활성화
-        if (completePanel != null)
+        // 최종 알파값 보정
+        SetAlpha(_canvasGroup, 0f);
+        SetAlpha(_completeCanvasGroup, 0f);
+        SetAlpha(_backgroundCanvasGroup, 0f);
+        SetAlpha(_dungeonNameCanvasGroup, 0f);
+    }
+
+    // CanvasGroup의 알파값을 안전하게 설정
+    private void SetAlpha(CanvasGroup canvasGroup, float alpha)
+    {
+        if (canvasGroup != null)
         {
-            completePanel.SetActive(false);
+            canvasGroup.alpha = alpha;
         }
     }
 
-    /// <summary>
-    /// UI 요소를 슬라이딩하면서 페이드 인하는 코루틴
-    /// </summary>
+    // UI 요소를 슬라이딩하면서 페이드 인하는 코루틴
     private IEnumerator SlideAndFadeIn(RectTransform rectTransform, CanvasGroup canvasGroup, float speed, float targetX)
     {
         if (rectTransform == null || canvasGroup == null)
@@ -225,19 +237,16 @@ public class DungeonClearUI : MonoBehaviour
 
         // 시작 위치 설정 (오른쪽 밖)
         Vector2 startPos = rectTransform.anchoredPosition;
-        startPos.x = startOffsetX;
+        startPos.x = _startOffsetX;
         rectTransform.anchoredPosition = startPos;
 
-        // 목표 위치
         Vector2 targetPos = startPos;
         targetPos.x = targetX;
 
-        // 알파값 0으로 시작
         canvasGroup.alpha = 0f;
 
-        // 슬라이딩 + 페이드 인
         float elapsedTime = 0f;
-        float duration = Mathf.Abs(startOffsetX - targetX) / speed;
+        float duration = Mathf.Abs(_startOffsetX - targetX) / speed;
 
         while (elapsedTime < duration)
         {
@@ -250,22 +259,18 @@ public class DungeonClearUI : MonoBehaviour
             // 위치 업데이트
             rectTransform.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
 
-            // 알파값 업데이트 (0 -> 1)
             canvasGroup.alpha = Mathf.Lerp(0f, 1f, t);
 
             yield return null;
         }
 
-        // 최종 값 보정
         rectTransform.anchoredPosition = targetPos;
         canvasGroup.alpha = 1f;
     }
 
-    /// <summary>
-    /// 외부에서 던전 클리어를 트리거하는 예시 메서드
-    /// </summary>
+    // 외부에서 던전 클리어를 트리거하는 예시 메서드
     public void OnDungeonCompleted()
     {
-        ShowDungeonClear("몽글몽글 연덕");
+        ShowDungeonClear("뭉글뭉글 언덕");
     }
 }
