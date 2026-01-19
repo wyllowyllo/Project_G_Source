@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Combat.Core;
 using Combat.Damage;
+
 using UnityEngine;
 
 namespace Boss.Combat
@@ -19,17 +20,15 @@ namespace Boss.Combat
         [Header("Settings")]
         [SerializeField] private LayerMask _targetLayers;
         [SerializeField] private LayerMask _obstacleLayer;
+        [SerializeField] private float _beamRange = 25f;
         [SerializeField] private float _tickInterval = 0.5f;
         [SerializeField] private float _beamRadius = 0.5f;
 
         private Combatant _combatant;
         private bool _isBreathing;
-        private float _range;
         private float _damagePerTick;
         private float _tickTimer;
 
-        private Component _beamScript;
-        private System.Reflection.FieldInfo _beamLengthField;
         private GameObject _impactInstance;
         private HashSet<IDamageable> _hitTargetsThisTick = new();
 
@@ -44,14 +43,8 @@ namespace Boss.Combat
                 _breathOrigin = transform;
             }
 
-            // 빔 스크립트 캐싱
             if (_beamObject != null)
             {
-                _beamScript = _beamObject.GetComponent("MagicBeamStatic");
-                if (_beamScript != null)
-                {
-                    _beamLengthField = _beamScript.GetType().GetField("beamLength");
-                }
                 _beamObject.SetActive(false);
             }
         }
@@ -68,16 +61,14 @@ namespace Boss.Combat
             }
         }
 
-        public void StartBreath(float range, float damage)
+        public void StartBreath(float damage)
         {
-            _range = range;
             _damagePerTick = damage * _tickInterval;
             _tickTimer = 0f;
             _isBreathing = true;
 
             if (_beamObject != null)
             {
-                _beamLengthField?.SetValue(_beamScript, range);
                 _beamObject.SetActive(true);
             }
         }
@@ -103,10 +94,10 @@ namespace Boss.Combat
 
             Vector3 origin = _breathOrigin.position;
             Vector3 direction = _breathOrigin.forward;
-            float beamLength = _range;
+            float beamLength = _beamRange;
 
             // 장애물 체크 - 빔 길이 제한
-            if (Physics.Raycast(origin, direction, out RaycastHit obstacleHit, _range, _obstacleLayer))
+            if (Physics.Raycast(origin, direction, out RaycastHit obstacleHit, _beamRange, _obstacleLayer))
             {
                 beamLength = obstacleHit.distance;
             }
@@ -189,7 +180,7 @@ namespace Boss.Combat
             Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
 
             Vector3 origin = _breathOrigin.position;
-            Vector3 endPoint = origin + _breathOrigin.forward * _range;
+            Vector3 endPoint = origin + _breathOrigin.forward * _beamRange;
 
             // 빔 중심선
             Gizmos.DrawLine(origin, endPoint);

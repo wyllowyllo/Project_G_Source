@@ -371,10 +371,7 @@ namespace Boss.AI
         // 브레스 공격
         public void StartBreathAttack()
         {
-            _breathAttacker?.StartBreath(
-                _bossData.BreathRange,
-                _bossData.BreathDamage
-            );
+            _breathAttacker?.StartBreath(_bossData.BreathDamage);
         }
 
         public void StopBreathAttack()
