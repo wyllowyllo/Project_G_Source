@@ -44,6 +44,29 @@ namespace Skill
                 if (_noise == null)
                     _noise = _dollyCamera.GetComponent<CinemachineBasicMultiChannelPerlin>();
             }
+
+            ValidateRequiredReferences();
+        }
+
+        private void ValidateRequiredReferences()
+        {
+            string objectName = $"[{gameObject.name}]";
+
+            if (_dollyCamera == null)
+            {
+                Debug.LogError($"{objectName} SkillCameraDirector: Dolly Camera가 할당되지 않았습니다.", this);
+            }
+            else
+            {
+                if (_splineDolly == null)
+                    Debug.LogError($"{objectName} SkillCameraDirector: CinemachineSplineDolly 컴포넌트를 찾을 수 없습니다.", this);
+
+                if (_noise == null)
+                    Debug.LogWarning($"{objectName} SkillCameraDirector: CinemachineBasicMultiChannelPerlin 컴포넌트가 없습니다. 카메라 쉐이크가 비활성화됩니다.", this);
+            }
+
+            if (_followCamera == null)
+                Debug.LogWarning($"{objectName} SkillCameraDirector: Follow Camera가 할당되지 않았습니다. 시퀀스 종료 후 카메라 복귀가 제한됩니다.", this);
         }
 
         private void Start()
@@ -246,18 +269,12 @@ namespace Skill
 
         private void OnDestroy()
         {
-            if (_isSequenceActive)
-            {
-                RestoreState();
-            }
+            CancelSequence();
         }
 
         private void OnDisable()
         {
-            if (_activeSequence != null)
-            {
-                RestoreState();
-            }
+            CancelSequence();
         }
 
 #if UNITY_EDITOR
