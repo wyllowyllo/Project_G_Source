@@ -59,7 +59,7 @@ public class SkillUIManager : MonoBehaviour
         if (gridLayout != null)
         {
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gridLayout.constraintCount = 3;
+            gridLayout.constraintCount = 4;
             gridLayout.cellSize = new Vector2(120, 120);
             gridLayout.spacing = new Vector2(120, 110);
         }
@@ -119,17 +119,21 @@ public class SkillUIManager : MonoBehaviour
 
     private int GetUnlockLevelForIndex(int index)
     {
-        int col = index % 3;
+        int col = index % 4;
 
-        // Element1,4,7
+        // Element1,5,9 (두 번째 열)
         if (col == 1)
             return 10;
 
-        // Element2,5,8
+        // Element2,6,10 (세 번째 열)
         if (col == 2)
             return 20;
 
-        // Element0,3,6
+        // Element3,7,11 (네 번째 열)
+        if (col == 3)
+            return 30;
+
+        // Element0,4,8 (첫 번째 열)
         return 1; // 기본 해금 레벨
     }
 
