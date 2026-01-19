@@ -1,13 +1,14 @@
 using Pool.Core;
 using UnityEngine;
 
-namespace Skill
+namespace Pool.Components
 {
-    public class VFXAutoDestroy : MonoBehaviour, IPooledObject
+    [RequireComponent(typeof(ParticleSystem))]
+    public class PooledVFX : MonoBehaviour, IPooledObject
     {
         [SerializeField] private bool _useParticleDuration = true;
         [SerializeField] private float _manualDuration = 2f;
-        [SerializeField] private float _destroyDelay = 0.5f;
+        [SerializeField] private float _releaseDelay = 0.5f;
 
         private ParticleSystem _particleSystem;
         private float _duration;
@@ -20,24 +21,11 @@ namespace Skill
             CalculateDuration();
         }
 
-        private void Start()
-        {
-            // 풀링 시스템이 없으면 기존 방식대로 동작
-            if (ObjectPoolManager.Instance == null)
-            {
-                Destroy(gameObject, _duration + _destroyDelay);
-                return;
-            }
-
-            _spawnTime = Time.time;
-            _isActive = true;
-        }
-
         private void Update()
         {
-            if (!_isActive || ObjectPoolManager.Instance == null) return;
+            if (!_isActive) return;
 
-            if (Time.time >= _spawnTime + _duration + _destroyDelay)
+            if (Time.time >= _spawnTime + _duration + _releaseDelay)
             {
                 _isActive = false;
                 PoolSpawner.Release(gameObject);
@@ -49,21 +37,22 @@ namespace Skill
             _spawnTime = Time.time;
             _isActive = true;
 
-            if (_particleSystem != null)
-            {
-                _particleSystem.Clear(true);
-                _particleSystem.Play(true);
-            }
+            // 파티클 리셋 및 재시작
+            _particleSystem.Clear(true);
+            _particleSystem.Play(true);
         }
 
         public void OnReturnToPool()
         {
             _isActive = false;
+            _particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
 
-            if (_particleSystem != null)
-            {
-                _particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            }
+        public void SetDuration(float duration)
+        {
+            _useParticleDuration = false;
+            _manualDuration = duration;
+            _duration = duration;
         }
 
         private void CalculateDuration()

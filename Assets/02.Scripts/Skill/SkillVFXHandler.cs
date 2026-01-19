@@ -1,3 +1,4 @@
+using Pool.Core;
 using UnityEngine;
 
 namespace Skill
@@ -50,9 +51,9 @@ namespace Skill
 
             Vector3 finalPosition = request.Origin + request.Rotation * config.positionOffset;
             Quaternion finalRotation = request.Rotation * Quaternion.Euler(config.rotationOffset);
-            GameObject vfx = Instantiate(config.prefab, finalPosition, finalRotation);
+            GameObject vfx = PoolSpawner.Spawn(config.prefab, finalPosition, finalRotation);
 
-            if (_scaleToRange)
+            if (_scaleToRange && vfx != null)
             {
                 ApplyScale(vfx, request);
             }

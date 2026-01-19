@@ -2,6 +2,7 @@ using System.Collections;
 using Combat.Core;
 using Combat.Damage;
 using Monster.Feedback.Data;
+using Pool.Core;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -195,18 +196,14 @@ namespace Monster.Feedback
                 ? info.HitPoint
                 : transform.position + Vector3.up;
 
-            //spawnPos.y += 0.5f;
-
-            var vfx = Instantiate(prefab, spawnPos, Quaternion.identity);
-            Destroy(vfx, _vfxLifetime);
+            PoolSpawner.SpawnVFX(prefab, spawnPos, Quaternion.identity, _vfxLifetime);
         }
 
         private void SpawnDeathVfx()
         {
             if (_deathVFXPrefab == null) return;
 
-            var vfx = Instantiate(_deathVFXPrefab, transform.position, Quaternion.identity);
-            Destroy(vfx, _vfxLifetime);
+            PoolSpawner.SpawnVFX(_deathVFXPrefab, transform.position, Quaternion.identity, _vfxLifetime);
         }
 
         private void PlayHitSfx(DamageInfo info)
@@ -231,9 +228,9 @@ namespace Monster.Feedback
             if (_damageNumberPrefab == null) return;
 
             var pos = transform.position + _damageNumberOffset;
-            var go = Instantiate(_damageNumberPrefab, pos, Quaternion.identity);
+            var go = PoolSpawner.Spawn(_damageNumberPrefab, pos, Quaternion.identity);
 
-            var damageNumberUI = go.GetComponent<UI.DamageNumberUI>();
+            var damageNumberUI = go?.GetComponent<UI.DamageNumberUI>();
             damageNumberUI?.Initialize(info.Amount, info.IsCritical);
         }
     }
