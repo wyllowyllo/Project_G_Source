@@ -2,12 +2,20 @@ using UnityEngine;
 
 namespace Skill
 {
+    [System.Serializable]
+    public class VFXConfig
+    {
+        public GameObject prefab;
+        public Vector3 positionOffset;
+        public Vector3 rotationOffset;
+    }
+
     public class SkillVFXHandler : MonoBehaviour
     {
-        [Header("VFX Prefabs")]
-        [SerializeField] private GameObject _sphereVFX;
-        [SerializeField] private GameObject _boxVFX;
-        [SerializeField] private GameObject _coneVFX;
+        [Header("VFX Configs")]
+        [SerializeField] private VFXConfig _sphereVFX;
+        [SerializeField] private VFXConfig _boxVFX;
+        [SerializeField] private VFXConfig _coneVFX;
 
         [Header("Settings")]
         [SerializeField] private bool _scaleToRange = true;
@@ -37,10 +45,12 @@ namespace Skill
 
         private void HandleVFXRequest(SkillVFXRequest request)
         {
-            GameObject prefab = GetVFXPrefab(request.AreaType);
-            if (prefab == null) return;
+            VFXConfig config = GetVFXConfig(request.AreaType);
+            if (config?.prefab == null) return;
 
-            GameObject vfx = Instantiate(prefab, request.Origin, prefab.transform.rotation);
+            Vector3 finalPosition = request.Origin + request.Rotation * config.positionOffset;
+            Quaternion finalRotation = request.Rotation * Quaternion.Euler(config.rotationOffset);
+            GameObject vfx = Instantiate(config.prefab, finalPosition, finalRotation);
 
             if (_scaleToRange)
             {
@@ -48,7 +58,7 @@ namespace Skill
             }
         }
 
-        private GameObject GetVFXPrefab(SkillAreaType areaType)
+        private VFXConfig GetVFXConfig(SkillAreaType areaType)
         {
             return areaType switch
             {

@@ -20,7 +20,7 @@ namespace Skill
         {
             _hitTargets.Clear();
 
-            Vector3 origin = transform.position + transform.TransformDirection(context.PositionOffset) * 1.5f;
+            Vector3 origin = transform.position + transform.TransformDirection(context.PositionOffset);
             var vfxRequest = SkillVFXRequest.FromContext(context, origin , transform.rotation);
             OnVFXRequested?.Invoke(vfxRequest);
 
