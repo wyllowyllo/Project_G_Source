@@ -29,6 +29,7 @@ namespace Skill
         private GlideController _glideController;
         private PlayerCombat _playerCombat;
         private PlayerTargetController _targetController;
+        private SkillCameraDirector _cameraDirector;
 
         private readonly Dictionary<SkillSlot, int> _skillLevels = new()
         {
@@ -77,6 +78,7 @@ namespace Skill
             _glideController = GetComponent<GlideController>();
             _playerCombat = GetComponent<PlayerCombat>();
             _targetController = GetComponent<PlayerTargetController>();
+            _cameraDirector = GetComponentInChildren<SkillCameraDirector>();
 
             if (_progression != null)
                 _progression.OnSkillEnhanced += HandleSkillEnhanced;
@@ -209,6 +211,19 @@ namespace Skill
 
             _targetController?.RotateTowardsNearestTarget();
             _animationController?.PlaySkill(slot);
+
+            StartCameraSequence(tier);
+        }
+
+        private void StartCameraSequence(SkillTierData tier)
+        {
+            if (_cameraDirector == null) return;
+
+            var cameraConfig = tier.CameraConfig;
+            if (cameraConfig == null) return;
+
+            float animDuration = tier.AnimationDuration > 0 ? tier.AnimationDuration : 1f;
+            _cameraDirector.StartSequence(cameraConfig, animDuration);
         }
         
         public void OnSkillDamageFrame()
@@ -296,6 +311,7 @@ namespace Skill
             }
 
             _vfxController?.StopTrail();
+            _cameraDirector?.CancelSequence();
 
             _isCasting = false;
             _currentSkill = null;
