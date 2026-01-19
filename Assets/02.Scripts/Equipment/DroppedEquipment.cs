@@ -98,14 +98,12 @@ namespace Equipment
             return _equipmentData != null;
         }
 
-        public override void Interact()
+        public override void Interact(IInteractor interactor)
         {
             if (!CanInteract()) return;
+            if (interactor.Equipment == null) return;
 
-            var playerEquipment = FindObjectOfType<PlayerEquipment>();
-            if (playerEquipment == null) return;
-
-            if (playerEquipment.TryEquip(_equipmentData))
+            if (interactor.Equipment.TryEquip(_equipmentData))
             {
                 var target = _rootObject != null ? _rootObject : gameObject;
                 Destroy(target);

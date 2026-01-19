@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using Equipment;
 using UnityEngine;
 
 namespace Interaction
 {
-    public class PlayerInteraction : MonoBehaviour
+    public class PlayerInteraction : MonoBehaviour, IInteractor
     {
         [Header("Settings")]
         [SerializeField] private KeyCode _interactKey = KeyCode.F;
@@ -16,9 +17,17 @@ namespace Interaction
         private readonly List<IInteractable> _candidates = new();
         private IInteractable _currentTarget;
         private Transform _cameraTransform;
+        private PlayerEquipment _equipment;
 
         public IInteractable CurrentTarget => _currentTarget;
         public bool HasTarget => _currentTarget != null && _currentTarget.CanInteract();
+
+        public PlayerEquipment Equipment => _equipment;
+
+        private void Awake()
+        {
+            _equipment = GetComponent<PlayerEquipment>();
+        }
 
         private void Start()
         {
@@ -34,7 +43,7 @@ namespace Interaction
 
             if (Input.GetKeyDown(_interactKey))
             {
-                _currentTarget.Interact();
+                _currentTarget.Interact(this);
             }
         }
 
@@ -59,7 +68,7 @@ namespace Interaction
 
         private void UpdateBestTarget()
         {
-            _candidates.RemoveAll(c => c == null || c.Transform == null);
+            _candidates.RemoveAll(c => (c as Object) == null || c.Transform == null);
 
             if (_candidates.Count == 0)
             {

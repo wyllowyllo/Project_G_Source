@@ -1,15 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Combat.Core
 {
+    [Serializable]
     public class Stat
     {
-        private float _baseValue;
+        [SerializeField] private float _baseValue;
         private readonly float _minValue;
         private readonly float _maxValue;
-        private readonly List<StatModifier> _modifiers = new();
+        [SerializeField] private List<StatModifier> _modifiers = new();
 
         public float BaseValue
         {

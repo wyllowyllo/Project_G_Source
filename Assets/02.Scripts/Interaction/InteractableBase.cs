@@ -34,7 +34,7 @@ namespace Interaction
 
         public virtual bool CanInteract() => true;
 
-        public abstract void Interact();
+        public abstract void Interact(IInteractor interactor);
 
         public virtual void OnHighlight()
         {

@@ -7,7 +7,7 @@ namespace Interaction
         Transform Transform { get; }
         string InteractionPrompt { get; }
         bool CanInteract();
-        void Interact();
+        void Interact(IInteractor interactor);
         void OnHighlight();
         void OnUnhighlight();
     }
