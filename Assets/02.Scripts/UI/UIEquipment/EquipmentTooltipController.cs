@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -36,15 +37,49 @@ namespace Equipment
         private static readonly Dictionary<Material, Material> _sharedMaterials = new();
         private static readonly Dictionary<Material, int> _materialRefCount = new();
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticFields()
+        {
+            CleanupAllMaterials();
+        }
+
+        static EquipmentTooltipController()
+        {
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        private static void OnSceneUnloaded(Scene scene)
+        {
+            CleanupAllMaterials();
+        }
+
+        private static void CleanupAllMaterials()
+        {
+            foreach (var kvp in _sharedMaterials)
+            {
+                if (kvp.Value != null)
+                {
+                    if (Application.isPlaying)
+                        Object.Destroy(kvp.Value);
+                    else
+                        Object.DestroyImmediate(kvp.Value);
+                }
+            }
+            _sharedMaterials.Clear();
+            _materialRefCount.Clear();
+        }
+
         private DroppedEquipment _droppedEquipment;
         private Camera _mainCamera;
         private RectTransform _tooltipRect;
+        private EquipmentGradeSettings _gradeSettings;
         private readonly List<Material> _usedOriginalMaterials = new();
 
         private void Awake()
         {
             _droppedEquipment = GetComponent<DroppedEquipment>();
             _mainCamera = Camera.main;
+            _gradeSettings = EquipmentGradeSettings.Instance;
 
             if (_tooltipCanvas != null)
             {
@@ -253,14 +288,14 @@ namespace Equipment
 
         private Color GetGradeColor(EquipmentGrade grade)
         {
-            if (EquipmentGradeSettings.Instance == null) return Color.white;
-            return EquipmentGradeSettings.Instance.GetTextColor(grade);
+            if (_gradeSettings == null) return Color.white;
+            return _gradeSettings.GetTextColor(grade);
         }
 
         private Color GetBackgroundColor(EquipmentGrade grade)
         {
-            if (EquipmentGradeSettings.Instance == null) return Color.gray;
-            return EquipmentGradeSettings.Instance.GetBackgroundColor(grade);
+            if (_gradeSettings == null) return Color.gray;
+            return _gradeSettings.GetBackgroundColor(grade);
         }
 
         public void ShowTooltip()

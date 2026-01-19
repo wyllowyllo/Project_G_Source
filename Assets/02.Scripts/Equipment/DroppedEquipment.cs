@@ -101,12 +101,11 @@ namespace Equipment
         public override void Interact(IInteractor interactor)
         {
             if (!CanInteract()) return;
-            if (interactor.Equipment == null) return;
 
-            if (interactor.Equipment.TryEquip(_equipmentData))
+            if (interactor.TryEquip(_equipmentData))
             {
-                var target = _rootObject != null ? _rootObject : gameObject;
-                Destroy(target);
+                bool isRootParent = _rootObject != null && transform.IsChildOf(_rootObject.transform);
+                Destroy(isRootParent ? _rootObject : gameObject);
             }
         }
 

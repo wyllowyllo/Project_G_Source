@@ -14,11 +14,11 @@ namespace Combat.Core
     {
         [SerializeField] private float _value;
         [SerializeField] private StatModifierType _type;
-        
+        [SerializeField] private string _sourceId;
+
         public float Value => _value;
         public StatModifierType Type => _type;
-
-        public IModifierSource Source { get; }
+        public string SourceId => _sourceId;
 
         public StatModifier(float value, StatModifierType type, IModifierSource source)
         {
@@ -33,7 +33,7 @@ namespace Combat.Core
 
             _value = value;
             _type = type;
-            Source = source;
+            _sourceId = source.Id;
         }
     }
 }

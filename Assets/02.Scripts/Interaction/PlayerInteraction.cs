@@ -24,6 +24,12 @@ namespace Interaction
 
         public PlayerEquipment Equipment => _equipment;
 
+        public bool TryEquip(EquipmentData equipment)
+        {
+            if (_equipment == null) return false;
+            return _equipment.TryEquip(equipment);
+        }
+
         private void Awake()
         {
             _equipment = GetComponent<PlayerEquipment>();

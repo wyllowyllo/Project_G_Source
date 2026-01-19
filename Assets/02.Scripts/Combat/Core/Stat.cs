@@ -51,7 +51,7 @@ namespace Combat.Core
             if (source == null)
                 return false;
 
-            return _modifiers.RemoveAll(m => m.Source == source) > 0;
+            return _modifiers.RemoveAll(m => m.SourceId == source.Id) > 0;
         }
 
         public void ClearModifiers()
