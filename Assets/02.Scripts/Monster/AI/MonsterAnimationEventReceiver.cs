@@ -11,13 +11,8 @@ namespace Monster.AI
         private MonsterAttacker _monsterAttacker;
         private MonsterRangedAttacker _rangedAttacker;
 
-        public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker)
-        {
-            _controller = controller;
-            _monsterAttacker = monsterAttacker;
-        }
-
-        public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker, MonsterRangedAttacker rangedAttacker)
+        
+        public void Initialize(MonsterController controller, MonsterAttacker monsterAttacker, MonsterRangedAttacker rangedAttacker = null)
         {
             _controller = controller;
             _monsterAttacker = monsterAttacker;
