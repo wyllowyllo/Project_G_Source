@@ -59,6 +59,8 @@ namespace Interaction
 
         private void UpdateBestTarget()
         {
+            _candidates.RemoveAll(c => c == null || c.Transform == null);
+
             if (_candidates.Count == 0)
             {
                 SetTarget(null);
@@ -88,16 +90,14 @@ namespace Interaction
             Vector3 targetPosition = target.Transform.position;
             Vector3 playerPosition = transform.position;
             Vector3 cameraPosition = _cameraTransform.position;
-
-            // 거리 점수 (가까울수록 높음)
+            
             float distance = Vector3.Distance(playerPosition, targetPosition);
             float normalizedDistance = Mathf.Clamp01(distance / _maxDetectionRange);
             float distanceScore = 1f - normalizedDistance;
-
-            // 각도 점수 (카메라 정면일수록 높음)
+            
             Vector3 directionToTarget = (targetPosition - cameraPosition).normalized;
             float dot = Vector3.Dot(_cameraTransform.forward, directionToTarget);
-            float angleScore = (dot + 1f) / 2f; // -1~1 -> 0~1
+            float angleScore = (dot + 1f) / 2f;
 
             return (angleScore * _angleWeight) + (distanceScore * _distanceWeight);
         }

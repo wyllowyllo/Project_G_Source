@@ -6,6 +6,7 @@ namespace Interaction
     public abstract class InteractableBase : MonoBehaviour, IInteractable
     {
         [Header("Outline Settings")]
+        [SerializeField] private GameObject _outlineTarget;
         [SerializeField] private Color _outlineColor = Color.yellow;
         [SerializeField] private float _outlineWidth = 5f;
         [SerializeField] private QuickOutline.Mode _outlineMode = QuickOutline.Mode.OutlineAll;
@@ -17,10 +18,12 @@ namespace Interaction
 
         protected virtual void Awake()
         {
-            _outline = GetComponent<QuickOutline>();
+            var target = _outlineTarget != null ? _outlineTarget : gameObject;
+
+            _outline = target.GetComponent<QuickOutline>();
             if (_outline == null)
             {
-                _outline = gameObject.AddComponent<QuickOutline>();
+                _outline = target.AddComponent<QuickOutline>();
             }
 
             _outline.OutlineMode = _outlineMode;
@@ -46,6 +49,14 @@ namespace Interaction
             if (_outline != null)
             {
                 _outline.enabled = false;
+            }
+        }
+
+        protected void SetOutlineColor(Color color)
+        {
+            if (_outline != null)
+            {
+                _outline.OutlineColor = color;
             }
         }
     }

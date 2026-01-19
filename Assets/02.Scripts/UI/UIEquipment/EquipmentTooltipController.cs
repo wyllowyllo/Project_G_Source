@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using TMPro;
 
@@ -22,51 +24,119 @@ namespace Equipment
         [SerializeField] private Vector3 _tooltipOffset = new Vector3(0, 1.5f, 0);
 
         [Header("Display Settings")]
-        [SerializeField] private float _showDistance = 5f;
         [SerializeField] private bool _alwaysShow = false;
+        [SerializeField] private bool _clampToScreen = true;
+        [SerializeField] private float _screenPadding = 50f;
 
-        [Header("Grade Colors")]
-        [SerializeField] private Color _normalColor = new Color(0.7f, 0.7f, 0.7f, 1f);
-        [SerializeField] private Color _rareColor = new Color(0.3f, 0.6f, 1f, 1f);
-        [SerializeField] private Color _uniqueColor = new Color(0.6f, 0.3f, 1f, 1f);
-        [SerializeField] private Color _legendaryColor = new Color(1f, 0.5f, 0.1f, 1f);
+        [Header("Rendering")]
+        [SerializeField] private bool _alwaysOnTop = true;
+        [SerializeField] private string _sortingLayerName = "UI";
+        [SerializeField] private int _sortingOrder = 100;
 
-        [Header("Background Colors")]
-        [SerializeField] private Color _normalBgColor = new Color(0.2f, 0.2f, 0.2f, 0.9f);
-        [SerializeField] private Color _rareBgColor = new Color(0.1f, 0.2f, 0.3f, 0.9f);
-        [SerializeField] private Color _uniqueBgColor = new Color(0.2f, 0.1f, 0.3f, 0.9f);
-        [SerializeField] private Color _legendaryBgColor = new Color(0.3f, 0.2f, 0.1f, 0.9f);
+        private static readonly Dictionary<Material, Material> _sharedMaterials = new();
+        private static readonly Dictionary<Material, int> _materialRefCount = new();
 
         private DroppedEquipment _droppedEquipment;
         private Camera _mainCamera;
-        private Transform _playerTransform;
+        private RectTransform _tooltipRect;
+        private readonly List<Material> _usedOriginalMaterials = new();
 
         private void Awake()
         {
             _droppedEquipment = GetComponent<DroppedEquipment>();
-            
+            _mainCamera = Camera.main;
+
             if (_tooltipCanvas != null)
             {
                 _tooltipCanvas.renderMode = RenderMode.WorldSpace;
-                _tooltipCanvas.worldCamera = Camera.main;
+                _tooltipCanvas.worldCamera = _mainCamera;
+                _tooltipCanvas.sortingLayerName = _sortingLayerName;
+                _tooltipCanvas.sortingOrder = _sortingOrder;
+
+                if (_alwaysOnTop)
+                {
+                    ApplyAlwaysOnTop();
+                }
             }
 
-            if (_tooltipPanel != null && !_alwaysShow)
+            if (_tooltipPanel != null)
             {
-                _tooltipPanel.SetActive(false);
+                _tooltipRect = _tooltipPanel.GetComponent<RectTransform>();
+                if (!_alwaysShow)
+                {
+                    _tooltipPanel.SetActive(false);
+                }
             }
+        }
+
+        private void ApplyAlwaysOnTop()
+        {
+            var graphics = _tooltipCanvas.GetComponentsInChildren<Graphic>(true);
+            foreach (var graphic in graphics)
+            {
+                if (graphic is TextMeshProUGUI tmp)
+                {
+                    var originalMat = tmp.fontMaterial;
+                    var sharedMat = GetOrCreateSharedMaterial(originalMat, true);
+                    tmp.fontMaterial = sharedMat;
+                    _usedOriginalMaterials.Add(originalMat);
+                }
+                else
+                {
+                    var originalMat = graphic.materialForRendering;
+                    var sharedMat = GetOrCreateSharedMaterial(originalMat, false);
+                    graphic.material = sharedMat;
+                    _usedOriginalMaterials.Add(originalMat);
+                }
+            }
+        }
+
+        private static Material GetOrCreateSharedMaterial(Material original, bool isTMP)
+        {
+            if (_sharedMaterials.TryGetValue(original, out var existing))
+            {
+                _materialRefCount[original]++;
+                return existing;
+            }
+
+            var newMat = new Material(original);
+            if (isTMP)
+            {
+                newMat.SetInt(ShaderUtilities.ShaderTag_ZTestMode, (int)CompareFunction.Always);
+            }
+            else
+            {
+                newMat.SetInt("unity_GUIZTestMode", (int)CompareFunction.Always);
+            }
+
+            _sharedMaterials[original] = newMat;
+            _materialRefCount[original] = 1;
+            return newMat;
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var originalMat in _usedOriginalMaterials)
+            {
+                if (originalMat == null) continue;
+                if (!_materialRefCount.ContainsKey(originalMat)) continue;
+
+                _materialRefCount[originalMat]--;
+                if (_materialRefCount[originalMat] <= 0)
+                {
+                    if (_sharedMaterials.TryGetValue(originalMat, out var sharedMat))
+                    {
+                        if (sharedMat != null) Destroy(sharedMat);
+                        _sharedMaterials.Remove(originalMat);
+                    }
+                    _materialRefCount.Remove(originalMat);
+                }
+            }
+            _usedOriginalMaterials.Clear();
         }
 
         private void Start()
         {
-            _mainCamera = Camera.main;
-            
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                _playerTransform = player.transform;
-            }
-
             if (_droppedEquipment != null && _droppedEquipment.EquipmentData != null)
             {
                 UpdateTooltip(_droppedEquipment.EquipmentData);
@@ -75,29 +145,57 @@ namespace Equipment
 
         private void LateUpdate()
         {
-            if (_enableBillboard && _tooltipCanvas != null && _mainCamera != null)
+            if (_tooltipCanvas == null || _mainCamera == null) return;
+            if (_tooltipPanel != null && !_tooltipPanel.activeSelf) return;
+
+            Vector3 worldPosition = transform.position + _tooltipOffset;
+
+            if (_clampToScreen)
+            {
+                worldPosition = ClampToScreen(worldPosition);
+            }
+
+            _tooltipCanvas.transform.position = worldPosition;
+
+            if (_enableBillboard)
             {
                 _tooltipCanvas.transform.LookAt(
                     _tooltipCanvas.transform.position + _mainCamera.transform.rotation * Vector3.forward,
                     _mainCamera.transform.rotation * Vector3.up
                 );
             }
+        }
 
-            if (!_alwaysShow && _playerTransform != null)
+        private Vector3 ClampToScreen(Vector3 worldPosition)
+        {
+            Vector3 screenPos = _mainCamera.WorldToScreenPoint(worldPosition);
+
+            if (screenPos.z < 0) return worldPosition;
+
+            Vector3[] corners = new Vector3[4];
+            if (_tooltipRect != null)
             {
-                float distance = Vector3.Distance(transform.position, _playerTransform.position);
-                bool shouldShow = distance <= _showDistance;
+                _tooltipRect.GetWorldCorners(corners);
+                Vector3 minCorner = _mainCamera.WorldToScreenPoint(corners[0]);
+                Vector3 maxCorner = _mainCamera.WorldToScreenPoint(corners[2]);
+                float tooltipWidth = Mathf.Abs(maxCorner.x - minCorner.x);
+                float tooltipHeight = Mathf.Abs(maxCorner.y - minCorner.y);
 
-                if (_tooltipPanel != null && _tooltipPanel.activeSelf != shouldShow)
-                {
-                    _tooltipPanel.SetActive(shouldShow);
-                }
+                float minX = _screenPadding + tooltipWidth * 0.5f;
+                float maxX = Screen.width - _screenPadding - tooltipWidth * 0.5f;
+                float minY = _screenPadding + tooltipHeight * 0.5f;
+                float maxY = Screen.height - _screenPadding - tooltipHeight * 0.5f;
+
+                if (minX < maxX) screenPos.x = Mathf.Clamp(screenPos.x, minX, maxX);
+                if (minY < maxY) screenPos.y = Mathf.Clamp(screenPos.y, minY, maxY);
+            }
+            else
+            {
+                screenPos.x = Mathf.Clamp(screenPos.x, _screenPadding, Screen.width - _screenPadding);
+                screenPos.y = Mathf.Clamp(screenPos.y, _screenPadding, Screen.height - _screenPadding);
             }
 
-            if (_tooltipCanvas != null)
-            {
-                _tooltipCanvas.transform.position = transform.position + _tooltipOffset;
-            }
+            return _mainCamera.ScreenToWorldPoint(screenPos);
         }
 
         public void UpdateTooltip(EquipmentData equipmentData)
@@ -134,8 +232,7 @@ namespace Equipment
             {
                 _backgroundImage.color = GetBackgroundColor(equipmentData.Grade);
             }
-
-            // 아이템 아이콘 (TODO: EquipmentData에 Sprite 필드 추가 시 구현)
+            
             if (_itemIcon != null)
             {
                 _itemIcon.color = GetGradeColor(equipmentData.Grade);
@@ -156,26 +253,14 @@ namespace Equipment
 
         private Color GetGradeColor(EquipmentGrade grade)
         {
-            return grade switch
-            {
-                EquipmentGrade.Normal => _normalColor,
-                EquipmentGrade.Rare => _rareColor,
-                EquipmentGrade.Unique => _uniqueColor,
-                EquipmentGrade.Legendary => _legendaryColor,
-                _ => Color.white
-            };
+            if (EquipmentGradeSettings.Instance == null) return Color.white;
+            return EquipmentGradeSettings.Instance.GetTextColor(grade);
         }
 
         private Color GetBackgroundColor(EquipmentGrade grade)
         {
-            return grade switch
-            {
-                EquipmentGrade.Normal => _normalBgColor,
-                EquipmentGrade.Rare => _rareBgColor,
-                EquipmentGrade.Unique => _uniqueBgColor,
-                EquipmentGrade.Legendary => _legendaryBgColor,
-                _ => Color.gray
-            };
+            if (EquipmentGradeSettings.Instance == null) return Color.gray;
+            return EquipmentGradeSettings.Instance.GetBackgroundColor(grade);
         }
 
         public void ShowTooltip()
@@ -193,16 +278,5 @@ namespace Equipment
                 _tooltipPanel.SetActive(false);
             }
         }
-
-        public void SetShowDistance(float distance)
-        {
-            _showDistance = distance;
-        }
-
-        public void SetTooltipOffset(Vector3 offset)
-        {
-            _tooltipOffset = offset;
-        }
-
     }
 }
