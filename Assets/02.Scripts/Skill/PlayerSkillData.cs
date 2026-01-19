@@ -37,6 +37,13 @@ namespace Skill
         [SerializeField] private GameObject _effectPrefab;
         [SerializeField] private AudioClip _skillSound;
 
+        [Header("Camera")]
+        [Tooltip("스킬 카메라 연출 설정 (없으면 연출 없음)")]
+        [SerializeField] private SkillCameraConfig _cameraConfig;
+
+        [Tooltip("애니메이션 길이 (초). 카메라 연출 타이밍 계산에 사용")]
+        [SerializeField] private float _animationDuration = 1f;
+
         public float DamageMultiplier => _damageMultiplier;
         public float Range => _range;
         public float Cooldown => _cooldown;
@@ -48,6 +55,8 @@ namespace Skill
         public bool AllowMovement => _allowMovement;
         public GameObject EffectPrefab => _effectPrefab;
         public AudioClip SkillSound => _skillSound;
+        public SkillCameraConfig CameraConfig => _cameraConfig;
+        public float AnimationDuration => _animationDuration;
     }
 
     [CreateAssetMenu(fileName = "PlayerSkill", menuName = "Combat/Player Skill")]
