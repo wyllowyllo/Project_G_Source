@@ -27,9 +27,9 @@ public class RankUpManager : MonoBehaviour
     [Tooltip("스킬 보상 UI 표시 여부")]
     [SerializeField] private bool _showSkillRewardUI = true;
 
-    [SerializeField] private Sprite attackSkillIcon;
-    [SerializeField] private Sprite defenseSkillIcon;
-    [SerializeField] private Sprite specialSkillIcon;
+    [SerializeField] private Sprite _attackSkillIcon;
+    [SerializeField] private Sprite _defenseSkillIcon;
+    [SerializeField] private Sprite _specialSkillIcon;
 
     [Header("UI 참조 (선택사항)")]
     [SerializeField] private TextMeshProUGUI _currentRankText;
@@ -172,7 +172,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
             new SkillRewardData
             {
                 skillName = "직선공격 스킬",
-                skillIcon = attackSkillIcon,
+                skillIcon = _attackSkillIcon,
                 previousLevel = previousSkillLevel,
                 newLevel = newSkillLevel,
                 glowColor = new Color(1f, 0.8f, 0f, 1f), // 황금색
@@ -181,7 +181,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
             new SkillRewardData
             {
                 skillName = "활공 스킬",
-                skillIcon = defenseSkillIcon,
+                skillIcon = _defenseSkillIcon,
                 previousLevel = previousSkillLevel,
                 newLevel = newSkillLevel,
                 glowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색
@@ -190,7 +190,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
             new SkillRewardData
             {
                 skillName = "궁극기",
-                skillIcon = specialSkillIcon,
+                skillIcon = _specialSkillIcon,
                 previousLevel = previousSkillLevel,
                 newLevel = newSkillLevel,
                 glowColor = new Color(1f, 0.2f, 0.8f, 1f), // 보라색
