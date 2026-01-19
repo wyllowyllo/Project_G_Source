@@ -46,6 +46,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged += HandleDamaged;
+                _playerCombatant.OnHealed += HandleHealed;
                 _playerCombatant.OnDeath += HandleDeath;
             }
         }
@@ -60,6 +61,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged -= HandleDamaged;
+                _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
             }
         }
@@ -100,6 +102,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged -= HandleDamaged;
+                _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
             }
         }
@@ -129,7 +132,7 @@ namespace Player
         {
             Debug.Log($"Player took {damageInfo.Amount} damage! (Critical: {damageInfo.IsCritical})");
 
-     
+
             _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
 
             _backHpDelayTimer = _backHpDelay;
@@ -142,6 +145,14 @@ namespace Player
             {
                 FlashCritical();
             }
+        }
+
+        private void HandleHealed(float amount)
+        {
+            _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+            BackSlider.value = _targetHp;
+            UpdateHpText();
+            UpdateHpColor();
         }
 
         private void HandleDeath()

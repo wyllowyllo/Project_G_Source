@@ -44,6 +44,7 @@ namespace Combat.Core
         public bool CanTakeDamage => IsAlive && !IsInvincible;
 
         public event Action<DamageInfo> OnDamaged;
+        public event Action<float> OnHealed;
         public event Action OnDeath;
         public event Action OnInvincibilityStart;
         public event Action OnInvincibilityEnd;
@@ -66,7 +67,10 @@ namespace Combat.Core
         private void OnEnable()
         {
             if (_health != null)
+            {
                 _health.OnDeath += HandleDeath;
+                _health.OnHealed += HandleHealed;
+            }
         }
 
         private void Update()
@@ -89,7 +93,10 @@ namespace Combat.Core
         private void OnDisable()
         {
             if (_health != null)
+            {
                 _health.OnDeath -= HandleDeath;
+                _health.OnHealed -= HandleHealed;
+            }
         }
 
         public void TakeDamage(float damage)
@@ -199,6 +206,11 @@ namespace Combat.Core
             ClearInvincibility();
             ClearHitStun();
             OnDeath?.Invoke();
+        }
+
+        private void HandleHealed(float amount)
+        {
+            OnHealed?.Invoke(amount);
         }
 
 #if UNITY_INCLUDE_TESTS
