@@ -42,22 +42,18 @@ PoolSpawner.Release(obj, 2f);
 
 ## VFX 프리팹 설정
 
-VFX 프리팹에 아래 컴포넌트 중 하나를 추가하면 자동으로 풀에 반환됩니다.
-
-### VFXAutoDestroy (권장)
-
-1. VFX 프리팹 선택
-2. `Add Component` → `VFXAutoDestroy` 추가
-3. Inspector 설정:
-   - `Use Particle Duration`: 체크 시 ParticleSystem duration 사용
-   - `Manual Duration`: 수동 지정 시간
-   - `Destroy Delay`: 추가 대기 시간
+VFX 프리팹에 `PooledVFX` 컴포넌트를 추가하면 자동으로 풀에 반환됩니다.
 
 ### PooledVFX
 
-1. VFX 프리팹 선택 (ParticleSystem 필수)
+1. VFX 프리팹 선택
 2. `Add Component` → `PooledVFX` 추가
-3. Inspector 설정은 VFXAutoDestroy와 동일
+3. Inspector 설정:
+   - `Use Particle Duration`: 체크 시 ParticleSystem duration 사용
+   - `Manual Duration`: 수동 지정 시간
+   - `Release Delay`: 추가 대기 시간
+
+**참고**: ParticleSystem이 없어도 동작하며, 풀링 시스템이 없으면 `Destroy()`로 자동 폴백됩니다.
 
 ---
 
