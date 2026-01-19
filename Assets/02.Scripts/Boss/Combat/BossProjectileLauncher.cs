@@ -62,6 +62,15 @@ namespace Boss.Combat
             Fire(0, 1);
         }
 
+        // 모든 투사체 동시 발사
+        public void FireAll(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                Fire(i, count);
+            }
+        }
+
         /// <summary>
         /// 다중 투사체 중 하나 발사 (인덱스 기반 퍼짐)
         /// </summary>

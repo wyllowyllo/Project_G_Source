@@ -138,12 +138,7 @@ namespace Boss.AI
         /// </summary>
         public void FireAllProjectiles()
         {
-            if (_controller == null) return;
-            int count = _controller.Data.ProjectileCount;
-            for (int i = 0; i < count; i++)
-            {
-                _controller.FireProjectile(i, count);
-            }
+            _controller?.FireAllProjectiles();
         }
 
         /// <summary>

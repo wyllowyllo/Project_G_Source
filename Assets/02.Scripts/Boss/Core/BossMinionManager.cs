@@ -16,6 +16,9 @@ namespace Boss.Core
     /// </summary>
     public class BossMinionManager : MonoBehaviour
     {
+        // Kill() 메서드가 없어 즉사 데미지로 처리
+        private const float INSTANT_KILL_DAMAGE = 99999f;
+
         [Header("Settings")]
         [SerializeField] private int _maxAttackSlots = 2;
         [SerializeField] private float _aggroRange = 15f;
@@ -219,7 +222,7 @@ namespace Boss.Core
                     var combatant = minion.GetComponent<Combatant>();
                     if (combatant != null && combatant.IsAlive)
                     {
-                        combatant.TakeDamage(99999f);
+                        combatant.TakeDamage(INSTANT_KILL_DAMAGE);
                     }
                     else
                     {

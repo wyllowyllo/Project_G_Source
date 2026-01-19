@@ -390,6 +390,12 @@ namespace Boss.AI
             _projectileLauncher?.Fire(index, totalCount);
         }
 
+        // 모든 투사체 동시 발사
+        public void FireAllProjectiles()
+        {
+            _projectileLauncher?.FireAll(_bossData.ProjectileCount);
+        }
+
         // 잡졸 소환
         public void SpawnMinions()
         {
