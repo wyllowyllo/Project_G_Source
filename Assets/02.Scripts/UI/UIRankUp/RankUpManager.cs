@@ -171,30 +171,30 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
         {
             new SkillRewardData
             {
-                skillName = "직선공격 스킬",
-                skillIcon = _attackSkillIcon,
-                previousLevel = previousSkillLevel,
-                newLevel = newSkillLevel,
-                glowColor = new Color(1f, 0.8f, 0f, 1f), // 황금색
-                rarityColor = new Color(0.8f, 0.2f, 0.2f, 0.5f) // 빨간색 배경
+                SkillName = "직선공격 스킬",
+                SkillIcon = _attackSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(1f, 0.8f, 0f, 1f), // 황금색
+                RarityColor = new Color(0.8f, 0.2f, 0.2f, 0.5f) // 빨간색 배경
             },
             new SkillRewardData
             {
-                skillName = "활공 스킬",
-                skillIcon = _defenseSkillIcon,
-                previousLevel = previousSkillLevel,
-                newLevel = newSkillLevel,
-                glowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색
-                rarityColor = new Color(0.2f, 0.4f, 0.8f, 0.5f) // 파란색 배경
+                SkillName = "활공 스킬",
+                SkillIcon = _defenseSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색
+                RarityColor = new Color(0.2f, 0.4f, 0.8f, 0.5f) // 파란색 배경
             },
             new SkillRewardData
             {
-                skillName = "궁극기",
-                skillIcon = _specialSkillIcon,
-                previousLevel = previousSkillLevel,
-                newLevel = newSkillLevel,
-                glowColor = new Color(1f, 0.2f, 0.8f, 1f), // 보라색
-                rarityColor = new Color(0.6f, 0.2f, 0.8f, 0.5f) // 보라색 배경
+                SkillName = "궁극기",
+                SkillIcon = _specialSkillIcon,
+                PreviousLevel = previousSkillLevel,
+                NewLevel = newSkillLevel,
+                GlowColor = new Color(1f, 0.2f, 0.8f, 1f), // 보라색
+                RarityColor = new Color(0.6f, 0.2f, 0.8f, 0.5f) // 보라색 배경
             }
         };
     }

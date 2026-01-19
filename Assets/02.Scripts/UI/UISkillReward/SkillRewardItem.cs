@@ -42,19 +42,19 @@ public class SkillRewardItem : MonoBehaviour
     public void Initialize(SkillRewardData data)
     {
         // 데이터 설정
-        if (iconImage != null && data.skillIcon != null)
+        if (iconImage != null && data.SkillIcon != null)
         {
-            iconImage.sprite = data.skillIcon;
+            iconImage.sprite = data.SkillIcon;
         }
         
         if (skillNameText != null)
         {
-            skillNameText.text = data.skillName;
+            skillNameText.text = data.SkillName;
         }
         
         if (levelText != null)
         {
-            levelText.text = $"Lv.{data.previousLevel} → Lv.{data.newLevel}";
+            levelText.text = $"Lv.{data.PreviousLevel} → Lv.{data.NewLevel}";
         }      
         
         // 초기 상태 설정
