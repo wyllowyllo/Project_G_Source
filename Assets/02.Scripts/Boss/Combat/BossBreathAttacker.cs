@@ -13,19 +13,23 @@ namespace Boss.Combat
     {
         [Header("References")]
         [SerializeField] private Transform _breathOrigin;
-        [SerializeField] private ParticleSystem _breathEffect;
+        [SerializeField] private GameObject _beamPrefab;
+        [SerializeField] private GameObject _impactPrefab;
 
         [Header("Settings")]
         [SerializeField] private LayerMask _targetLayers;
+        [SerializeField] private LayerMask _obstacleLayer;
         [SerializeField] private float _tickInterval = 0.5f;
+        [SerializeField] private float _beamRadius = 0.5f;
 
         private Combatant _combatant;
         private bool _isBreathing;
-        private float _angle;
         private float _range;
         private float _damagePerTick;
         private float _tickTimer;
 
+        private GameObject _beamInstance;
+        private GameObject _impactInstance;
         private HashSet<IDamageable> _hitTargetsThisTick = new();
 
         public bool IsBreathing => _isBreathing;
@@ -52,18 +56,16 @@ namespace Boss.Combat
             }
         }
 
-        public void StartBreath(float angle, float range, float damage)
+        public void StartBreath(float range, float damage)
         {
-            _angle = angle;
             _range = range;
-            _damagePerTick = damage * _tickInterval; // 틱당 데미지
+            _damagePerTick = damage * _tickInterval;
             _tickTimer = 0f;
             _isBreathing = true;
 
-            // 이펙트 시작
-            if (_breathEffect != null)
+            if (_beamPrefab != null)
             {
-                _breathEffect.Play();
+                _beamInstance = Instantiate(_beamPrefab, _breathOrigin.position, _breathOrigin.rotation, _breathOrigin);
             }
         }
 
@@ -71,10 +73,16 @@ namespace Boss.Combat
         {
             _isBreathing = false;
 
-            // 이펙트 종료
-            if (_breathEffect != null)
+            if (_beamInstance != null)
             {
-                _breathEffect.Stop();
+                Destroy(_beamInstance);
+                _beamInstance = null;
+            }
+
+            if (_impactInstance != null)
+            {
+                Destroy(_impactInstance);
+                _impactInstance = null;
             }
         }
 
@@ -82,43 +90,74 @@ namespace Boss.Combat
         {
             _hitTargetsThisTick.Clear();
 
-            // 범위 내 대상 검색
-            Collider[] colliders = Physics.OverlapSphere(_breathOrigin.position, _range, _targetLayers);
+            Vector3 origin = _breathOrigin.position;
+            Vector3 direction = _breathOrigin.forward;
+            float beamLength = _range;
 
-            foreach (var col in colliders)
+            // 장애물 체크 - 빔 길이 제한
+            if (Physics.Raycast(origin, direction, out RaycastHit obstacleHit, _range, _obstacleLayer))
             {
-                // 각도 체크
-                Vector3 directionToTarget = (col.transform.position - _breathOrigin.position).normalized;
-                float angleToTarget = Vector3.Angle(_breathOrigin.forward, directionToTarget);
+                beamLength = obstacleHit.distance;
+                UpdateImpactEffect(obstacleHit.point);
+            }
+            else
+            {
+                UpdateImpactEffect(null);
+            }
 
-                if (angleToTarget > _angle * 0.5f) continue;
+            // 전방으로 SphereCast하여 대상 검색
+            RaycastHit[] hits = Physics.SphereCastAll(origin, _beamRadius, direction, beamLength, _targetLayers);
 
-                // 데미지 처리
-                var damageable = col.GetComponentInParent<IDamageable>();
+            foreach (var hit in hits)
+            {
+                var damageable = hit.collider.GetComponentInParent<IDamageable>();
                 if (damageable == null || !damageable.CanTakeDamage) continue;
                 if (_hitTargetsThisTick.Contains(damageable)) continue;
 
-                var combatant = col.GetComponentInParent<ICombatant>();
+                var combatant = hit.collider.GetComponentInParent<ICombatant>();
                 if (combatant == null) continue;
 
                 // 같은 팀이면 무시
                 if (_combatant != null && combatant.Team == _combatant.Team) continue;
 
                 _hitTargetsThisTick.Add(damageable);
-                ApplyBreathDamage(damageable, col);
+                ApplyBreathDamage(damageable, hit.point);
             }
         }
 
-        private void ApplyBreathDamage(IDamageable target, Collider collider)
+        private void ApplyBreathDamage(IDamageable target, Vector3 hitPoint)
         {
             var hitContext = HitContext.FromCollision(
-                collider.ClosestPoint(_breathOrigin.position),
-                (_breathOrigin.position - collider.transform.position).normalized,
-                DamageType.Skill // 브레스는 화염 데미지
+                hitPoint,
+                -_breathOrigin.forward,
+                DamageType.Skill
             );
 
             var damageInfo = new DamageInfo(_damagePerTick, false, hitContext);
             target.TakeDamage(damageInfo);
+        }
+
+        private void UpdateImpactEffect(Vector3? hitPoint)
+        {
+            if (!hitPoint.HasValue)
+            {
+                if (_impactInstance != null)
+                {
+                    _impactInstance.SetActive(false);
+                }
+                return;
+            }
+
+            if (_impactPrefab == null) return;
+
+            if (_impactInstance == null)
+            {
+                _impactInstance = Instantiate(_impactPrefab);
+            }
+
+            _impactInstance.SetActive(true);
+            _impactInstance.transform.position = hitPoint.Value;
+            _impactInstance.transform.rotation = Quaternion.LookRotation(-_breathOrigin.forward);
         }
 
 #if UNITY_EDITOR
@@ -126,29 +165,17 @@ namespace Boss.Combat
         {
             if (_breathOrigin == null) return;
 
-            // 브레스 범위 시각화
-            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f);
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
 
             Vector3 origin = _breathOrigin.position;
-            Vector3 forward = _breathOrigin.forward;
-            float halfAngle = _angle * 0.5f;
+            Vector3 endPoint = origin + _breathOrigin.forward * _range;
 
-            // 부채꼴 그리기
-            int segments = 20;
-            Vector3 prevPoint = origin;
-            for (int i = 0; i <= segments; i++)
-            {
-                float currentAngle = -halfAngle + (halfAngle * 2f * i / segments);
-                Vector3 direction = Quaternion.Euler(0, currentAngle, 0) * forward;
-                Vector3 point = origin + direction * _range;
+            // 빔 중심선
+            Gizmos.DrawLine(origin, endPoint);
 
-                if (i > 0)
-                {
-                    Gizmos.DrawLine(prevPoint, point);
-                }
-                Gizmos.DrawLine(origin, point);
-                prevPoint = point;
-            }
+            // 빔 반경 표시
+            Gizmos.DrawWireSphere(origin, _beamRadius);
+            Gizmos.DrawWireSphere(endPoint, _beamRadius);
         }
 #endif
     }

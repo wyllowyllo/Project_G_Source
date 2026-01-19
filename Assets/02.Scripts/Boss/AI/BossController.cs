@@ -372,7 +372,6 @@ namespace Boss.AI
         public void StartBreathAttack()
         {
             _breathAttacker?.StartBreath(
-                _bossData.BreathAngle,
                 _bossData.BreathRange,
                 _bossData.BreathDamage
             );
