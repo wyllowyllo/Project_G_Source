@@ -1,15 +1,17 @@
+using Common;
 using UnityEngine;
 using UnityEngine.AI;
 
 namespace Monster.Ability
 {
     // NavMeshAgent를 래핑하여 이동 기능을 제공하는 Ability
+    // Monster와 Boss에서 공통으로 사용 가능
     public class NavAgentAbility : EntityAbility
     {
         private NavMeshAgent _navAgent;
         private Transform _transform;
 
-        public override void Initialize(AI.MonsterController controller)
+        public override void Initialize(IEntityController controller)
         {
             base.Initialize(controller);
             _navAgent = controller.NavAgent;
@@ -35,7 +37,7 @@ namespace Monster.Ability
         // 이동 정지/재개
         public void Stop()
         {
-            if (_navAgent != null)
+            if (IsActive && _navAgent.isOnNavMesh)
             {
                 _navAgent.isStopped = true;
             }
@@ -43,7 +45,7 @@ namespace Monster.Ability
 
         public void Resume()
         {
-            if (_navAgent != null)
+            if (IsActive && _navAgent.isOnNavMesh)
             {
                 _navAgent.isStopped = false;
             }

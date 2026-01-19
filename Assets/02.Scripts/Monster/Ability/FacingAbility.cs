@@ -1,18 +1,20 @@
+using Common;
 using UnityEngine;
 
 namespace Monster.Ability
 {
     // 캐릭터 회전 및 방향 전환을 담당하는 Ability
+    // Monster와 Boss에서 공통으로 사용 가능
     public class FacingAbility : EntityAbility
     {
         private Transform _transform;
         private float _rotationSpeed;
 
-        public override void Initialize(AI.MonsterController controller)
+        public override void Initialize(IEntityController controller)
         {
             base.Initialize(controller);
             _transform = controller.transform;
-            _rotationSpeed = controller.Data.RotationSpeed;
+            _rotationSpeed = controller.RotationSpeed;
         }
 
         // 특정 위치를 향해 회전
