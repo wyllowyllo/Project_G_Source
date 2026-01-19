@@ -18,7 +18,11 @@ namespace Equipment
         [Header("Rotation Effect")]
         [SerializeField] private float _rotationSpeed = 90f;
 
+        [Header("Particle Effect")]
+        [SerializeField] private GameObject _particleRoot;
+
         private EquipmentTooltipController _tooltipController;
+        private ParticleSystem[] _particles;
         private Vector3 _initialLocalPosition;
         private bool _isHighlighted;
 
@@ -31,6 +35,11 @@ namespace Equipment
         {
             base.Awake();
             _tooltipController = GetComponent<EquipmentTooltipController>();
+
+            if (_particleRoot != null)
+            {
+                _particles = _particleRoot.GetComponentsInChildren<ParticleSystem>();
+            }
         }
 
         private Transform TargetTransform => _rootObject != null ? _rootObject.transform : transform;
@@ -67,7 +76,21 @@ namespace Equipment
         private void ApplyGradeColor()
         {
             if (_equipmentData == null || EquipmentGradeSettings.Instance == null) return;
-            SetOutlineColor(EquipmentGradeSettings.Instance.GetOutlineColor(_equipmentData.Grade));
+
+            var color = EquipmentGradeSettings.Instance.GetOutlineColor(_equipmentData.Grade);
+            SetOutlineColor(color);
+            ApplyParticleColor(color);
+        }
+
+        private void ApplyParticleColor(Color color)
+        {
+            if (_particles == null) return;
+
+            foreach (var particle in _particles)
+            {
+                var main = particle.main;
+                main.startColor = color;
+            }
         }
 
         public override bool CanInteract()
