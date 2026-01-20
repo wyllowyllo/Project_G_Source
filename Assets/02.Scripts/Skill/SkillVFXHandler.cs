@@ -6,8 +6,6 @@ namespace Skill
     [System.Serializable]
     public class VFXConfig
     {
-        [Tooltip("기본 프리팹 (랭크 1)")]
-        public GameObject prefab;
         [Tooltip("랭크별 프리팹 (인덱스 0 = 랭크 1, 인덱스 1 = 랭크 2, ...)")]
         public GameObject[] rankPrefabs;
         public Vector3 positionOffset;
@@ -88,7 +86,7 @@ namespace Skill
         private void HandleVFXRequest(SkillVFXRequest request)
         {
             VFXConfig config = GetVFXConfig(request.AreaType);
-            if (config?.prefab == null) return;
+            if (config?.rankPrefabs == null || config.rankPrefabs.Length == 0) return;
 
             int rank = request.Rank;
             GameObject prefabToSpawn = GetPrefabForRank(config, rank);
@@ -113,21 +111,18 @@ namespace Skill
 
         private GameObject GetPrefabForRank(VFXConfig config, int rank)
         {
-            if (config.rankPrefabs == null || config.rankPrefabs.Length == 0)
-                return config.prefab;
-
             int index = rank - 1;
             if (index < config.rankPrefabs.Length && config.rankPrefabs[index] != null)
                 return config.rankPrefabs[index];
 
-            // 해당 랭크 프리팹이 없으면 가장 높은 랭크 프리팹 사용
+            // 해당 랭크 프리팹이 없으면 가장 높은 유효 랭크 프리팹 사용
             for (int i = config.rankPrefabs.Length - 1; i >= 0; i--)
             {
                 if (config.rankPrefabs[i] != null)
                     return config.rankPrefabs[i];
             }
 
-            return config.prefab;
+            return null;
         }
 
         private VFXConfig GetVFXConfig(SkillAreaType areaType)
