@@ -12,6 +12,7 @@ namespace Skill
         public float ConeHeight { get; }
         public float BoxWidth { get; }
         public float BoxHeight { get; }
+        public int Rank { get; }
 
         public SkillVFXRequest(
             SkillAreaType areaType,
@@ -21,7 +22,8 @@ namespace Skill
             float angle = 0f,
             float coneHeight = 0f,
             float boxWidth = 0f,
-            float boxHeight = 0f)
+            float boxHeight = 0f,
+            int rank = 1)
         {
             AreaType = areaType;
             Origin = origin;
@@ -31,9 +33,10 @@ namespace Skill
             ConeHeight = coneHeight;
             BoxWidth = boxWidth;
             BoxHeight = boxHeight;
+            Rank = rank;
         }
 
-        public static SkillVFXRequest FromContext(SkillAreaContext context, Vector3 origin, Quaternion rotation)
+        public static SkillVFXRequest FromContext(SkillAreaContext context, Vector3 origin, Quaternion rotation, int rank = 1)
         {
             return new SkillVFXRequest(
                 context.AreaType,
@@ -43,7 +46,8 @@ namespace Skill
                 context.Angle,
                 context.ConeHeight,
                 context.BoxWidth,
-                context.BoxHeight);
+                context.BoxHeight,
+                rank);
         }
     }
 }
