@@ -65,7 +65,7 @@ public class SkillUIManager : MonoBehaviour
         }
     }
 
-    private void CreateSkillSlots()
+private void CreateSkillSlots()
     {
         if (skillSlotPrefab == null || skillGridContainer == null)
         {
@@ -84,6 +84,9 @@ public class SkillUIManager : MonoBehaviour
         for (int i = 0; i < skills.Count; i++)
         {
             GameObject slotObj = Instantiate(skillSlotPrefab, skillGridContainer);
+            // GameObject가 활성화되어 있는지 확인
+            slotObj.SetActive(true);
+            
             SkillSlotUI slot = slotObj.GetComponent<SkillSlotUI>();
             
             if (slot != null)
