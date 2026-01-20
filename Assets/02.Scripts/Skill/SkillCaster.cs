@@ -152,7 +152,8 @@ namespace Skill
 
             _combatant.SetSuperArmor(true);
             _targetController?.RotateTowardsNearestTarget();
-            _glideController.PrepareGlide();
+            int rank = _skillLevels[slot] + 1;
+            _glideController.PrepareGlide(rank);
             return true;
         }
 
