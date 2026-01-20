@@ -147,6 +147,10 @@ namespace Skill
             var tier = skill?.GetTier(_skillLevels[slot]);
             float cooldown = tier?.Cooldown ?? DEFAULT_GLIDE_COOLDOWN;
 
+            _currentSkill = skill;
+            _currentTier = tier;
+            _currentSlot = slot;
+
             _isCasting = true;
             _cooldownEndTimes[slot] = Time.time + cooldown;
             OnSkillUsed?.Invoke(slot, cooldown);
@@ -161,6 +165,8 @@ namespace Skill
         private void HandleGlideEnded()
         {
             _isCasting = false;
+            _currentSkill = null;
+            _currentTier = null;
             _combatant?.SetSuperArmor(false);
         }
 
@@ -174,6 +180,19 @@ namespace Skill
             );
 
             _skillHitbox.PerformCheck(context);
+
+            if (_currentSkill != null && _currentTier != null)
+            {
+                int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
+                var vfxRequest = SkillVFXRequest.Create(
+                    _currentSkill,
+                    _currentTier,
+                    transform.position,
+                    transform.rotation,
+                    rank
+                );
+                OnVFXRequested?.Invoke(vfxRequest);
+            }
         }
 
         public bool IsSkillReady(SkillSlot slot)
