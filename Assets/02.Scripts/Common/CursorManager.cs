@@ -38,7 +38,7 @@ namespace Common
 
         private void HandleInput()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.M))
             {
                 ToggleCursor();
             }
