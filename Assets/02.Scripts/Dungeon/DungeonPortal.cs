@@ -14,7 +14,13 @@ namespace Dungeon
         private DungeonManager _dungeonManager;
 
         public override string InteractionPrompt =>
-            _dungeonData != null ? $"[F] Enter {_dungeonData.DisplayName}" : "[F] Enter Dungeon";
+            _dungeonData != null ? $"Enter {_dungeonData.DisplayName}" : "Enter Dungeon";
+
+        protected override void Awake()
+        {
+            _autoInteractOnEnter = true;
+            base.Awake();
+        }
 
         private void OnEnable()
         {
