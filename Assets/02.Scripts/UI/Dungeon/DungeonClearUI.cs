@@ -147,7 +147,7 @@ public class DungeonClearUI : MonoBehaviour
         );
 
         // Complete 이미지 나타나기 전 짧은 대기
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.7f);
     }
 
     // Complete 이미지가 나타나는 애니메이션
