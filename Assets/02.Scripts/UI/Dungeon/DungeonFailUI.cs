@@ -34,11 +34,16 @@ public class DungeonFailUI : MonoBehaviour
     private RectTransform _dungeonNameRectTransform;
     private CanvasGroup _canvasGroup;
     private CanvasGroup _returnMessageCanvasGroup;
-    private CanvasGroup _failCanvasGroup; // Complete 이미지용 CanvasGroup
+    private CanvasGroup _failCanvasGroup;
     private CanvasGroup _backgroundCanvasGroup;
     private CanvasGroup _dungeonNameCanvasGroup;
     private Vector2 _startPosition;
     private Vector2 _targetPosition;
+
+    [SerializeField] private string _returnMessage = "3초 후 도시로 이동합니다.";
+    [SerializeField] private string _countdownMessageFormat = "{0}초 후 도시로 이동합니다.";
+    [SerializeField] private float _countdownInterval = 1f; // 카운트다운 간격 (초)
+
 
     private void Awake()
     {
@@ -68,12 +73,12 @@ public class DungeonFailUI : MonoBehaviour
         }
     }
 
-    public void ShowDungeonClear(string dungeonName = "")
+    public void ShowDungeonFail(string dungeonName = "")
     {
-        StartCoroutine(DungeonClearAnimation(dungeonName));
+        StartCoroutine(DungeonFailAnimation(dungeonName));
     }
 
-    private IEnumerator DungeonClearAnimation(string dungeonName)
+    private IEnumerator DungeonFailAnimation(string dungeonName)
     {
         InitializeUI(dungeonName);
 
@@ -113,7 +118,7 @@ public class DungeonFailUI : MonoBehaviour
 
         if (_returnMessageText != null)
         {
-            _returnMessageText.text = "3초후 도시로 이동합니다.";
+            _returnMessageText.text = _returnMessage;
         }
 
         // Complete 이미지 CanvasGroup 초기화
@@ -264,8 +269,8 @@ public class DungeonFailUI : MonoBehaviour
         // 카운트다운 (3 -> 2 -> 1)
         for (int countdown = 3; countdown > 0; countdown--)
         {
-            _returnMessageText.text = $"{countdown}초후 도시로 이동합니다";
-            yield return new WaitForSeconds(1f);
+            _returnMessageText.text = string.Format(_countdownMessageFormat, countdown);
+            yield return new WaitForSeconds(_countdownInterval);
         }
 
         // 페이드 아웃
@@ -331,8 +336,8 @@ public class DungeonFailUI : MonoBehaviour
     }
 
     // 외부에서 던전 클리어를 트리거하는 예시 메서드
-    public void OnDungeonCompleted()
+    public void OnDungeonFailed()
     {
-        ShowDungeonClear("뭉글뭉글 언덕");
+        ShowDungeonFail("뭉글뭉글 언덕");
     }
 }

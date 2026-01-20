@@ -33,7 +33,7 @@ public class DungeonFailTest : MonoBehaviour
         }
 
         // 던전 클리어 애니메이션 실행
-        dungeonFailUI.ShowDungeonClear(testDungeonName);
+        dungeonFailUI.ShowDungeonFail(testDungeonName);
     }
 
     // Inspector에서 테스트 버튼으로 실행하기
