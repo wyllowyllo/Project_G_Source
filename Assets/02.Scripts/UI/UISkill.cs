@@ -14,6 +14,11 @@ public class UISkill : MonoBehaviour
     [SerializeField] private Image _imageCooldownTime;
     [SerializeField] private Image _imageCooldownComplete;
 
+    private Transform _skillButtonScale;
+    private Vector3 _skillDefaultScale;
+    private float _skillSizeRate = 0.8f;
+    [SerializeField] private float _sizeChangeDuration = 0.1f;
+
     private float _currentCooldownTime;
     private bool _isCooldown;
 
@@ -24,6 +29,9 @@ public class UISkill : MonoBehaviour
     {
         SetCooldownIs(false);
         SetUseSkillText();
+
+        _skillButtonScale = transform;
+        _skillDefaultScale = _skillButtonScale.localScale;
     }
 
     public void UseSkill()
@@ -42,11 +50,13 @@ public class UISkill : MonoBehaviour
 
     private IEnumerator OnCooldownTime(float cooldownTime)
     {
-        
+
         _currentCooldownTime = _maxCooldownTime;
         SetCooldownIs(true);
 
-        while(_currentCooldownTime > 0)
+        StartCoroutine(nameof(AnimateButtonSize));
+
+        while (_currentCooldownTime > 0)
         {
             _currentCooldownTime -= Time.deltaTime;
             _imageCooldownTime.fillAmount = _currentCooldownTime / _maxCooldownTime;
@@ -57,6 +67,35 @@ public class UISkill : MonoBehaviour
 
         SetCooldownIs(false);
         StartCoroutine(nameof(ImageCooldownComplete));
+    }
+
+    private IEnumerator AnimateButtonSize()
+    {
+        float elapsed = 0f;
+        Vector3 targetScale = _skillDefaultScale * _skillSizeRate;
+
+        while (elapsed < _sizeChangeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / _sizeChangeDuration;
+            _skillButtonScale.localScale = Vector3.Lerp(_skillDefaultScale, targetScale, t);
+            yield return null;
+        }
+
+        _skillButtonScale.localScale = targetScale;
+
+        elapsed = 0f;
+
+        // 다시 커지는 애니메이션
+        while (elapsed < _sizeChangeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / _sizeChangeDuration;
+            _skillButtonScale.localScale = Vector3.Lerp(targetScale, _skillDefaultScale, t);
+            yield return null;
+        }
+
+        _skillButtonScale.localScale = _skillDefaultScale;
     }
 
     private void SetUseSkillText()
@@ -154,4 +193,5 @@ public class UISkill : MonoBehaviour
         _maxCooldownTime = cooldownTime;
         StartCoroutine(nameof(OnCooldownTime), cooldownTime);
     }
+
 }
