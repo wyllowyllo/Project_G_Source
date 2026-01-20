@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class DungeonFailUI : MonoBehaviour
 {
@@ -44,6 +45,7 @@ public class DungeonFailUI : MonoBehaviour
     [SerializeField] private string _countdownMessageFormat = "{0}초 후 도시로 이동합니다.";
     [SerializeField] private float _countdownInterval = 1f; // 카운트다운 간격 (초)
 
+    public event Action OnAnimationComplete;
 
     private void Awake()
     {
@@ -98,6 +100,8 @@ public class DungeonFailUI : MonoBehaviour
         {
             _failPanel.SetActive(false);
         }
+
+        OnAnimationComplete?.Invoke();
     }
 
     // UI 요소 초기화 및 초기 상태 설정
