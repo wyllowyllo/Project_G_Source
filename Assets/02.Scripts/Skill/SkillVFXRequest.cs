@@ -13,41 +13,58 @@ namespace Skill
         public float BoxWidth { get; }
         public float BoxHeight { get; }
         public int Rank { get; }
+        public GameObject[] EffectPrefabs { get; }
+        public Vector3 VFXPositionOffset { get; }
+        public Vector3 VFXRotationOffset { get; }
 
         public SkillVFXRequest(
             SkillAreaType areaType,
             Vector3 origin,
             Quaternion rotation,
             float range,
+            int rank,
+            GameObject[] effectPrefabs,
+            Vector3 vfxPositionOffset,
+            Vector3 vfxRotationOffset,
             float angle = 0f,
             float coneHeight = 0f,
             float boxWidth = 0f,
-            float boxHeight = 0f,
-            int rank = 1)
+            float boxHeight = 0f)
         {
             AreaType = areaType;
             Origin = origin;
             Rotation = rotation;
             Range = range;
+            Rank = rank;
+            EffectPrefabs = effectPrefabs;
+            VFXPositionOffset = vfxPositionOffset;
+            VFXRotationOffset = vfxRotationOffset;
             Angle = angle;
             ConeHeight = coneHeight;
             BoxWidth = boxWidth;
             BoxHeight = boxHeight;
-            Rank = rank;
         }
 
-        public static SkillVFXRequest FromContext(SkillAreaContext context, Vector3 origin, Quaternion rotation, int rank = 1)
+        public static SkillVFXRequest Create(
+            PlayerSkillData skillData,
+            SkillTierData tierData,
+            Vector3 origin,
+            Quaternion rotation,
+            int rank)
         {
             return new SkillVFXRequest(
-                context.AreaType,
+                skillData.AreaType,
                 origin,
                 rotation,
-                context.Range,
-                context.Angle,
-                context.ConeHeight,
-                context.BoxWidth,
-                context.BoxHeight,
-                rank);
+                tierData.Range,
+                rank,
+                tierData.EffectPrefabs,
+                tierData.VFXPositionOffset,
+                tierData.VFXRotationOffset,
+                tierData.Angle,
+                tierData.ConeHeight,
+                tierData.BoxWidth,
+                tierData.BoxHeight);
         }
     }
 }

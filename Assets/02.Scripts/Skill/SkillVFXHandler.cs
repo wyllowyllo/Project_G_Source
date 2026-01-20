@@ -4,15 +4,6 @@ using UnityEngine;
 namespace Skill
 {
     [System.Serializable]
-    public class VFXConfig
-    {
-        [Tooltip("랭크별 프리팹 (인덱스 0 = 랭크 1, 인덱스 1 = 랭크 2, ...)")]
-        public GameObject[] rankPrefabs;
-        public Vector3 positionOffset;
-        public Vector3 rotationOffset;
-    }
-
-    [System.Serializable]
     public class RankEnhancementConfig
     {
         [Header("Emission")]
@@ -37,24 +28,19 @@ namespace Skill
         [Tooltip("Sphere 스킬용 오버레이")]
         public GameObject sphereOverlayPrefab;
         [Tooltip("Sphere 오버레이 위치 오프셋 (로컬)")]
-        public Vector3 sphereOverlayOffset;
+        public Vector3 sphereOverlayOffset = Vector3.zero;
         [Tooltip("Box 스킬용 오버레이")]
         public GameObject boxOverlayPrefab;
         [Tooltip("Box 오버레이 위치 오프셋 (로컬)")]
-        public Vector3 boxOverlayOffset;
+        public Vector3 boxOverlayOffset = new Vector3(0.0f, 0.0f, -8.0f);
         [Tooltip("Cone 스킬용 오버레이")]
         public GameObject coneOverlayPrefab;
         [Tooltip("Cone 오버레이 위치 오프셋 (로컬)")]
-        public Vector3 coneOverlayOffset;
+        public Vector3 coneOverlayOffset = Vector3.zero;
     }
 
     public class SkillVFXHandler : MonoBehaviour
     {
-        [Header("VFX Configs")]
-        [SerializeField] private VFXConfig _sphereVFX;
-        [SerializeField] private VFXConfig _boxVFX;
-        [SerializeField] private VFXConfig _coneVFX;
-
         [Header("Settings")]
         [SerializeField] private bool _scaleToRange = true;
 
@@ -62,38 +48,37 @@ namespace Skill
         [SerializeField] private bool _enableRankEnhancement = true;
         [SerializeField] private RankEnhancementConfig _rankConfig = new RankEnhancementConfig();
 
-        private SkillHitbox _skillHitbox;
+        private SkillCaster _skillCaster;
 
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         private void Awake()
         {
-            _skillHitbox = GetComponent<SkillHitbox>();
+            _skillCaster = GetComponent<SkillCaster>();
         }
 
         private void OnEnable()
         {
-            if (_skillHitbox != null)
-                _skillHitbox.OnVFXRequested += HandleVFXRequest;
+            if (_skillCaster != null)
+                _skillCaster.OnVFXRequested += HandleVFXRequest;
         }
 
         private void OnDisable()
         {
-            if (_skillHitbox != null)
-                _skillHitbox.OnVFXRequested -= HandleVFXRequest;
+            if (_skillCaster != null)
+                _skillCaster.OnVFXRequested -= HandleVFXRequest;
         }
 
-        private void HandleVFXRequest(SkillVFXRequest request)
+        public void HandleVFXRequest(SkillVFXRequest request)
         {
-            VFXConfig config = GetVFXConfig(request.AreaType);
-            if (config?.rankPrefabs == null || config.rankPrefabs.Length == 0) return;
+            if (request.EffectPrefabs == null || request.EffectPrefabs.Length == 0) return;
 
             int rank = request.Rank;
-            GameObject prefabToSpawn = GetPrefabForRank(config, rank);
+            GameObject prefabToSpawn = GetPrefabForRank(request.EffectPrefabs, rank);
             if (prefabToSpawn == null) return;
 
-            Vector3 finalPosition = request.Origin + request.Rotation * config.positionOffset;
-            Quaternion finalRotation = request.Rotation * Quaternion.Euler(config.rotationOffset);
+            Vector3 finalPosition = request.Origin + request.Rotation * request.VFXPositionOffset;
+            Quaternion finalRotation = request.Rotation * Quaternion.Euler(request.VFXRotationOffset);
             GameObject vfx = PoolSpawner.Spawn(prefabToSpawn, finalPosition, finalRotation);
 
             if (vfx == null) return;
@@ -109,31 +94,20 @@ namespace Skill
             }
         }
 
-        private GameObject GetPrefabForRank(VFXConfig config, int rank)
+        private GameObject GetPrefabForRank(GameObject[] prefabs, int rank)
         {
             int index = rank - 1;
-            if (index < config.rankPrefabs.Length && config.rankPrefabs[index] != null)
-                return config.rankPrefabs[index];
+            if (index < prefabs.Length && prefabs[index] != null)
+                return prefabs[index];
 
             // 해당 랭크 프리팹이 없으면 가장 높은 유효 랭크 프리팹 사용
-            for (int i = config.rankPrefabs.Length - 1; i >= 0; i--)
+            for (int i = prefabs.Length - 1; i >= 0; i--)
             {
-                if (config.rankPrefabs[i] != null)
-                    return config.rankPrefabs[i];
+                if (prefabs[i] != null)
+                    return prefabs[i];
             }
 
             return null;
-        }
-
-        private VFXConfig GetVFXConfig(SkillAreaType areaType)
-        {
-            return areaType switch
-            {
-                SkillAreaType.Sphere => _sphereVFX,
-                SkillAreaType.Box => _boxVFX,
-                SkillAreaType.Cone => _coneVFX,
-                _ => null
-            };
         }
 
         private void ApplyScale(GameObject vfx, SkillVFXRequest request)

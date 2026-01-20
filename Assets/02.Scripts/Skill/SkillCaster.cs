@@ -53,6 +53,7 @@ namespace Skill
         public bool IsCasting => _isCasting;
         public event Action<SkillSlot, float> OnSkillUsed;
         public event Action<HitInfo> OnSkillHit;
+        public event Action<SkillVFXRequest> OnVFXRequested;
 
         private PlayerSkillData GetSkillData(SkillSlot slot) => slot switch
         {
@@ -244,7 +245,14 @@ namespace Skill
             );
             _skillHitbox.PerformCheck(areaContext);
 
-            SpawnEffect(_currentTier);
+            var vfxRequest = SkillVFXRequest.Create(
+                _currentSkill,
+                _currentTier,
+                transform.position,
+                transform.rotation,
+                rank
+            );
+            OnVFXRequested?.Invoke(vfxRequest);
         }
 
         private void HandleHit(HitInfo hitInfo)
@@ -256,28 +264,6 @@ namespace Skill
             );
             hitInfo.Target.TakeDamage(damageInfo);
             OnSkillHit?.Invoke(hitInfo);
-        }
-
-        private void SpawnEffect(SkillTierData tier)
-        {
-            if (tier.EffectPrefab != null)
-            {
-                Instantiate(tier.EffectPrefab, transform.position, transform.rotation);
-            }
-            else
-            {
-                SkillDebugVisual.Spawn(
-                    _currentSkill.AreaType,
-                    transform.position,
-                    transform.rotation,
-                    tier.Range,
-                    tier.Angle,
-                    tier.ConeHeight,
-                    tier.BoxWidth,
-                    tier.BoxHeight,
-                    tier.PositionOffset
-                );
-            }
         }
 
         private void HandleSkillEnhanced(SkillSlot slot)
