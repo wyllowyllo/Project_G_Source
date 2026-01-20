@@ -55,8 +55,10 @@ public class PauseManager : MonoBehaviour
     {
         IsPaused = paused;
 
-/*        if (pauseTimeScale)
-            Time.timeScale = paused ? 0f : 1f;*/
+        if (pauseTimeScale)
+        { 
+            Time.timeScale = paused ? 0f : 1f;
+        }
 
         if (pausePanel != null)
             pausePanel.SetActive(paused);
@@ -76,7 +78,9 @@ public class PauseManager : MonoBehaviour
 
     private void OnDestroy()
     {
-/*        if (Instance == this && Time.timeScale == 0f)
-            Time.timeScale = 1f;*/
+        if (Instance == this && Time.timeScale == 0f)
+        { 
+            Time.timeScale = 1f;
+        }
     }
 }

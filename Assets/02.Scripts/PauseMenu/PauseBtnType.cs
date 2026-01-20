@@ -40,12 +40,12 @@ public class PauseMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
                 break;
 
             case PauseButtonType.MainMenu:
-/*                Time.timeScale = 1f;*/
+                Time.timeScale = 1f;
                 SceneLoader.LoadScene("MainScene");
                 break;
 
             case PauseButtonType.GameEnd:
-/*                Time.timeScale = 1f;*/
+                Time.timeScale = 1f;
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
 #else
