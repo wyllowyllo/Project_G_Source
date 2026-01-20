@@ -2,11 +2,18 @@ using UnityEngine;
 
 public class BillboardCanvas : MonoBehaviour
 {
-    private Transform _cameraTransform;
+    [SerializeField] private Transform _cameraTransform;
 
-    private void Start()
+    private void Awake()
     {
-        _cameraTransform = Camera.main.transform;
+        if (_cameraTransform == null)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                _cameraTransform = mainCamera.transform;
+            }
+        }
     }
 
     private void LateUpdate()
