@@ -49,6 +49,7 @@ namespace Skill
         [SerializeField] private RankEnhancementConfig _rankConfig = new RankEnhancementConfig();
 
         private SkillCaster _skillCaster;
+        private MaterialPropertyBlock _propertyBlock;
 
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
@@ -137,15 +138,21 @@ namespace Skill
         {
             float intensityMultiplier = 1f + bonusRank * _rankConfig.emissionIntensityPerRank;
 
+            _propertyBlock ??= new MaterialPropertyBlock();
+
             var renderers = vfx.GetComponentsInChildren<Renderer>();
             foreach (var renderer in renderers)
             {
-                foreach (var mat in renderer.materials)
+                var sharedMats = renderer.sharedMaterials;
+                for (int i = 0; i < sharedMats.Length; i++)
                 {
-                    if (!mat.HasProperty(EmissionColor)) continue;
+                    var mat = sharedMats[i];
+                    if (mat == null || !mat.HasProperty(EmissionColor)) continue;
 
                     Color baseColor = mat.GetColor(EmissionColor);
-                    mat.SetColor(EmissionColor, baseColor * intensityMultiplier);
+                    renderer.GetPropertyBlock(_propertyBlock, i);
+                    _propertyBlock.SetColor(EmissionColor, baseColor * intensityMultiplier);
+                    renderer.SetPropertyBlock(_propertyBlock, i);
                 }
             }
         }

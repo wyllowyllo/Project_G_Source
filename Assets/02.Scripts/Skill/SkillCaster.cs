@@ -167,6 +167,7 @@ namespace Skill
             _isCasting = false;
             _currentSkill = null;
             _currentTier = null;
+            _currentSlot = SkillSlot.None;
             _combatant?.SetSuperArmor(false);
         }
 
@@ -183,7 +184,7 @@ namespace Skill
 
             if (_currentSkill != null && _currentTier != null)
             {
-                int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
+                int rank = GetCurrentSkillRank();
                 var vfxRequest = SkillVFXRequest.Create(
                     _currentSkill,
                     _currentTier,
@@ -205,6 +206,11 @@ namespace Skill
         {
             if (!_cooldownEndTimes.TryGetValue(slot, out float endTime)) return 0f;
             return Mathf.Max(0f, endTime - Time.time);
+        }
+
+        private int GetCurrentSkillRank()
+        {
+            return _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
         }
 
         private void ExecuteSkill(PlayerSkillData skill, SkillSlot slot)
@@ -254,7 +260,7 @@ namespace Skill
             if (!_isCasting || _currentSkill == null || _currentTier == null)
                 return;
 
-            int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
+            int rank = GetCurrentSkillRank();
             var areaContext = SkillAreaContext.Create(
                 _currentSkill,
                 _currentTier,
@@ -306,6 +312,7 @@ namespace Skill
             _isCasting = false;
             _currentSkill = null;
             _currentTier = null;
+            _currentSlot = SkillSlot.None;
             _combatant?.SetSuperArmor(false);
             _animationController?.EndSkill();
         }
@@ -326,6 +333,7 @@ namespace Skill
             _isCasting = false;
             _currentSkill = null;
             _currentTier = null;
+            _currentSlot = SkillSlot.None;
             _combatant?.SetSuperArmor(false);
         }
 
