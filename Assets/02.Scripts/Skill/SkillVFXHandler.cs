@@ -31,12 +31,22 @@ namespace Skill
         public float simulationSpeedPerRank = 0.05f;
 
         [Header("Overlay VFX")]
-        [Tooltip("랭크 2 이상에서 추가되는 오버레이 이펙트")]
-        public GameObject overlayPrefab;
         [Tooltip("오버레이가 적용되는 최소 랭크")]
         public int overlayMinRank = 2;
         [Tooltip("랭크당 오버레이 스케일 배율")]
         public float overlayScalePerRank = 0.15f;
+        [Tooltip("Sphere 스킬용 오버레이")]
+        public GameObject sphereOverlayPrefab;
+        [Tooltip("Sphere 오버레이 위치 오프셋 (로컬)")]
+        public Vector3 sphereOverlayOffset;
+        [Tooltip("Box 스킬용 오버레이")]
+        public GameObject boxOverlayPrefab;
+        [Tooltip("Box 오버레이 위치 오프셋 (로컬)")]
+        public Vector3 boxOverlayOffset;
+        [Tooltip("Cone 스킬용 오버레이")]
+        public GameObject coneOverlayPrefab;
+        [Tooltip("Cone 오버레이 위치 오프셋 (로컬)")]
+        public Vector3 coneOverlayOffset;
     }
 
     public class SkillVFXHandler : MonoBehaviour
@@ -127,7 +137,7 @@ namespace Skill
             int rank = GetCurrentRank();
             if (_enableRankEnhancement && rank > 1)
             {
-                ApplyRankEnhancement(vfx, rank, finalPosition, finalRotation);
+                ApplyRankEnhancement(vfx, rank, request.AreaType, finalPosition, finalRotation);
             }
         }
 
@@ -155,14 +165,14 @@ namespace Skill
             vfx.transform.localScale = scale;
         }
 
-        private void ApplyRankEnhancement(GameObject vfx, int rank, Vector3 position, Quaternion rotation)
+        private void ApplyRankEnhancement(GameObject vfx, int rank, SkillAreaType areaType, Vector3 position, Quaternion rotation)
         {
             int bonusRank = rank - 1;
 
             ApplyEmissionEnhancement(vfx, bonusRank);
             ApplyParticleEnhancement(vfx, bonusRank);
             ApplySimulationSpeedEnhancement(vfx, bonusRank);
-            SpawnOverlayVFX(rank, bonusRank, position, rotation);
+            SpawnOverlayVFX(rank, bonusRank, areaType, position, rotation);
         }
 
         private void ApplyEmissionEnhancement(GameObject vfx, int bonusRank)
@@ -210,12 +220,22 @@ namespace Skill
             }
         }
 
-        private void SpawnOverlayVFX(int rank, int bonusRank, Vector3 position, Quaternion rotation)
+        private void SpawnOverlayVFX(int rank, int bonusRank, SkillAreaType areaType, Vector3 position, Quaternion rotation)
         {
-            if (_rankConfig.overlayPrefab == null) return;
             if (rank < _rankConfig.overlayMinRank) return;
 
-            GameObject overlay = PoolSpawner.Spawn(_rankConfig.overlayPrefab, position, rotation);
+            var (prefab, offset) = areaType switch
+            {
+                SkillAreaType.Sphere => (_rankConfig.sphereOverlayPrefab, _rankConfig.sphereOverlayOffset),
+                SkillAreaType.Box => (_rankConfig.boxOverlayPrefab, _rankConfig.boxOverlayOffset),
+                SkillAreaType.Cone => (_rankConfig.coneOverlayPrefab, _rankConfig.coneOverlayOffset),
+                _ => (null, Vector3.zero)
+            };
+
+            if (prefab == null) return;
+
+            Vector3 finalPosition = position + rotation * offset;
+            GameObject overlay = PoolSpawner.Spawn(prefab, finalPosition, rotation);
             if (overlay == null) return;
 
             float scaleMultiplier = 1f + bonusRank * _rankConfig.overlayScalePerRank;
