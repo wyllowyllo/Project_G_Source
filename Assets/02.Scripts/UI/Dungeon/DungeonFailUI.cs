@@ -9,11 +9,16 @@ public class DungeonFailUI : MonoBehaviour
     [SerializeField] private GameObject _failPanel;
     [SerializeField] private Image _failImage;
     [SerializeField] private TextMeshProUGUI _dungeonNameText;
+    [SerializeField] private TextMeshProUGUI _returnMessageText;
 
     [Header("애니메이션 설정")]
     [SerializeField] private float _slideSpeed = 1000f;
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeSpeed = 1f;
+
+    [Header("도시 이동 메세지")]
+    [SerializeField] private float _returnMessageFadeSpeed = 0.7f;
+    [SerializeField] private float _returnMessageDisplayDuration = 2f;
 
     [Header("위치 설정")]
     [SerializeField] private float _startOffsetX = 1518f;
@@ -28,6 +33,7 @@ public class DungeonFailUI : MonoBehaviour
     private RectTransform _backgroundRectTransform;
     private RectTransform _dungeonNameRectTransform;
     private CanvasGroup _canvasGroup;
+    private CanvasGroup _returnMessageCanvasGroup;
     private CanvasGroup _failCanvasGroup; // Complete 이미지용 CanvasGroup
     private CanvasGroup _backgroundCanvasGroup;
     private CanvasGroup _dungeonNameCanvasGroup;
@@ -81,6 +87,8 @@ public class DungeonFailUI : MonoBehaviour
 
         yield return StartCoroutine(AnimateOutro());
 
+        yield return StartCoroutine(AnimateReturnMessage());
+
         if (_failPanel != null)
         {
             _failPanel.SetActive(false);
@@ -103,6 +111,11 @@ public class DungeonFailUI : MonoBehaviour
             _dungeonNameText.text = dungeonName;
         }
 
+        if (_returnMessageText != null)
+        {
+            _returnMessageText.text = "3초후 도시로 이동합니다.";
+        }
+
         // Complete 이미지 CanvasGroup 초기화
         InitializeCanvasGroup(_failImage.gameObject, ref _failCanvasGroup);
 
@@ -118,6 +131,12 @@ public class DungeonFailUI : MonoBehaviour
         {
             _dungeonNameRectTransform = _dungeonNameText.GetComponent<RectTransform>();
             InitializeCanvasGroup(_dungeonNameText.gameObject, ref _dungeonNameCanvasGroup);
+        }
+
+        // 도시 이동 메시지 초기화
+        if (_returnMessageText != null)
+        {
+            InitializeCanvasGroup(_returnMessageText.gameObject, ref _returnMessageCanvasGroup);
         }
     }
 
@@ -216,6 +235,49 @@ public class DungeonFailUI : MonoBehaviour
         SetAlpha(_failCanvasGroup, 0f);
         SetAlpha(_backgroundCanvasGroup, 0f);
         SetAlpha(_dungeonNameCanvasGroup, 0f);
+    }
+
+    private IEnumerator AnimateReturnMessage()
+    {
+        if (_returnMessageCanvasGroup == null || _returnMessageText == null)
+        {
+            yield break;
+        }
+
+        if (_canvasGroup != null)
+        {
+            _canvasGroup.alpha = 1f;
+        }
+
+
+        // 페이드 인
+        float fadeElapsed = 0f;
+        while (fadeElapsed < _returnMessageFadeSpeed)
+        {
+            fadeElapsed += Time.deltaTime;
+            float alpha = fadeElapsed / _returnMessageFadeSpeed;
+            _returnMessageCanvasGroup.alpha = alpha;
+            yield return null;
+        }
+        _returnMessageCanvasGroup.alpha = 1f;
+
+        // 카운트다운 (3 -> 2 -> 1)
+        for (int countdown = 3; countdown > 0; countdown--)
+        {
+            _returnMessageText.text = $"{countdown}초후 도시로 이동합니다";
+            yield return new WaitForSeconds(1f);
+        }
+
+        // 페이드 아웃
+        fadeElapsed = 0f;
+        while (fadeElapsed < _returnMessageFadeSpeed)
+        {
+            fadeElapsed += Time.deltaTime;
+            float alpha = 1f - (fadeElapsed / _returnMessageFadeSpeed);
+            _returnMessageCanvasGroup.alpha = alpha;
+            yield return null;
+        }
+        _returnMessageCanvasGroup.alpha = 0f;
     }
 
     // CanvasGroup의 알파값을 안전하게 설정
