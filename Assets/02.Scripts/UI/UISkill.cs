@@ -17,7 +17,7 @@ public class UISkill : MonoBehaviour
     private Transform _skillButtonScale;
     private Vector3 _skillDefaultScale;
     private float _skillSizeRate = 0.8f;
-    [SerializeField] private float _sizeChangeDuration = 0.1f;
+    [SerializeField] private float _sizeChangeDuration = 0.05f;
 
     private float _currentCooldownTime;
     private bool _isCooldown;
