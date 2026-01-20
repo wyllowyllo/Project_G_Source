@@ -43,6 +43,16 @@ public class MissionPanel : MonoBehaviour
 
     private void Start()
     {
+        // MonsterTracker가 OnEnable에서 초기화되지 않았다면 Start에서 재시도
+        if (_monsterTracker == null)
+        {
+            _monsterTracker = MonsterTracker.Instance;
+            if (_monsterTracker != null)
+            {
+                _monsterTracker.OnAllMonstersDefeated.AddListener(OnAllMonstersDefeated);
+            }
+        }
+
         if (_dungeonManager != null && _dungeonManager.IsInDungeon)
         {
             _isCleared = false;
@@ -82,15 +92,6 @@ public class MissionPanel : MonoBehaviour
 
     private void Update()
     {
-        if (_monsterTracker == null)
-        {
-            _monsterTracker = MonsterTracker.Instance;
-            if (_monsterTracker != null)
-            {
-                _monsterTracker.OnAllMonstersDefeated.AddListener(OnAllMonstersDefeated);
-            }
-        }
-
         // 패널이 활성화되어 있고 클리어되지 않았으면 텍스트 업데이트
         if (_missionPanel != null && _missionPanel.activeSelf && !_isCleared)
         {
