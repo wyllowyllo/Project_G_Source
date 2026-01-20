@@ -41,7 +41,7 @@ public class SkillTooltip : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public void ShowTooltip(SkillData skillData, RectTransform slotTransform)
+public void ShowTooltip(SkillData skillData, RectTransform slotTransform)
     {
         if (skillData == null || slotTransform == null) return;
 
@@ -73,15 +73,30 @@ public class SkillTooltip : MonoBehaviour
         gameObject.SetActive(true);
         isVisible = true;
 
+        // GameObject가 활성화된 후에만 코루틴 시작
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
         }
-        fadeCoroutine = StartCoroutine(FadeIn());
+        
+        // activeInHierarchy 체크 후 코루틴 시작
+        if (gameObject.activeInHierarchy)
+        {
+            fadeCoroutine = StartCoroutine(FadeIn());
+        }
+        else
+        {
+            // 활성화되지 않았다면 즉시 보이게 설정
+            canvasGroup.alpha = 1f;
+        }
     }
 
-    public void HideTooltip()
+public void HideTooltip()
     {
+        // GameObject가 비활성 상태면 아무것도 하지 않음
+        if (!gameObject.activeInHierarchy)
+            return;
+            
         isVisible = false;
 
         if (fadeCoroutine != null)

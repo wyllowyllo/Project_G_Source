@@ -8,23 +8,39 @@ namespace Dungeon
     public class DungeonFailHandler : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private float _autoReturnDelay = 10f;
         [SerializeField] private float _inputAcceptDelay = 1f;
+
+        [Header("UI Reference")]
+        [SerializeField] private DungeonFailUI _dungeonFailUI;
 
         public event Action OnFailSequenceStarted;
         public event Action OnInputAccepted;
         public event Action OnReturnToTown;
 
         private DungeonManager _dungeonManager;
-        private Coroutine _returnCoroutine;
         private bool _canAcceptInput;
+        private bool _animationCompleted;
 
         private void OnEnable()
         {
+            if (_dungeonFailUI == null)
+            {
+                _dungeonFailUI = FindObjectOfType<DungeonFailUI>(true);
+            }
+
             _dungeonManager = DungeonManager.Instance;
             if (_dungeonManager != null)
             {
                 _dungeonManager.DungeonFailed += HandleDungeonFailed;
+            }
+
+            if (_dungeonFailUI != null)
+            {
+                _dungeonFailUI.OnAnimationComplete += HandleAnimationComplete;
+            }
+            else
+            {
+                Debug.LogWarning($"[{nameof(DungeonFailHandler)}] DungeonFailUI not found in current scene!");
             }
         }
 
@@ -34,7 +50,11 @@ namespace Dungeon
             {
                 _dungeonManager.DungeonFailed -= HandleDungeonFailed;
             }
-            StopReturnCoroutine();
+
+            if (_dungeonFailUI != null)
+            {
+                _dungeonFailUI.OnAnimationComplete -= HandleAnimationComplete;
+            }
         }
 
         private void Update()
@@ -51,38 +71,40 @@ namespace Dungeon
 
         private void HandleDungeonFailed()
         {
-            StopReturnCoroutine();
-            _returnCoroutine = StartCoroutine(FailSequence());
+            _animationCompleted = false;
+            StartCoroutine(FailSequence());
         }
 
-        private IEnumerator FailSequence()
+private IEnumerator FailSequence()
         {
             _canAcceptInput = false;
             OnFailSequenceStarted?.Invoke();
+
+            // 던전 실패 UI 표시
+            if (_dungeonFailUI != null)
+            {
+                string dungeonName = _dungeonManager?.CurrentDungeon?.DisplayName ?? "";
+                _dungeonFailUI.ShowDungeonFail(dungeonName);
+            }
 
             yield return new WaitForSeconds(_inputAcceptDelay);
             _canAcceptInput = true;
             OnInputAccepted?.Invoke();
 
-            yield return new WaitForSeconds(_autoReturnDelay - _inputAcceptDelay);
+            yield return new WaitUntil(() => _animationCompleted);
             ReturnToTown();
+        }
+
+        private void HandleAnimationComplete()
+        {
+            _animationCompleted = true;
         }
 
         private void ReturnToTown()
         {
-            StopReturnCoroutine();
             _canAcceptInput = false;
             OnReturnToTown?.Invoke();
             _dungeonManager?.ReturnToTown();
-        }
-
-        private void StopReturnCoroutine()
-        {
-            if (_returnCoroutine != null)
-            {
-                StopCoroutine(_returnCoroutine);
-                _returnCoroutine = null;
-            }
         }
     }
 }

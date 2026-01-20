@@ -1,34 +1,32 @@
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System.Collections;
-using System.Collections.Generic;
+using Skill;
 
 public class SkillSystem : MonoBehaviour
 {
     [SerializeField] private UISkill[] _skills;
+    [SerializeField] private SkillCaster _skillCaster;
 
-    private void Update()
+    private void Start()
     {
-        if (Input.anyKeyDown && int.TryParse(Input.inputString, out int key) && key >= 1 && key <= _skills.Length)
+        if (_skillCaster == null)
         {
-            _skills[key - 1].UseSkill();
+            Debug.LogError($"[{nameof(SkillSystem)}] SkillCaster가 할당되지 않았습니다.", this);
+            return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            _skills[0].UseSkill();
-        }
-
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            _skills[1].UseSkill();
-        }
-
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            _skills[2].UseSkill();
-        }
+        BindSkillsToSlots();
     }
 
+    private static readonly SkillSlot[] SlotOrder = { SkillSlot.Q, SkillSlot.E, SkillSlot.R };
+
+    private void BindSkillsToSlots()
+    {
+        if (_skills == null) return;
+
+        for (int i = 0; i < _skills.Length && i < SlotOrder.Length; i++)
+        {
+            if (_skills[i] != null)
+                _skills[i].BindToSkillCaster(_skillCaster, SlotOrder[i]);
+        }
+    }
 }

@@ -28,6 +28,8 @@ namespace Player
         [SerializeField] private Color32 _highHpColor = new Color32(0, 191, 5, 255);
         [SerializeField] private Color32 _mediumHpColor = new Color32(255, 204, 0, 255);
         [SerializeField] private Color32 _lowHpColor = new Color32(255, 77, 77, 255);
+        [SerializeField] private float _highHpThreshold = 0.5f;
+        [SerializeField] private float _lowHpThreshold = 0.3f;
 
         [SerializeField] private PlayerProgression _playerProgression;
 
@@ -46,6 +48,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged += HandleDamaged;
+                _playerCombatant.OnHealed += HandleHealed;
                 _playerCombatant.OnDeath += HandleDeath;
             }
         }
@@ -60,6 +63,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged -= HandleDamaged;
+                _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
             }
         }
@@ -100,6 +104,7 @@ namespace Player
             if (_playerCombatant != null)
             {
                 _playerCombatant.OnDamaged -= HandleDamaged;
+                _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
             }
         }
@@ -129,7 +134,7 @@ namespace Player
         {
             Debug.Log($"Player took {damageInfo.Amount} damage! (Critical: {damageInfo.IsCritical})");
 
-     
+
             _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
 
             _backHpDelayTimer = _backHpDelay;
@@ -142,6 +147,14 @@ namespace Player
             {
                 FlashCritical();
             }
+        }
+
+        private void HandleHealed(float _)
+        {
+            _targetHp = _playerCombatant.CurrentHealth / _playerCombatant.MaxHealth;
+            _backHpHit = false;
+            UpdateHpText();
+            UpdateHpColor();
         }
 
         private void HandleDeath()
@@ -189,11 +202,11 @@ namespace Player
         {
             Color newColor;
 
-            if (HpSlider.value > 0.5f)
+            if (_targetHp > _highHpThreshold)
             {
                 newColor = _highHpColor;
             }
-            else if (HpSlider.value > 0.3f)
+            else if (_targetHp > _lowHpThreshold)
             {
                 newColor = _mediumHpColor;
             }

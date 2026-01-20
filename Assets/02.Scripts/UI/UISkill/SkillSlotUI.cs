@@ -177,9 +177,13 @@ namespace UI.UISkill
             isAnimating = false;
         }
 
-        public void PlaySlideInAnimation(float delay)
+public void PlaySlideInAnimation(float delay)
         {
-            StartCoroutine(SlideInAnimation(delay));
+            // GameObject가 활성화되어 있을 때만 코루틴 시작
+            if (gameObject.activeInHierarchy)
+            {
+                StartCoroutine(SlideInAnimation(delay));
+            }
         }
 
         private System.Collections.IEnumerator SlideInAnimation(float delay)

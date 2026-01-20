@@ -16,6 +16,10 @@ namespace UI.Dungeon
         [SerializeField] private TextMeshProUGUI _xpRewardText;
         [SerializeField] private Button _returnButton;
 
+        [Header("Fail UI Animation")]
+        [SerializeField] private DungeonFailUI _dungeonFailUI;
+        [SerializeField] private string _dungeonName = "";
+
         private DungeonManager _dungeonManager;
 
         private void Awake()
@@ -25,6 +29,11 @@ namespace UI.Dungeon
                 Debug.LogError($"[{nameof(DungeonResultUI)}] Return button not assigned!", this);
                 enabled = false;
                 return;
+            }
+
+            if (_dungeonFailUI == null && _failPanel != null)
+            {
+                _dungeonFailUI = _failPanel.GetComponent<DungeonFailUI>();
             }
         }
 
@@ -60,7 +69,17 @@ namespace UI.Dungeon
             }
         }
 
-        private void ShowFailPanel() => _failPanel?.SetActive(true);
+        private void ShowFailPanel()
+        {
+            if (_dungeonFailUI != null)
+            {
+                _dungeonFailUI.ShowDungeonFail(_dungeonName);
+            }
+            else
+            {
+                _failPanel?.SetActive(true);
+            }
+        }
 
         private void ShowGameCompletePanel() => _gameCompletePanel?.SetActive(true);
 
