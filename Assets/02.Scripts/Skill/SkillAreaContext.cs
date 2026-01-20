@@ -14,6 +14,7 @@ namespace Skill
         public Vector3 PositionOffset { get; }
         public LayerMask EnemyLayer { get; }
         public CombatTeam AttackerTeam { get; }
+        public int Rank { get; }
 
         private SkillAreaContext(
             SkillAreaType areaType,
@@ -21,6 +22,7 @@ namespace Skill
             Vector3 positionOffset,
             LayerMask enemyLayer,
             CombatTeam attackerTeam,
+            int rank = 1,
             float angle = 0f,
             float coneHeight = 0f,
             float boxWidth = 0f,
@@ -35,20 +37,23 @@ namespace Skill
             PositionOffset = positionOffset;
             EnemyLayer = enemyLayer;
             AttackerTeam = attackerTeam;
+            Rank = rank;
         }
 
         public static SkillAreaContext CreateSphere(
             float range,
             Vector3 positionOffset,
             LayerMask enemyLayer,
-            CombatTeam attackerTeam)
+            CombatTeam attackerTeam,
+            int rank = 1)
         {
             return new SkillAreaContext(
                 SkillAreaType.Sphere,
                 range,
                 positionOffset,
                 enemyLayer,
-                attackerTeam);
+                attackerTeam,
+                rank);
         }
 
         public static SkillAreaContext CreateBox(
@@ -57,7 +62,8 @@ namespace Skill
             float boxHeight,
             Vector3 positionOffset,
             LayerMask enemyLayer,
-            CombatTeam attackerTeam)
+            CombatTeam attackerTeam,
+            int rank = 1)
         {
             return new SkillAreaContext(
                 SkillAreaType.Box,
@@ -65,6 +71,7 @@ namespace Skill
                 positionOffset,
                 enemyLayer,
                 attackerTeam,
+                rank,
                 boxWidth: boxWidth,
                 boxHeight: boxHeight);
         }
@@ -75,7 +82,8 @@ namespace Skill
             float coneHeight,
             Vector3 positionOffset,
             LayerMask enemyLayer,
-            CombatTeam attackerTeam)
+            CombatTeam attackerTeam,
+            int rank = 1)
         {
             return new SkillAreaContext(
                 SkillAreaType.Cone,
@@ -83,6 +91,7 @@ namespace Skill
                 positionOffset,
                 enemyLayer,
                 attackerTeam,
+                rank,
                 angle: angle,
                 coneHeight: coneHeight);
         }
@@ -91,7 +100,8 @@ namespace Skill
             PlayerSkillData skillData,
             SkillTierData tierData,
             LayerMask enemyLayer,
-            CombatTeam attackerTeam)
+            CombatTeam attackerTeam,
+            int rank = 1)
         {
             return skillData.AreaType switch
             {
@@ -99,7 +109,8 @@ namespace Skill
                     tierData.Range,
                     tierData.PositionOffset,
                     enemyLayer,
-                    attackerTeam),
+                    attackerTeam,
+                    rank),
 
                 SkillAreaType.Box => CreateBox(
                     tierData.Range,
@@ -107,7 +118,8 @@ namespace Skill
                     tierData.BoxHeight,
                     tierData.PositionOffset,
                     enemyLayer,
-                    attackerTeam),
+                    attackerTeam,
+                    rank),
 
                 SkillAreaType.Cone => CreateCone(
                     tierData.Range,
@@ -115,13 +127,15 @@ namespace Skill
                     tierData.ConeHeight,
                     tierData.PositionOffset,
                     enemyLayer,
-                    attackerTeam),
+                    attackerTeam,
+                    rank),
 
                 _ => CreateSphere(
                     tierData.Range,
                     tierData.PositionOffset,
                     enemyLayer,
-                    attackerTeam)
+                    attackerTeam,
+                    rank)
             };
         }
     }

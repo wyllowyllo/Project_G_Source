@@ -47,11 +47,13 @@ namespace Skill
 
         private PlayerSkillData _currentSkill;
         private SkillTierData _currentTier;
+        private SkillSlot _currentSlot;
         private AttackContext _currentAttackContext;
 
         public bool IsCasting => _isCasting;
         public event Action<SkillSlot, float> OnSkillUsed;
         public event Action<HitInfo> OnSkillHit;
+        public event Action<SkillVFXRequest> OnVFXRequested;
 
         private PlayerSkillData GetSkillData(SkillSlot slot) => slot switch
         {
@@ -145,19 +147,26 @@ namespace Skill
             var tier = skill?.GetTier(_skillLevels[slot]);
             float cooldown = tier?.Cooldown ?? DEFAULT_GLIDE_COOLDOWN;
 
+            _currentSkill = skill;
+            _currentTier = tier;
+            _currentSlot = slot;
+
             _isCasting = true;
             _cooldownEndTimes[slot] = Time.time + cooldown;
             OnSkillUsed?.Invoke(slot, cooldown);
 
             _combatant.SetSuperArmor(true);
             _targetController?.RotateTowardsNearestTarget();
-            _glideController.PrepareGlide();
+            int rank = _skillLevels[slot] + 1;
+            _glideController.PrepareGlide(rank);
             return true;
         }
 
         private void HandleGlideEnded()
         {
             _isCasting = false;
+            _currentSkill = null;
+            _currentTier = null;
             _combatant?.SetSuperArmor(false);
         }
 
@@ -171,6 +180,19 @@ namespace Skill
             );
 
             _skillHitbox.PerformCheck(context);
+
+            if (_currentSkill != null && _currentTier != null)
+            {
+                int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
+                var vfxRequest = SkillVFXRequest.Create(
+                    _currentSkill,
+                    _currentTier,
+                    transform.position,
+                    transform.rotation,
+                    rank
+                );
+                OnVFXRequested?.Invoke(vfxRequest);
+            }
         }
 
         public bool IsSkillReady(SkillSlot slot)
@@ -191,6 +213,7 @@ namespace Skill
 
             _currentSkill = skill;
             _currentTier = tier;
+            _currentSlot = slot;
             _currentAttackContext = AttackContext.Scaled(
                 _combatant,
                 tier.DamageMultiplier,
@@ -231,15 +254,24 @@ namespace Skill
             if (!_isCasting || _currentSkill == null || _currentTier == null)
                 return;
 
+            int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
             var areaContext = SkillAreaContext.Create(
                 _currentSkill,
                 _currentTier,
                 _enemyLayer,
-                _combatant.Team
+                _combatant.Team,
+                rank
             );
             _skillHitbox.PerformCheck(areaContext);
 
-            SpawnEffect(_currentTier);
+            var vfxRequest = SkillVFXRequest.Create(
+                _currentSkill,
+                _currentTier,
+                transform.position,
+                transform.rotation,
+                rank
+            );
+            OnVFXRequested?.Invoke(vfxRequest);
         }
 
         private void HandleHit(HitInfo hitInfo)
@@ -251,28 +283,6 @@ namespace Skill
             );
             hitInfo.Target.TakeDamage(damageInfo);
             OnSkillHit?.Invoke(hitInfo);
-        }
-
-        private void SpawnEffect(SkillTierData tier)
-        {
-            if (tier.EffectPrefab != null)
-            {
-                Instantiate(tier.EffectPrefab, transform.position, transform.rotation);
-            }
-            else
-            {
-                SkillDebugVisual.Spawn(
-                    _currentSkill.AreaType,
-                    transform.position,
-                    transform.rotation,
-                    tier.Range,
-                    tier.Angle,
-                    tier.ConeHeight,
-                    tier.BoxWidth,
-                    tier.BoxHeight,
-                    tier.PositionOffset
-                );
-            }
         }
 
         private void HandleSkillEnhanced(SkillSlot slot)

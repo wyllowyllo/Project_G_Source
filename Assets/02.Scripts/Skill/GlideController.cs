@@ -67,6 +67,7 @@ namespace Skill
         private bool _isParabolicDive;
 
         private DiveBombAimVisualizer _aimVisualizer;
+        private int _skillRank = 1;
 
         public GlideState CurrentState => _currentState;
         public bool IsActive => _currentState != GlideState.Inactive;
@@ -125,10 +126,11 @@ namespace Skill
             }
         }
 
-        public void PrepareGlide()
+        public void PrepareGlide(int rank = 1)
         {
             if (_currentState != GlideState.Inactive) return;
 
+            _skillRank = rank;
             _currentState = GlideState.Preparing;
             _playerMovement?.SetMovementEnabled(false);
             _playerMovement?.SetVelocityOverride((_, _) => Vector3.zero);
@@ -543,7 +545,8 @@ namespace Skill
                 _settings.DiveRadius,
                 Vector3.zero,
                 _enemyLayer,
-                _combatant.Team
+                _combatant.Team,
+                _skillRank
             );
 
             OnDiveBombDamageRequest?.Invoke(context, _settings.DiveDamageMultiplier);

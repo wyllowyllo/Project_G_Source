@@ -7,8 +7,12 @@ namespace Pool.Components
     // ParticleSystem이 없어도 동작하며, 풀링 시스템이 없으면 Destroy로 폴백
     public class PooledVFX : MonoBehaviour, IPooledObject
     {
+        [Header("Duration Settings")]
+        [Tooltip("체크 해제 시 파티클 시스템이 있어도 수동 기간 사용")]
         [SerializeField] private bool _useParticleDuration = true;
+        [Tooltip("수동 기간 (useParticleDuration이 false일 때 적용)")]
         [SerializeField] private float _manualDuration = 2f;
+        [Tooltip("재생 완료 후 풀 반환까지 대기 시간")]
         [SerializeField] private float _releaseDelay = 0.5f;
 
         private ParticleSystem _particleSystem;

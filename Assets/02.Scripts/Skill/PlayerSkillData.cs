@@ -34,7 +34,10 @@ namespace Skill
         [SerializeField] private bool _allowMovement;
 
         [Header("Presentation")]
-        [SerializeField] private GameObject _effectPrefab;
+        [Tooltip("랭크별 VFX 프리팹 (인덱스 0 = 랭크 1, 인덱스 1 = 랭크 2, ...)")]
+        [SerializeField] private GameObject[] _effectPrefabs;
+        [SerializeField] private Vector3 _vfxPositionOffset;
+        [SerializeField] private Vector3 _vfxRotationOffset;
         [SerializeField] private AudioClip _skillSound;
 
         [Header("Camera")]
@@ -53,7 +56,9 @@ namespace Skill
         public float BoxWidth => _boxWidth;
         public float BoxHeight => _boxHeight;
         public bool AllowMovement => _allowMovement;
-        public GameObject EffectPrefab => _effectPrefab;
+        public GameObject[] EffectPrefabs => _effectPrefabs;
+        public Vector3 VFXPositionOffset => _vfxPositionOffset;
+        public Vector3 VFXRotationOffset => _vfxRotationOffset;
         public AudioClip SkillSound => _skillSound;
         public SkillCameraConfig CameraConfig => _cameraConfig;
         public float AnimationDuration => _animationDuration;
