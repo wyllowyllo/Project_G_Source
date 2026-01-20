@@ -10,97 +10,42 @@ public enum PauseButtonType
     GameEnd,
 }
 
-public class PauseBtnType : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class PauseMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] private PauseButtonType _currentType;
-    [SerializeField] private Transform _buttonScale;
-    private Vector3 _defaultScale;
-    private float _rateScale = 1.2f;
+    [SerializeField] private PauseButtonType buttonType;
 
-    [SerializeField] private GameObject _pausePanel;
+    [Header("Hover Scale")]
+    [SerializeField] private Transform buttonScale;
+    [SerializeField] private float rateScale = 1.2f;
 
-    private bool _isPaused = false;
+    private Vector3 defaultScale;
 
-    public void Start()
+    private void Start()
     {
-        if (_buttonScale != null)
+        if (buttonScale != null)
         {
-            _defaultScale = _buttonScale.localScale;
-        }
-
-        if (_pausePanel != null)
-        {
-            _pausePanel.SetActive(false);
+            defaultScale = buttonScale.localScale;
         }
     }
 
-    private void Update()
+    public void OnClick()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            TogglePause();
-        }
-    }
-
-    private void TogglePause()
-    {
-        if (_isPaused)
-        {
-            ResumeGame();
-        }
-        else
-        {
-            PauseGame();
-        }
-    }
-
-    private void PauseGame()
-    {
-        _isPaused = true;
-        Time.timeScale = 0f;
-
-        if (_pausePanel != null)
-        {
-            _pausePanel.SetActive(true);
-        }
-
-        if (CursorManager.Instance != null)
-        {
-            CursorManager.Instance.UnlockCursor();
-        }
-    }
-
-    private void ResumeGame()
-    {
-        _isPaused = false;
-        Time.timeScale = 1f;
-
-        if (_pausePanel != null)
-        {
-            _pausePanel.SetActive(false);
-        }
-
-        if (CursorManager.Instance != null)
-        {
-            CursorManager.Instance.LockCursor();
-        }
-    }
-
-    public void OnBtnClick()
-    {
-        switch (_currentType)
+        switch (buttonType)
         {
             case PauseButtonType.Continue:
-                ResumeGame();
+                if (PauseManager.Instance != null)
+                {
+                    PauseManager.Instance.Resume();
+                }
                 break;
 
             case PauseButtonType.MainMenu:
-                Time.timeScale = 1f;
+/*                Time.timeScale = 1f;*/
                 SceneLoader.LoadScene("MainScene");
                 break;
 
             case PauseButtonType.GameEnd:
-                Time.timeScale = 1f;
+/*                Time.timeScale = 1f;*/
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -113,17 +58,17 @@ public class PauseBtnType : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (_buttonScale != null)
+        if (buttonScale != null)
         {
-            _buttonScale.localScale = _defaultScale * _rateScale;
+            buttonScale.localScale = defaultScale * rateScale;
         }
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (_buttonScale != null)
+        if (buttonScale != null)
         {
-            _buttonScale.localScale = _defaultScale;
+            buttonScale.localScale = defaultScale;
         }
     }
 }
