@@ -2,13 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 개선된 사운드 매니저 - BGM/SFX 분리, 볼륨 조절, 페이드, 풀링 지원
-/// 사용 예시:
-/// - SoundManager.Instance.PlayBgm(SoundManager.EDungeonBgm.MainCity);
-/// - SoundManager.Instance.PlaySfx(SoundManager.EPlayerSfx.Attack);
-/// - SoundManager.Instance.SetBgmVolume(0.5f);
-/// </summary>
 public class SoundManager : MonoBehaviour
 {
     public static SoundManager Instance { get; private set; }
@@ -54,7 +47,6 @@ public class SoundManager : MonoBehaviour
     }
     #endregion
 
-    #region Serialized Fields
     [Header("BGM Settings")]
     [SerializeField] private AudioClip[] _dungeonBgms;
     [Range(0f, 1f)]
@@ -72,15 +64,11 @@ public class SoundManager : MonoBehaviour
     
     [Header("AudioSource Pool Settings")]
     [SerializeField] private int _sfxPoolSize = 10;
-    #endregion
 
-    #region Private Fields
     private AudioSource _bgmSource;
     private List<AudioSource> _sfxSourcePool = new List<AudioSource>();
     private Coroutine _fadeCoroutine;
-    #endregion
 
-    #region Unity Lifecycle
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -102,9 +90,7 @@ public class SoundManager : MonoBehaviour
             Instance = null;
         }
     }
-    #endregion
 
-    #region Initialization
     private void InitializeAudioSources()
     {
         // BGM AudioSource 생성
@@ -123,12 +109,7 @@ public class SoundManager : MonoBehaviour
             _sfxSourcePool.Add(sfxSource);
         }
     }
-    #endregion
 
-    #region BGM Methods
-    /// <summary>
-    /// BGM 재생 (페이드 없이)
-    /// </summary>
     public void PlayBgm(EDungeonBgm bgm, bool restart = false)
     {
         AudioClip clip = GetClip(_dungeonBgms, (int)bgm, bgm.ToString());
@@ -142,9 +123,7 @@ public class SoundManager : MonoBehaviour
         _bgmSource.Play();
     }
 
-    /// <summary>
-    /// BGM 재생 (페이드 인)
-    /// </summary>
+    // BGM 재생 (페이드 인)
     public void PlayBgmWithFade(EDungeonBgm bgm, float fadeDuration = 1f)
     {
         AudioClip clip = GetClip(_dungeonBgms, (int)bgm, bgm.ToString());
@@ -157,9 +136,7 @@ public class SoundManager : MonoBehaviour
         _fadeCoroutine = StartCoroutine(FadeBgm(clip, fadeDuration));
     }
 
-    /// <summary>
-    /// BGM 정지
-    /// </summary>
+    // BGM 정지
     public void StopBgm(bool immediate = true)
     {
         if (immediate)
@@ -174,92 +151,68 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// BGM 일시정지
-    /// </summary>
+    // BGM 일시정지
     public void PauseBgm()
     {
         _bgmSource.Pause();
     }
 
-    /// <summary>
-    /// BGM 재개
-    /// </summary>
+    // BGM 재개
     public void ResumeBgm()
     {
         _bgmSource.UnPause();
     }
 
-    /// <summary>
-    /// BGM 볼륨 설정
-    /// </summary>
+    // BGM 볼륨 설정
     public void SetBgmVolume(float volume)
     {
         _bgmVolume = Mathf.Clamp01(volume);
         _bgmSource.volume = _bgmVolume;
     }
 
-    /// <summary>
-    /// 현재 BGM 볼륨 가져오기
-    /// </summary>
+    // 현재 BGM 볼륨 가져오기
     public float GetBgmVolume()
     {
         return _bgmVolume;
     }
-    #endregion
 
-    #region SFX Methods
-    /// <summary>
-    /// 플레이어 효과음 재생
-    /// </summary>
+    // 플레이어 효과음 재생
     public void PlayPlayerSfx(EPlayerSfx sfx)
     {
         PlaySfxFromArray(_playerSfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// 적 효과음 재생
-    /// </summary>
+    // 적 효과음 재생
     public void PlayEnemySfx(EEnemySfx sfx)
     {
         PlaySfxFromArray(_enemySfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// 보스 효과음 재생
-    /// </summary>
+    // 보스 효과음 재생
     public void PlayBossSfx(EBossSfx sfx)
     {
         PlaySfxFromArray(_bossSfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// UI 효과음 재생
-    /// </summary>
+    // UI 효과음 재생
     public void PlayUISfx(EUISfx sfx)
     {
         PlaySfxFromArray(_uISfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// 플레이어 스킬 효과음 재생
-    /// </summary>
+    // 플레이어 스킬 효과음 재생
     public void PlayPlayerSkillSfx(EPlayerSkillSfx sfx)
     {
         PlaySfxFromArray(_playerSkillSfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// 일반 효과음 재생
-    /// </summary>
+    // 일반 효과음 재생
     public void PlaySfx(ESfx sfx)
     {
         PlaySfxFromArray(_sfxs, (int)sfx, sfx.ToString());
     }
 
-    /// <summary>
-    /// 3D 공간상에서 효과음 재생
-    /// </summary>
+    // 3D 공간상에서 효과음 재생
     public void PlaySfx3D(AudioClip clip, Vector3 position, float volume = 1f)
     {
         if (clip == null)
@@ -271,9 +224,7 @@ public class SoundManager : MonoBehaviour
         AudioSource.PlayClipAtPoint(clip, position, volume * _sfxVolume);
     }
 
-    /// <summary>
-    /// SFX 볼륨 설정
-    /// </summary>
+    // SFX 볼륨 설정
     public void SetSfxVolume(float volume)
     {
         _sfxVolume = Mathf.Clamp01(volume);
@@ -283,17 +234,13 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 현재 SFX 볼륨 가져오기
-    /// </summary>
+    // 현재 SFX 볼륨 가져오기
     public float GetSfxVolume()
     {
         return _sfxVolume;
     }
 
-    /// <summary>
-    /// 모든 SFX 정지
-    /// </summary>
+    // 모든 SFX 정지
     public void StopAllSfx()
     {
         foreach (var source in _sfxSourcePool)
@@ -301,9 +248,7 @@ public class SoundManager : MonoBehaviour
             source.Stop();
         }
     }
-    #endregion
 
-    #region Private Helper Methods
     private void PlaySfxFromArray(AudioClip[] clips, int index, string name)
     {
         AudioClip clip = GetClip(clips, index, name);
@@ -369,9 +314,7 @@ public class SoundManager : MonoBehaviour
             _fadeCoroutine = null;
         }
     }
-    #endregion
 
-    #region Coroutines
     private IEnumerator FadeBgm(AudioClip newClip, float duration)
     {
         // 이전 BGM 페이드 아웃
@@ -423,5 +366,4 @@ public class SoundManager : MonoBehaviour
         _bgmSource.volume = _bgmVolume;
         _fadeCoroutine = null;
     }
-    #endregion
 }

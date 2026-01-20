@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// 사운드 설정을 저장하고 불러오는 유틸리티 클래스
-/// PlayerPrefs를 사용하여 볼륨 설정을 영구 저장합니다
-/// </summary>
 public class SoundSettings : MonoBehaviour
 {
     private const string BGM_VOLUME_KEY = "Settings_BGM_Volume";
@@ -19,9 +15,7 @@ public class SoundSettings : MonoBehaviour
         LoadSettings();
     }
 
-    /// <summary>
-    /// 저장된 설정 불러오기
-    /// </summary>
+    // 저장된 설정 불러오기
     public void LoadSettings()
     {
         if (SoundManager.Instance == null)
@@ -56,9 +50,7 @@ public class SoundSettings : MonoBehaviour
         Debug.Log($"Sound settings loaded - BGM: {bgmVolume}, SFX: {sfxVolume}");
     }
 
-    /// <summary>
-    /// 현재 설정 저장
-    /// </summary>
+    // 현재 설정 저장
     public void SaveSettings()
     {
         if (SoundManager.Instance == null)
@@ -74,9 +66,7 @@ public class SoundSettings : MonoBehaviour
         Debug.Log("Sound settings saved");
     }
 
-    /// <summary>
-    /// BGM 볼륨 설정 및 저장
-    /// </summary>
+    // BGM 볼륨 설정 및 저장
     public void SetAndSaveBgmVolume(float volume)
     {
         if (SoundManager.Instance == null) return;
@@ -88,9 +78,7 @@ public class SoundSettings : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// SFX 볼륨 설정 및 저장
-    /// </summary>
+    // SFX 볼륨 설정 및 저장
     public void SetAndSaveSfxVolume(float volume)
     {
         if (SoundManager.Instance == null) return;
@@ -102,9 +90,7 @@ public class SoundSettings : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// BGM 음소거 토글
-    /// </summary>
+    // BGM 음소거 토글
     public void ToggleBgmMute()
     {
         if (SoundManager.Instance == null) return;
@@ -128,9 +114,7 @@ public class SoundSettings : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// SFX 음소거 토글
-    /// </summary>
+    // SFX 음소거 토글
     public void ToggleSfxMute()
     {
         if (SoundManager.Instance == null) return;
@@ -154,25 +138,19 @@ public class SoundSettings : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// BGM이 음소거 상태인지 확인
-    /// </summary>
+    // BGM이 음소거 상태인지 확인
     public bool IsBgmMuted()
     {
         return SoundManager.Instance != null && SoundManager.Instance.GetBgmVolume() == 0f;
     }
 
-    /// <summary>
-    /// SFX가 음소거 상태인지 확인
-    /// </summary>
+    // SFX가 음소거 상태인지 확인
     public bool IsSfxMuted()
     {
         return SoundManager.Instance != null && SoundManager.Instance.GetSfxVolume() == 0f;
     }
 
-    /// <summary>
-    /// 설정 초기화 (기본값으로 복원)
-    /// </summary>
+    // 설정 초기화
     public void ResetToDefault()
     {
         SetAndSaveBgmVolume(0.7f);
