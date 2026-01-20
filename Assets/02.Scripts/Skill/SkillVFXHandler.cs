@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Pool.Core;
-using Progression;
 using UnityEngine;
 
 namespace Skill
@@ -8,7 +6,10 @@ namespace Skill
     [System.Serializable]
     public class VFXConfig
     {
+        [Tooltip("기본 프리팹 (랭크 1)")]
         public GameObject prefab;
+        [Tooltip("랭크별 프리팹 (인덱스 0 = 랭크 1, 인덱스 1 = 랭크 2, ...)")]
+        public GameObject[] rankPrefabs;
         public Vector3 positionOffset;
         public Vector3 rotationOffset;
     }
@@ -32,7 +33,7 @@ namespace Skill
 
         [Header("Overlay VFX")]
         [Tooltip("오버레이가 적용되는 최소 랭크")]
-        public int overlayMinRank = 2;
+        public int overlayMinRank = 4;
         [Tooltip("랭크당 오버레이 스케일 배율")]
         public float overlayScalePerRank = 0.15f;
         [Tooltip("Sphere 스킬용 오버레이")]
@@ -64,68 +65,38 @@ namespace Skill
         [SerializeField] private RankEnhancementConfig _rankConfig = new RankEnhancementConfig();
 
         private SkillHitbox _skillHitbox;
-        private PlayerProgression _progression;
-        private SkillCaster _skillCaster;
-
-        private readonly Dictionary<SkillSlot, int> _enhancementLevels = new();
-        private SkillSlot _currentSlot;
 
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         private void Awake()
         {
             _skillHitbox = GetComponent<SkillHitbox>();
-            _progression = GetComponent<PlayerProgression>();
-            _skillCaster = GetComponent<SkillCaster>();
         }
 
         private void OnEnable()
         {
             if (_skillHitbox != null)
                 _skillHitbox.OnVFXRequested += HandleVFXRequest;
-
-            if (_progression != null)
-                _progression.OnSkillEnhanced += HandleSkillEnhanced;
-
-            if (_skillCaster != null)
-                _skillCaster.OnSkillUsed += HandleSkillUsed;
         }
 
         private void OnDisable()
         {
             if (_skillHitbox != null)
                 _skillHitbox.OnVFXRequested -= HandleVFXRequest;
-
-            if (_progression != null)
-                _progression.OnSkillEnhanced -= HandleSkillEnhanced;
-
-            if (_skillCaster != null)
-                _skillCaster.OnSkillUsed -= HandleSkillUsed;
         }
-
-        private void HandleSkillEnhanced(SkillSlot slot)
-        {
-            if (!_enhancementLevels.ContainsKey(slot))
-                _enhancementLevels[slot] = 0;
-            _enhancementLevels[slot]++;
-        }
-
-        private void HandleSkillUsed(SkillSlot slot, float cooldown)
-        {
-            _currentSlot = slot;
-        }
-
-        private int GetCurrentRank() =>
-            _enhancementLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
 
         private void HandleVFXRequest(SkillVFXRequest request)
         {
             VFXConfig config = GetVFXConfig(request.AreaType);
             if (config?.prefab == null) return;
 
+            int rank = request.Rank;
+            GameObject prefabToSpawn = GetPrefabForRank(config, rank);
+            if (prefabToSpawn == null) return;
+
             Vector3 finalPosition = request.Origin + request.Rotation * config.positionOffset;
             Quaternion finalRotation = request.Rotation * Quaternion.Euler(config.rotationOffset);
-            GameObject vfx = PoolSpawner.Spawn(config.prefab, finalPosition, finalRotation);
+            GameObject vfx = PoolSpawner.Spawn(prefabToSpawn, finalPosition, finalRotation);
 
             if (vfx == null) return;
 
@@ -134,11 +105,29 @@ namespace Skill
                 ApplyScale(vfx, request);
             }
 
-            int rank = GetCurrentRank();
             if (_enableRankEnhancement && rank > 1)
             {
                 ApplyRankEnhancement(vfx, rank, request.AreaType, finalPosition, finalRotation);
             }
+        }
+
+        private GameObject GetPrefabForRank(VFXConfig config, int rank)
+        {
+            if (config.rankPrefabs == null || config.rankPrefabs.Length == 0)
+                return config.prefab;
+
+            int index = rank - 1;
+            if (index < config.rankPrefabs.Length && config.rankPrefabs[index] != null)
+                return config.rankPrefabs[index];
+
+            // 해당 랭크 프리팹이 없으면 가장 높은 랭크 프리팹 사용
+            for (int i = config.rankPrefabs.Length - 1; i >= 0; i--)
+            {
+                if (config.rankPrefabs[i] != null)
+                    return config.rankPrefabs[i];
+            }
+
+            return config.prefab;
         }
 
         private VFXConfig GetVFXConfig(SkillAreaType areaType)

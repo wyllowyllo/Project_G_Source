@@ -21,7 +21,7 @@ namespace Skill
             _hitTargets.Clear();
 
             Vector3 origin = transform.position + transform.TransformDirection(context.PositionOffset);
-            var vfxRequest = SkillVFXRequest.FromContext(context, origin , transform.rotation);
+            var vfxRequest = SkillVFXRequest.FromContext(context, origin, transform.rotation, context.Rank);
             OnVFXRequested?.Invoke(vfxRequest);
 
             int hitCount = GetTargetsInArea(context);

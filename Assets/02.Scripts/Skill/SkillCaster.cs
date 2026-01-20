@@ -47,6 +47,7 @@ namespace Skill
 
         private PlayerSkillData _currentSkill;
         private SkillTierData _currentTier;
+        private SkillSlot _currentSlot;
         private AttackContext _currentAttackContext;
 
         public bool IsCasting => _isCasting;
@@ -191,6 +192,7 @@ namespace Skill
 
             _currentSkill = skill;
             _currentTier = tier;
+            _currentSlot = slot;
             _currentAttackContext = AttackContext.Scaled(
                 _combatant,
                 tier.DamageMultiplier,
@@ -231,11 +233,13 @@ namespace Skill
             if (!_isCasting || _currentSkill == null || _currentTier == null)
                 return;
 
+            int rank = _skillLevels.TryGetValue(_currentSlot, out var level) ? level + 1 : 1;
             var areaContext = SkillAreaContext.Create(
                 _currentSkill,
                 _currentTier,
                 _enemyLayer,
-                _combatant.Team
+                _combatant.Team,
+                rank
             );
             _skillHitbox.PerformCheck(areaContext);
 
