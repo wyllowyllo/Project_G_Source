@@ -12,25 +12,25 @@ public enum PauseButtonType
 
 public class PauseMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] private PauseButtonType buttonType;
+    [SerializeField] private PauseButtonType _buttonType;
 
     [Header("Hover Scale")]
-    [SerializeField] private Transform buttonScale;
-    [SerializeField] private float rateScale = 1.2f;
+    [SerializeField] private Transform _buttonScale;
+    [SerializeField] private float _rateScale = 1.2f;
 
-    private Vector3 defaultScale;
+    private Vector3 _defaultScale;
 
     private void Start()
     {
-        if (buttonScale != null)
+        if (_buttonScale != null)
         {
-            defaultScale = buttonScale.localScale;
+            _defaultScale = _buttonScale.localScale;
         }
     }
 
     public void OnClick()
     {
-        switch (buttonType)
+        switch (_buttonType)
         {
             case PauseButtonType.Continue:
                 if (PauseManager.Instance != null)
@@ -58,17 +58,17 @@ public class PauseMenuButton : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (buttonScale != null)
+        if (_buttonScale != null)
         {
-            buttonScale.localScale = defaultScale * rateScale;
+            _buttonScale.localScale = _defaultScale * _rateScale;
         }
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (buttonScale != null)
+        if (_buttonScale != null)
         {
-            buttonScale.localScale = defaultScale;
+            _buttonScale.localScale = _defaultScale;
         }
     }
 }

@@ -1,4 +1,5 @@
 using Common;
+using System;
 using UnityEngine;
 
 public class PauseManager : MonoBehaviour
@@ -12,6 +13,8 @@ public class PauseManager : MonoBehaviour
     [SerializeField] private bool pauseTimeScale = true;
 
     private bool IsPaused = false;
+
+    public static event Action<bool> OnPauseStateChanged;
 
     private void Awake()
     {
@@ -61,7 +64,11 @@ public class PauseManager : MonoBehaviour
         }
 
         if (pausePanel != null)
+        { 
             pausePanel.SetActive(paused);
+        }
+
+        OnPauseStateChanged?.Invoke(paused);
 
         if (CursorManager.Instance != null)
         {
