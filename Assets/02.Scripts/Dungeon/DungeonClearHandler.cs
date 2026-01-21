@@ -25,14 +25,13 @@ namespace Dungeon
         private void OnEnable()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
-            TrySubscribe();
         }
 
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
-            Unsubscribe();
             StopReturnCoroutine();
+            Unsubscribe();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -51,9 +50,8 @@ namespace Dungeon
                 }
                 _dungeonManager = newDungeonManager;
                 _dungeonManager.DungeonCleared += HandleDungeonCleared;
-                Debug.Log("[DungeonClearHandler] DungeonManager 이벤트 구독 완료");
             }
-            
+
             var newMonsterTracker = MonsterTracker.Instance;
             if (newMonsterTracker != null && newMonsterTracker != _monsterTracker)
             {
@@ -63,7 +61,6 @@ namespace Dungeon
                 }
                 _monsterTracker = newMonsterTracker;
                 _monsterTracker.OnAllMonstersDefeated.AddListener(HandleAllMonstersDefeated);
-                Debug.Log("[DungeonClearHandler] MonsterTracker 이벤트 구독 완료");
             }
         }
 
@@ -80,17 +77,14 @@ namespace Dungeon
             }
         }
 
-public void HandleAllMonstersDefeated()
+        public void HandleAllMonstersDefeated()
         {
-            Debug.Log("[DungeonClearHandler] HandleAllMonstersDefeated 호출됨!");
-            
             if (_dungeonManager == null)
             {
                 Debug.LogError("[DungeonClearHandler] _dungeonManager가 null입니다!");
                 return;
             }
-            
-            Debug.Log("[DungeonClearHandler] DungeonManager.CompleteDungeon() 호출");
+
             _dungeonManager.CompleteDungeon();
         }
 
@@ -108,7 +102,6 @@ private void Update()
 
         private void HandleDungeonCleared(int xpReward)
         {
-            Debug.Log($"[DungeonClearHandler] HandleDungeonCleared 호출됨! XP: {xpReward}");
             StopReturnCoroutine();
             _returnCoroutine = StartCoroutine(ClearSequence());
         }
@@ -134,7 +127,6 @@ private void Update()
 
         private void ReturnToTown()
         {
-            Debug.Log("[DungeonClearHandler] ReturnToTown 호출됨");
             StopReturnCoroutine();
             _canAcceptInput = false;
             OnReturnToTown?.Invoke();
@@ -150,22 +142,17 @@ private void Update()
                 Debug.LogError("[DungeonClearHandler] MonsterTracker가 null입니다!");
                 return;
             }
-            
+
             var aliveMonsters = _monsterTracker.GetAliveMonsters();
-            Debug.Log($"[DungeonClearHandler] 생존 몬스터 수: {aliveMonsters.Count}");
-            
             foreach (var monster in aliveMonsters)
             {
                 if (monster != null && monster.gameObject != null)
                 {
-                    Debug.Log($"[DungeonClearHandler] 몬스터 제거: {monster.name}");
                     Destroy(monster.gameObject);
                 }
             }
-            
+
             _monsterTracker.CleanupDestroyedMonsters();
-            
-            Debug.Log("[DungeonClearHandler] 모든 몬스터 제거 완료");
         }
 private void StopReturnCoroutine()
         {
