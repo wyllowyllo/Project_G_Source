@@ -14,7 +14,7 @@ public class SkillTooltip : MonoBehaviour
 
     [Header("Settings")]
     public float horizontalSpacing = 40f; // 슬롯과 툴팁 사이 간격
-    public float fadeSpeed = 2f;
+    public float fadeSpeed = 10f;
     
     private bool isVisible = false;
     private Coroutine fadeCoroutine;
@@ -98,6 +98,8 @@ public void HideTooltip()
             return;
             
         isVisible = false;
+
+        canvasGroup.blocksRaycasts = false;
 
         if (fadeCoroutine != null)
         {
