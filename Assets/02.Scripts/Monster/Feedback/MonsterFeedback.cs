@@ -22,6 +22,7 @@ namespace Monster.Feedback
         [Header("VFX")]
         [SerializeField] private GameObject _hitVFXPrefab;
         [SerializeField] private GameObject _criticalHitVFXPrefab;
+        [SerializeField] private GameObject _skillHitVFXPrefab;
         [SerializeField] private GameObject _deathVFXPrefab;
         [SerializeField] private float _vfxLifetime = 0.3f;
 
@@ -189,7 +190,7 @@ namespace Monster.Feedback
 
         private void SpawnHitVfx(DamageInfo info)
         {
-            var prefab = info.IsCritical ? _criticalHitVFXPrefab : _hitVFXPrefab;
+            var prefab = SelectHitVfxPrefab(info);
             if (prefab == null) return;
 
             Vector3 spawnPos = info.HitPoint != Vector3.zero
@@ -197,6 +198,16 @@ namespace Monster.Feedback
                 : transform.position + Vector3.up;
 
             PoolSpawner.SpawnVFX(prefab, spawnPos, Quaternion.identity, _vfxLifetime);
+        }
+
+        private GameObject SelectHitVfxPrefab(DamageInfo info)
+        {
+            if (info.Type == DamageType.Skill)
+            {
+                return _skillHitVFXPrefab;
+            }
+
+            return info.IsCritical ? _criticalHitVFXPrefab : _hitVFXPrefab;
         }
 
         private void SpawnDeathVfx()
