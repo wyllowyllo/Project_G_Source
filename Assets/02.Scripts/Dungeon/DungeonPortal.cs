@@ -61,7 +61,7 @@ namespace Dungeon
             DungeonManager.Instance.EnterDungeon(_dungeonData);
         }
 
-        private void OnDungeonCleared(int xp)
+        private void OnDungeonCleared(int xp, bool isFirstClear)
         {
             UpdateVisibility();
         }
@@ -80,7 +80,11 @@ namespace Dungeon
 
             bool isUnlocked = DungeonManager.Instance.IsDungeonUnlocked(_dungeonData);
             bool isCleared = DungeonManager.Instance.IsDungeonCleared(_dungeonData.DungeonId);
-            gameObject.SetActive(isUnlocked && !isCleared);
+            bool isFreeMode = DungeonManager.Instance.IsFreeModeUnlocked;
+
+            // 자유 모드: 클리어 여부 무관하게 표시
+            // 일반 모드: 잠금 해제 + 미클리어만 표시
+            gameObject.SetActive(isUnlocked && (!isCleared || isFreeMode));
         }
 
         private void UpdateClearedIndicator()

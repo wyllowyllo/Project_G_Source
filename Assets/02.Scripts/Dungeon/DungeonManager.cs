@@ -17,7 +17,7 @@ namespace Dungeon
         private DungeonData _currentDungeon;
         private HashSet<string> _clearedDungeons = new();
 
-        public event Action<int> DungeonCleared;
+        public event Action<int, bool> DungeonCleared;
         public event Action DungeonFailed;
         public event Action GameCompleted;
         public event Action<DungeonData> DungeonUnlocked;
@@ -27,6 +27,7 @@ namespace Dungeon
         public DungeonData CurrentDungeon => _currentDungeon;
         public bool IsInDungeon => _currentDungeon != null;
         public IReadOnlyList<DungeonData> AllDungeons => _allDungeons;
+        public bool IsFreeModeUnlocked => _clearedDungeons.Count >= _allDungeons.Length;
 
         private void Awake()
         {
@@ -37,7 +38,6 @@ namespace Dungeon
             }
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            LoadProgress();
         }
 
         private void OnDestroy()
@@ -100,9 +100,6 @@ namespace Dungeon
             {
                 _clearedDungeons.Add(_currentDungeon.DungeonId);
 
-                PlayerPrefs.SetInt($"Dungeon_{_currentDungeon.DungeonId}_Cleared", 1);
-                PlayerPrefs.Save();
-
                 var nextDungeon = GetNextDungeon(_currentDungeon);
                 if (nextDungeon != null)
                 {
@@ -117,7 +114,7 @@ namespace Dungeon
 
             // 첫 클리어: XP 보상, 재클리어: 0
             int xpReward = isFirstClear ? _currentDungeon.ClearXpReward : 0;
-            DungeonCleared?.Invoke(xpReward);
+            DungeonCleared?.Invoke(xpReward, isFirstClear);
             
         }
 
@@ -131,17 +128,6 @@ namespace Dungeon
             _currentDungeon = null;
             DungeonExited?.Invoke();
             SceneLoader.LoadScene(_townSceneName);
-        }
-
-        private void LoadProgress()
-        {
-            foreach (var dungeon in _allDungeons)
-            {
-                if (PlayerPrefs.GetInt($"Dungeon_{dungeon.DungeonId}_Cleared", 0) == 1)
-                {
-                    _clearedDungeons.Add(dungeon.DungeonId);
-                }
-            }
         }
 
 #if UNITY_EDITOR

@@ -10,22 +10,18 @@ namespace Progression
     [RequireComponent(typeof(Combatant))]
     public class PlayerProgression : MonoBehaviour
     {
-        [Header("Configuration")]
-        [SerializeField] private ProgressionConfig _config;
-
         private Combatant _combatant;
         private float _initialAttackDamage;
         private bool _initialized;
 
-        private const int MaxXpPerAdd = 100000;
+        private ProgressionManager Manager => ProgressionManager.Instance;
 
-        public int Level { get; private set; } = 1;
-        public int CurrentXp { get; private set; }
-        public bool IsMaxLevel => Level >= _config.MaxLevel;
-        public int XpToNextLevel => IsMaxLevel ? 0 : _config.GetRequiredXp(Level + 1);
-        public float LevelProgress => IsMaxLevel ? 1f : (float)CurrentXp / _config.GetRequiredXp(Level + 1);
-
-        public HunterRank Rank => ProgressionConfig.GetRank(Level);
+        public int Level => Manager?.Level ?? 1;
+        public int CurrentXp => Manager?.CurrentXp ?? 0;
+        public bool IsMaxLevel => Manager?.IsMaxLevel ?? false;
+        public int XpToNextLevel => Manager?.XpToNextLevel ?? 0;
+        public float LevelProgress => Manager?.LevelProgress ?? 0f;
+        public HunterRank Rank => Manager?.Rank ?? HunterRank.C;
         public Combatant Combatant => _combatant;
 
         public event Action<int, int> OnLevelUp;
@@ -45,17 +41,41 @@ namespace Progression
         {
             if (DungeonManager.Instance != null)
                 DungeonManager.Instance.DungeonCleared += OnDungeonCleared;
+
+            if (Manager != null)
+            {
+                Manager.OnLevelUp += HandleLevelUp;
+                Manager.OnSkillEnhanced += HandleSkillEnhanced;
+            }
         }
 
         private void OnDisable()
         {
             if (DungeonManager.Instance != null)
                 DungeonManager.Instance.DungeonCleared -= OnDungeonCleared;
+
+            if (Manager != null)
+            {
+                Manager.OnLevelUp -= HandleLevelUp;
+                Manager.OnSkillEnhanced -= HandleSkillEnhanced;
+            }
         }
 
-        private void OnDungeonCleared(int xpReward)
+        private void OnDungeonCleared(int xpReward, bool isFirstClear)
         {
-            AddExperience(xpReward);
+            Manager?.AddExperience(xpReward);
+        }
+
+        private void HandleLevelUp(int previousLevel, int newLevel)
+        {
+            ApplyLevelStats();
+            RestoreHealthToFull();
+            OnLevelUp?.Invoke(previousLevel, newLevel);
+        }
+
+        private void HandleSkillEnhanced(SkillSlot skill)
+        {
+            OnSkillEnhanced?.Invoke(skill);
         }
 
         private void EnsureInitialized()
@@ -71,37 +91,13 @@ namespace Progression
             if (amount <= 0 || IsMaxLevel) return;
 
             EnsureInitialized();
-            CurrentXp += Mathf.Min(amount, MaxXpPerAdd);
-            CheckLevelUp();
-        }
-
-        private void CheckLevelUp()
-        {
-            int requiredXp = _config.GetRequiredXp(Level + 1);
-
-            while (!IsMaxLevel && CurrentXp >= requiredXp)
-            {
-                CurrentXp -= requiredXp;
-                int previousLevel = Level;
-                Level++;
-
-                ApplyLevelStats();
-                RestoreHealthToFull();
-                OnLevelUp?.Invoke(previousLevel, Level);
-
-                foreach (var skill in _config.GetSkillEnhancements(Level))
-                    OnSkillEnhanced?.Invoke(skill);
-
-                requiredXp = _config.GetRequiredXp(Level + 1);
-            }
-
-            if (IsMaxLevel)
-                CurrentXp = 0;
+            Manager?.AddExperience(amount);
         }
 
         private void ApplyLevelStats()
         {
-            float bonus = _config.GetAttackBonus(Level);
+            if (Manager?.Config == null) return;
+            float bonus = Manager.Config.GetAttackBonus(Level);
             _combatant.Stats.AttackDamage.BaseValue = _initialAttackDamage + bonus;
         }
 
@@ -114,13 +110,14 @@ namespace Progression
         public void SetLevel(int level)
         {
             EnsureInitialized();
-            Level = Mathf.Clamp(level, 1, _config.MaxLevel);
-            CurrentXp = 0;
+            Manager?.SetLevel(level);
             ApplyLevelStats();
         }
 
 #if UNITY_INCLUDE_TESTS
-        public void SetConfigForTest(ProgressionConfig config) => _config = config;
+        public void SetConfigForTest(ProgressionConfig config)
+        {
+        }
 #endif
     }
 }
