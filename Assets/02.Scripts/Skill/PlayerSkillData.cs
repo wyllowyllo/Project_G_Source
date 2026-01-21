@@ -11,6 +11,18 @@ namespace Skill
     }
 
     [System.Serializable]
+    public class SkillVFXData
+    {
+        [SerializeField] private GameObject _prefab;
+        [SerializeField] private Vector3 _positionOffset;
+        [SerializeField] private Vector3 _rotationOffset;
+
+        public GameObject Prefab => _prefab;
+        public Vector3 PositionOffset => _positionOffset;
+        public Vector3 RotationOffset => _rotationOffset;
+    }
+
+    [System.Serializable]
     public class SkillTierData
     {
         [Header("Combat")]
@@ -34,10 +46,8 @@ namespace Skill
         [SerializeField] private bool _allowMovement;
 
         [Header("Presentation")]
-        [Tooltip("랭크별 VFX 프리팹 (인덱스 0 = 랭크 1, 인덱스 1 = 랭크 2, ...)")]
-        [SerializeField] private GameObject[] _effectPrefabs;
-        [SerializeField] private Vector3 _vfxPositionOffset;
-        [SerializeField] private Vector3 _vfxRotationOffset;
+        [Tooltip("스킬 사용 시 동시에 스폰할 VFX 목록 (각각 개별 offset 적용)")]
+        [SerializeField] private SkillVFXData[] _vfxDataList;
         [SerializeField] private AudioClip _skillSound;
 
         [Header("Camera")]
@@ -56,9 +66,7 @@ namespace Skill
         public float BoxWidth => _boxWidth;
         public float BoxHeight => _boxHeight;
         public bool AllowMovement => _allowMovement;
-        public GameObject[] EffectPrefabs => _effectPrefabs;
-        public Vector3 VFXPositionOffset => _vfxPositionOffset;
-        public Vector3 VFXRotationOffset => _vfxRotationOffset;
+        public SkillVFXData[] VFXDataList => _vfxDataList;
         public AudioClip SkillSound => _skillSound;
         public SkillCameraConfig CameraConfig => _cameraConfig;
         public float AnimationDuration => _animationDuration;
