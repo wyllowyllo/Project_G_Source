@@ -1,7 +1,6 @@
 using Dungeon;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace UI.Dungeon
 {
@@ -14,7 +13,6 @@ namespace UI.Dungeon
 
         [Header("Clear Panel")]
         [SerializeField] private TextMeshProUGUI _xpRewardText;
-        [SerializeField] private Button _returnButton;
 
         [Header("Fail UI Animation")]
         [SerializeField] private DungeonFailUI _dungeonFailUI;
@@ -24,13 +22,6 @@ namespace UI.Dungeon
 
         private void Awake()
         {
-            if (_returnButton == null)
-            {
-                Debug.LogError($"[{nameof(DungeonResultUI)}] Return button not assigned!", this);
-                enabled = false;
-                return;
-            }
-
             if (_dungeonFailUI == null && _failPanel != null)
             {
                 _dungeonFailUI = _failPanel.GetComponent<DungeonFailUI>();
@@ -46,7 +37,6 @@ namespace UI.Dungeon
                 _dungeonManager.DungeonFailed += ShowFailPanel;
                 _dungeonManager.GameCompleted += ShowGameCompletePanel;
             }
-            _returnButton?.onClick.AddListener(OnReturnClicked);
         }
 
         private void OnDisable()
@@ -57,7 +47,6 @@ namespace UI.Dungeon
                 _dungeonManager.DungeonFailed -= ShowFailPanel;
                 _dungeonManager.GameCompleted -= ShowGameCompletePanel;
             }
-            _returnButton?.onClick.RemoveListener(OnReturnClicked);
         }
 
         private void ShowClearPanel(int xpReward)
@@ -82,18 +71,5 @@ namespace UI.Dungeon
         }
 
         private void ShowGameCompletePanel() => _gameCompletePanel?.SetActive(true);
-
-        private void OnReturnClicked()
-        {
-            HideAllPanels();
-            _dungeonManager?.ReturnToTown();
-        }
-
-        private void HideAllPanels()
-        {
-            _clearPanel?.SetActive(false);
-            _failPanel?.SetActive(false);
-            _gameCompletePanel?.SetActive(false);
-        }
     }
 }

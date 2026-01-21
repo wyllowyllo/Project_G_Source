@@ -21,8 +21,6 @@ namespace Skill
     public class GlideController : MonoBehaviour, IGlideAnimationReceiver
     {
         private const float SuperJumpGravity = 30f;
-        private const float GroundCheckOriginOffset = 0.5f;
-        private const float GroundCheckDistance = 10f;
 
         [SerializeField] private GlideSettings _settings;
         [SerializeField] private LayerMask _enemyLayer;
@@ -56,11 +54,8 @@ namespace Skill
         private bool _wasGrounded;
 
         private bool _isAiming;
-        private bool _hasValidTarget;
         private bool _canDiveBomb;
         private Vector3 _aimTargetPosition;
-        private Vector3 _aimForwardDirection;
-        private Vector3 _aimRightDirection;
         private Vector3 _diveStartPosition;
         private float _diveProgress;
         private float _diveDuration;
@@ -156,12 +151,10 @@ namespace Skill
 
         public void OnGlideTransition()
         {
-            // 현재 물리 기반으로 자동 전환하므로 사용하지 않음
         }
 
         public void OnGlideComplete()
         {
-            // 현재 물리 기반으로 자동 종료하므로 사용하지 않음
         }
 
         public void OnLandingComplete()
@@ -270,6 +263,7 @@ namespace Skill
             _currentState = GlideState.Landing;
             _stateTimer = 0f;
             _playerMovement.ClearSmoothRotation();
+            _playerMovement.SetForceRootMotionOnUnstableGround(true);
             _animationController?.PlayGlide(GlideState.Landing);
 
             StopGlideEffects();
@@ -319,7 +313,7 @@ namespace Skill
             if (_diveProgress >= 1f)
             {
                 _diveProgress = 1f;
-                _playerMovement.SetPosition(GetGroundPosition(_aimTargetPosition));
+                _playerMovement.SetPosition(_aimTargetPosition);
                 RequestDiveBombDamage();
                 _isParabolicDive = false;
                 TransitionToDiveBombLanding();
@@ -344,15 +338,60 @@ namespace Skill
             return linear + Vector3.up * arc;
         }
 
-        private Vector3 GetGroundPosition(Vector3 targetPosition)
+        private const float RayStartHeightOffset = 100f;
+
+        private bool TryFindFloor(Vector3 xzPosition, out Vector3 floorPoint)
         {
-            Vector3 rayOrigin = new Vector3(targetPosition.x, transform.position.y, targetPosition.z);
+            float rayStartHeight = transform.position.y + RayStartHeightOffset;
+            Vector3 rayOrigin = new Vector3(xzPosition.x, rayStartHeight, xzPosition.z);
+
             if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, Mathf.Infinity, _settings.GroundLayer))
             {
-                return hit.point;
+                if (hit.point.y <= transform.position.y)
+                {
+                    floorPoint = hit.point;
+                    return true;
+                }
             }
 
-            return targetPosition;
+            floorPoint = default;
+            return false;
+        }
+
+        private const int TrajectoryCheckSegments = 10;
+
+        private Vector3 GetLandingPosition(Vector3 targetXZ)
+        {
+            Vector3 targetPoint;
+            if (TryFindFloor(targetXZ, out Vector3 targetFloor))
+            {
+                targetPoint = targetFloor;
+            }
+            else
+            {
+                targetPoint = new Vector3(targetXZ.x, transform.position.y - 50f, targetXZ.z);
+            }
+
+            Vector3 start = transform.position;
+            
+            for (int i = 0; i < TrajectoryCheckSegments; i++)
+            {
+                float t1 = (float)i / TrajectoryCheckSegments;
+                float t2 = (float)(i + 1) / TrajectoryCheckSegments;
+
+                Vector3 p1 = CalculateParabolicPosition(start, targetPoint, t1);
+                Vector3 p2 = CalculateParabolicPosition(start, targetPoint, t2);
+
+                Vector3 direction = (p2 - p1).normalized;
+                float distance = Vector3.Distance(p1, p2);
+
+                if (Physics.Raycast(p1, direction, out RaycastHit hit, distance, _settings.GroundLayer))
+                {
+                    return hit.point;
+                }
+            }
+            
+            return targetPoint;
         }
 
         private void HandleAttackInput()
@@ -360,7 +399,7 @@ namespace Skill
             if (_currentState != GlideState.Gliding) return;
             if (!_canDiveBomb) return;
 
-            if (_isAiming && _hasValidTarget)
+            if (_isAiming)
             {
                 StartParabolicDive();
             }
@@ -389,14 +428,10 @@ namespace Skill
         private void InitializeAimPosition()
         {
             Vector3 cameraForward = _mainCamera.transform.forward;
-            Vector3 cameraRight = _mainCamera.transform.right;
+            Vector3 forwardXZ = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
 
-            _aimForwardDirection = new Vector3(cameraForward.x, 0f, cameraForward.z).normalized;
-            _aimRightDirection = new Vector3(cameraRight.x, 0f, cameraRight.z).normalized;
-
-            Vector3 initialXZ = transform.position + _aimForwardDirection * _settings.AimInitialDistance;
-            _aimTargetPosition = GetGroundPosition(initialXZ);
-            _hasValidTarget = true;
+            Vector3 initialXZ = transform.position + forwardXZ * _settings.AimInitialDistance;
+            _aimTargetPosition = GetLandingPosition(initialXZ);
         }
 
         private void HandleAimInputReleased()
@@ -404,7 +439,6 @@ namespace Skill
             if (!_isAiming) return;
 
             _isAiming = false;
-            _hasValidTarget = false;
             Time.timeScale = 1f;
             _aimVisualizer?.Hide();
             _cameraController?.SetAimMode(false);
@@ -438,8 +472,7 @@ namespace Skill
                 newPosition = new Vector3(newPosXZ.x, newPosition.y, newPosXZ.z);
             }
 
-            _aimTargetPosition = GetGroundPosition(newPosition);
-            _hasValidTarget = true;
+            _aimTargetPosition = GetLandingPosition(newPosition);
             _aimVisualizer?.UpdateTarget(_aimTargetPosition, transform.position, _settings.ParabolicArcHeight);
             _cameraController?.SetAimTarget(_aimTargetPosition);
         }
@@ -460,8 +493,7 @@ namespace Skill
 
             float distance = Vector3.Distance(_diveStartPosition, _aimTargetPosition);
             _diveDuration = distance / _settings.ParabolicDiveSpeedFactor;
-
-            // 포물선 다이브 중에는 velocity를 0으로 유지 (위치는 SetPosition으로 직접 제어)
+            
             _playerMovement.SetVelocityOverride((_, _) => Vector3.zero);
             _animationController?.PlayGlide(GlideState.DiveBomb);
         }
@@ -560,6 +592,7 @@ namespace Skill
             _playerMovement?.SetMovementEnabled(true);
             _playerMovement?.ClearVelocityOverride();
             _playerMovement?.ClearSmoothRotation();
+            _playerMovement?.SetForceRootMotionOnUnstableGround(false);
             _animationController?.EndGlide();
             _cameraController?.SetGlideMode(false);
             _cameraController?.SetDiveBombMode(false);
@@ -567,7 +600,6 @@ namespace Skill
             if (_isAiming)
             {
                 _isAiming = false;
-                _hasValidTarget = false;
                 Time.timeScale = 1f;
                 _aimVisualizer?.Hide();
                 _cameraController?.SetAimMode(false);
