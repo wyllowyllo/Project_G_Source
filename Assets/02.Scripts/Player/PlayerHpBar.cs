@@ -76,7 +76,7 @@ namespace Player
                 return;
             }
 
-            _level = _firstLevel;
+            _level = _playerProgression != null ? _playerProgression.Level : _firstLevel;
             InitializeHpBar();
         }
 
