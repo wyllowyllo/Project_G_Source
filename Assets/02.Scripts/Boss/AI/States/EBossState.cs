@@ -3,6 +3,7 @@ namespace Boss.AI.States
     public enum EBossState
     {
         Idle,               // 전투 대기, 패턴 선택
+        Chase,              // 플레이어 추적 (공격 범위 밖일 때)
         MeleeAttack,        // 근접 공격 (Attack01)
         Charge,             // 돌진 공격
         Breath,             // 브레스 공격 (Attack03)
