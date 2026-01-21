@@ -53,6 +53,7 @@ namespace Player
         private readonly int _isMovingHash = Animator.StringToHash("IsMoving");
         
         private bool _movementEnabled = true;
+        private bool _isDead;
         
         private Vector3 _rootMotionPositionDelta;
         private float _rootMotionTimeDelta;
@@ -443,6 +444,14 @@ namespace Player
 
         public void SetMovementEnabled(bool movementEnabled)
         {
+            if (_isDead)
+            {
+                _movementEnabled = false;
+                _moveInputVector = Vector3.zero;
+                _currentVelocity = Vector3.zero;
+                return;
+            }
+
             _movementEnabled = movementEnabled;
 
             if (!movementEnabled)
@@ -511,6 +520,8 @@ namespace Player
         {
             ReleaseRootMotion(this);
 
+            if (_isDead) return;
+
             if (!_canMoveWhileDodging)
             {
                 SetMovementEnabled(true);
@@ -527,6 +538,22 @@ namespace Player
             _velocityOverride = null;
         }
 
+        public void OnDeath()
+        {
+            _isDead = true;
+            _movementEnabled = false;
+            _moveInputVector = Vector3.zero;
+            _currentVelocity = Vector3.zero;
+
+            ClearVelocityOverride();
+            ClearSmoothRotation();
+
+            _rootMotionRequesters.Clear();
+            _rootMotionPositionDelta = Vector3.zero;
+            _rootMotionTimeDelta = 0f;
+            _rootMotionMultiplier = 1f;
+        }
+
         public bool IsMoving()
         {
             return _moveInputVector.magnitude > MinInputThreshold;
@@ -539,7 +566,7 @@ namespace Player
 
         public bool IsGrounded()
         {
-            return _motor != null && _motor.GroundingStatus.IsStableOnGround;
+            return _motor != null && _motor.GroundingStatus.FoundAnyGround;
         }
 
         public void ForceUnground()

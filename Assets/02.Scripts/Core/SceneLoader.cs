@@ -1,4 +1,5 @@
 using System.Collections;
+using Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -122,10 +123,22 @@ namespace Core
             yield return null;
             yield return new WaitForSecondsRealtime(SCENE_STABILIZATION_WAIT_TIME);
 
-            // 5. Fade from black
+            // 5. Force camera snap before fade (카메라가 날아오는 현상 방지)
+            ForceSnapCamera();
+
+            // 6. Fade from black
             yield return StartCoroutine(FadeFromBlack());
 
             IsLoading = false;
+        }
+
+        private void ForceSnapCamera()
+        {
+            var cameraController = FindAnyObjectByType<CinemachineCameraController>();
+            if (cameraController != null)
+            {
+                cameraController.ForceSnapToTarget();
+            }
         }
 
         private IEnumerator FadeToBlack()

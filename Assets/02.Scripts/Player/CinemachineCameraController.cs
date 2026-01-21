@@ -450,8 +450,14 @@ namespace Player
             var target = _orbitalFollow != null ? _orbitalFollow.FollowTarget : null;
             if (target == null) return;
 
-            _cinemachineCamera.OnTargetObjectWarped(target, Vector3.zero);
+            // 이전 상태 무효화하여 블렌딩 없이 즉시 스냅
             _cinemachineCamera.PreviousStateIsValid = false;
+
+            // Brain 강제 업데이트로 즉시 위치 계산
+            if (_brain != null)
+            {
+                _brain.ManualUpdate();
+            }
         }
 
         #endregion
