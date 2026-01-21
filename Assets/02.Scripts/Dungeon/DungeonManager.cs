@@ -87,6 +87,7 @@ namespace Dungeon
 
         public void CompleteDungeon()
         {
+            Debug.Log("CompleteDungeon");
             if (_currentDungeon == null)
             {
                 Debug.LogWarning("[DungeonManager] CompleteDungeon called but not in dungeon");
@@ -117,6 +118,7 @@ namespace Dungeon
             // 첫 클리어: XP 보상, 재클리어: 0
             int xpReward = isFirstClear ? _currentDungeon.ClearXpReward : 0;
             DungeonCleared?.Invoke(xpReward);
+            
         }
 
         public void FailDungeon()

@@ -109,6 +109,7 @@ namespace Monster.Manager
                 }
 
                 OnAllMonstersDefeated?.Invoke();
+               
             }
         }
 

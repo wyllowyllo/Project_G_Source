@@ -66,6 +66,7 @@ namespace Dungeon
                 if (_monsterTracker != null)
                 {
                     _monsterTracker.OnAllMonstersDefeated.AddListener(HandleAllMonstersDefeated);
+                    Debug.Log("AllKill");
                 }
             }
 
@@ -79,8 +80,9 @@ namespace Dungeon
             }
         }
 
-        private void HandleAllMonstersDefeated()
+        public void HandleAllMonstersDefeated()
         {
+         
             _dungeonManager?.CompleteDungeon();
         }
 
