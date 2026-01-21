@@ -14,15 +14,15 @@ namespace Equipment
         [SerializeField] private int _uniqueWeight = 12;
         [SerializeField] private int _legendaryWeight = 3;
 
-        [Header("Equipment Pools")]
-        [SerializeField] private EquipmentData[] _normalPool;
-        [SerializeField] private EquipmentData[] _rarePool;
-        [SerializeField] private EquipmentData[] _uniquePool;
-        [SerializeField] private EquipmentData[] _legendaryPool;
+        [Header("Equipment Prefab Pools")]
+        [SerializeField] private GameObject[] _normalPool;
+        [SerializeField] private GameObject[] _rarePool;
+        [SerializeField] private GameObject[] _uniquePool;
+        [SerializeField] private GameObject[] _legendaryPool;
 
         public float DropChance => _dropChance;
 
-        public EquipmentData RollDrop()
+        public GameObject RollDrop()
         {
             if (Random.value > _dropChance)
                 return null;
@@ -50,7 +50,7 @@ namespace Equipment
             return _legendaryPool[Random.Range(0, _legendaryPool.Length)];
         }
 
-        private bool HasItems(EquipmentData[] pool) => pool != null && pool.Length > 0;
+        private bool HasItems(GameObject[] pool) => pool != null && pool.Length > 0;
 
 #if UNITY_INCLUDE_TESTS
         public static DropTableData CreateForTest(
@@ -70,15 +70,15 @@ namespace Equipment
         }
 
         public void SetPoolsForTest(
-            EquipmentData[] normalPool = null,
-            EquipmentData[] rarePool = null,
-            EquipmentData[] uniquePool = null,
-            EquipmentData[] legendaryPool = null)
+            GameObject[] normalPool = null,
+            GameObject[] rarePool = null,
+            GameObject[] uniquePool = null,
+            GameObject[] legendaryPool = null)
         {
-            _normalPool = normalPool ?? System.Array.Empty<EquipmentData>();
-            _rarePool = rarePool ?? System.Array.Empty<EquipmentData>();
-            _uniquePool = uniquePool ?? System.Array.Empty<EquipmentData>();
-            _legendaryPool = legendaryPool ?? System.Array.Empty<EquipmentData>();
+            _normalPool = normalPool ?? System.Array.Empty<GameObject>();
+            _rarePool = rarePool ?? System.Array.Empty<GameObject>();
+            _uniquePool = uniquePool ?? System.Array.Empty<GameObject>();
+            _legendaryPool = legendaryPool ?? System.Array.Empty<GameObject>();
         }
 #endif
     }

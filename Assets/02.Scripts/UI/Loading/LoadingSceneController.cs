@@ -40,16 +40,14 @@ namespace UI
             {
                 elapsedTime += Time.deltaTime;
 
-                float progress = Mathf.Clamp01(_asyncLoad.progress / 0.9f);
+                float loadProgress = Mathf.Clamp01(_asyncLoad.progress / 0.9f);
+                float timeProgress = Mathf.Clamp01(elapsedTime / _minimumDisplayTime);
+
                 if (_progressBar != null)
-                    _progressBar.value = progress;
+                    _progressBar.value = Mathf.Min(loadProgress, timeProgress);
 
                 yield return null;
             }
-
-            // Fill progress bar
-            if (_progressBar != null)
-                _progressBar.value = 1f;
 
             // Tell SceneLoader we're ready
             if (SceneLoader.Instance == null)

@@ -63,7 +63,7 @@ namespace Dungeon
 
         private void OnDungeonCleared(int xp)
         {
-            UpdateClearedIndicator();
+            UpdateVisibility();
         }
 
         private void OnDungeonUnlocked(DungeonData unlockedDungeon)
@@ -79,7 +79,8 @@ namespace Dungeon
             if (_dungeonData == null || DungeonManager.Instance == null) return;
 
             bool isUnlocked = DungeonManager.Instance.IsDungeonUnlocked(_dungeonData);
-            gameObject.SetActive(isUnlocked);
+            bool isCleared = DungeonManager.Instance.IsDungeonCleared(_dungeonData.DungeonId);
+            gameObject.SetActive(isUnlocked && !isCleared);
         }
 
         private void UpdateClearedIndicator()

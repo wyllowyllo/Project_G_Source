@@ -175,6 +175,7 @@ namespace Player
             if (!CanPerformAction() || _isDodging) return;
             if (_skillCaster != null && _skillCaster.IsCasting) return;
             if (_glideController != null && _glideController.IsActive) return;
+            if (_playerMovement != null && !_playerMovement.IsGrounded()) return;
 
             switch (CurrentState)
             {
@@ -228,6 +229,9 @@ namespace Player
             if (_glideController != null && _glideController.IsActive)
                 return;
 
+            if (_playerMovement != null && !_playerMovement.IsGrounded())
+                return;
+
             if (CurrentState != ComboState.Idle)
             {
                 CancelCurrentAttack();
@@ -262,9 +266,9 @@ namespace Player
         {
             _animationController?.PlayDeath();
             _inputHandler?.SetEnabled(false);
-            _playerMovement?.SetMovementEnabled(false);
+            _playerMovement?.OnDeath();
 
-            EndDodge();
+            _isDodging = false;
 
             if (CurrentState != ComboState.Idle)
             {

@@ -21,7 +21,9 @@ namespace Player
         private static readonly int _skillSlotParameter = Animator.StringToHash("SkillSlot");
         private static readonly int _skillEndTrigger = Animator.StringToHash("SkillEnd");
         private static readonly int _glideStateParameter = Animator.StringToHash("GlideState");
+        private static readonly int _isDeadParameter = Animator.StringToHash("IsDead");
 
+        private bool _isDead;
         private bool HasAnimator => _animator != null;
 
         private void Awake()
@@ -48,7 +50,7 @@ namespace Player
 
         public void PlayDamage()
         {
-            if (!HasAnimator) return;
+            if (!HasAnimator || _isDead) return;
 
             _animator.SetTrigger(_damageTrigger);
         }
@@ -57,6 +59,8 @@ namespace Player
         {
             if (!HasAnimator) return;
 
+            _isDead = true;
+            _animator.SetBool(_isDeadParameter, true);
             _animator.SetTrigger(_deathTrigger);
         }
 

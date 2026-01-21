@@ -126,6 +126,7 @@ namespace Skill
             if (!IsSkillReady(slot)) return false;
             if (_isCasting) return false;
             if (_playerCombat != null && _playerCombat.IsDodging) return false;
+            if (_playerMovement != null && !_playerMovement.IsGrounded()) return false;
 
             if (slot == SkillSlot.E && _glideController != null)
             {

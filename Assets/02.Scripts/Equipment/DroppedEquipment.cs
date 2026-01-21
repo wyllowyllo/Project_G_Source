@@ -11,6 +11,11 @@ namespace Equipment
         [Header("Root Object")]
         [SerializeField] private GameObject _rootObject;
 
+        [Header("Ground Settings")]
+        [SerializeField] private float _heightAboveGround = 1f;
+        [SerializeField] private float _groundCheckDistance = 10f;
+        [SerializeField] private LayerMask _groundLayer = ~0;
+
         [Header("Floating Effect")]
         [SerializeField] private float _floatAmplitude = 0.15f;
         [SerializeField] private float _floatSpeed = 2f;
@@ -46,8 +51,23 @@ namespace Equipment
 
         private void Start()
         {
+            SnapToGround();
             ApplyGradeColor();
             _initialLocalPosition = TargetTransform.localPosition;
+        }
+
+        private void SnapToGround()
+        {
+            var targetTransform = TargetTransform;
+
+            if (Physics.Raycast(transform.position, Vector3.down, out var hit, _groundCheckDistance, _groundLayer))
+            {
+                targetTransform.position = hit.point + Vector3.up * _heightAboveGround;
+            }
+            else
+            {
+                targetTransform.position += Vector3.up * _heightAboveGround;
+            }
         }
 
         private void Update()
