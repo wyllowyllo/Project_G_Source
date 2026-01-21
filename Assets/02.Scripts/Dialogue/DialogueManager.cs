@@ -6,8 +6,6 @@ namespace Dialogue
 {
     public class DialogueManager : MonoBehaviour
     {
-        private const string INTRO_SHOWN_KEY = "IntroDialogueShown";
-
         public static DialogueManager Instance { get; private set; }
 
         [SerializeField] private DialogueUI _dialogueUI;
@@ -48,15 +46,13 @@ namespace Dialogue
         {
             if (scene.name != _townSceneName) return;
 
-            // 인트로 대화 (첫 플레이 시 1회)
+            // 인트로 대화 (게임 시작 시 1회)
             if (!_introChecked)
             {
                 _introChecked = true;
 
-                if (_introDialogue != null && PlayerPrefs.GetInt(INTRO_SHOWN_KEY, 0) == 0)
+                if (_introDialogue != null)
                 {
-                    PlayerPrefs.SetInt(INTRO_SHOWN_KEY, 1);
-                    PlayerPrefs.Save();
                     ShowDialogue(_introDialogue);
                     return;
                 }

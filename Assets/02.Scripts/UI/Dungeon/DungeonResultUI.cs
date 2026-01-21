@@ -70,9 +70,9 @@ private void Awake()
             }
         }
 
-private void ShowClearPanel(int xpReward)
+private void ShowClearPanel(int xpReward, bool isFirstClear)
         {
-            Debug.Log($"[DungeonResultUI] ShowClearPanel 호출됨! XP: {xpReward}");
+            Debug.Log($"[DungeonResultUI] ShowClearPanel 호출됨! XP: {xpReward}, FirstClear: {isFirstClear}");
             
             // 던전 이름 가져오기
             string dungeonName = "";

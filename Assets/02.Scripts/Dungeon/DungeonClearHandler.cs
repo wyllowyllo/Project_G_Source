@@ -21,6 +21,7 @@ namespace Dungeon
         private MonsterTracker _monsterTracker;
         private Coroutine _returnCoroutine;
         private bool _canAcceptInput;
+        private bool _isFirstClear;
 
         private void OnEnable()
         {
@@ -100,8 +101,9 @@ private void Update()
             }
         }
 
-        private void HandleDungeonCleared(int xpReward)
+        private void HandleDungeonCleared(int xpReward, bool isFirstClear)
         {
+            _isFirstClear = isFirstClear;
             StopReturnCoroutine();
             _returnCoroutine = StartCoroutine(ClearSequence());
         }
@@ -110,11 +112,14 @@ private void Update()
         {
             _canAcceptInput = false;
             OnClearSequenceStarted?.Invoke();
-            
-            var clearDialogue = _dungeonManager?.GetCurrentDungeonClearDialogue();
-            if (clearDialogue != null && DialogueManager.Instance != null)
+
+            if (_isFirstClear)
             {
-                DialogueManager.Instance.QueueDialogueOnTownLoad(clearDialogue);
+                var clearDialogue = _dungeonManager?.GetCurrentDungeonClearDialogue();
+                if (clearDialogue != null && DialogueManager.Instance != null)
+                {
+                    DialogueManager.Instance.QueueDialogueOnTownLoad(clearDialogue);
+                }
             }
 
             yield return new WaitForSeconds(_inputAcceptDelay);
