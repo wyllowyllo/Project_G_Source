@@ -58,16 +58,6 @@ public class PauseManager : MonoBehaviour
     {
         IsPaused = paused;
 
-        if (pauseTimeScale)
-        { 
-            Time.timeScale = paused ? 0f : 1f;
-        }
-
-        if (pausePanel != null)
-        { 
-            pausePanel.SetActive(paused);
-        }
-
         OnPauseStateChanged?.Invoke(paused);
 
         if (CursorManager.Instance != null)
@@ -80,6 +70,16 @@ public class PauseManager : MonoBehaviour
             {
                 CursorManager.Instance.LockCursor();
             }
+        }
+
+        if (pauseTimeScale)
+        { 
+            Time.timeScale = paused ? 0f : 1f;
+        }
+
+        if (pausePanel != null)
+        { 
+            pausePanel.SetActive(paused);
         }
     }
 
