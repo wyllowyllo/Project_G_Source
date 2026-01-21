@@ -191,13 +191,14 @@ namespace Boss.AI
         {
             _stateMachine = new BossStateMachine(this);
 
-            // Phase 3: 기본 상태 등록
+            // 기본 상태 등록
             _stateMachine.RegisterState(EBossState.Idle, new BossIdleState(this, _stateMachine));
+            _stateMachine.RegisterState(EBossState.Chase, new BossChaseState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Stagger, new BossStaggerState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Dead, new BossDeadState(this));
             _stateMachine.RegisterState(EBossState.PhaseTransition, new BossPhaseTransitionState(this, _stateMachine));
 
-            // Phase 4: 공격 상태 등록
+            // 공격 상태 등록
             _stateMachine.RegisterState(EBossState.MeleeAttack, new BossMeleeAttackState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Charge, new BossChargeState(this, _stateMachine));
             _stateMachine.RegisterState(EBossState.Breath, new BossBreathState(this, _stateMachine));

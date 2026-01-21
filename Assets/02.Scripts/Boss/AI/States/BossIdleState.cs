@@ -4,10 +4,8 @@ using UnityEngine;
 
 namespace Boss.AI.States
 {
-    /// <summary>
-    /// 전투 대기 상태: 플레이어를 향해 회전하며 패턴 선택 대기
-    /// BossPatternSelector와 연동하여 자동으로 공격 패턴 선택
-    /// </summary>
+    // 전투 대기 상태: 플레이어를 향해 회전하며 패턴 선택 대기
+    // BossPatternSelector와 연동하여 자동으로 공격 패턴 선택
     public class BossIdleState : IBossState
     {
         private readonly BossController _controller;
@@ -23,6 +21,14 @@ namespace Boss.AI.States
         private float _idleTimer;
         private float _patternSelectDelay;
         private bool _patternSelected;
+
+        // 최대 공격 범위 (이 범위 밖이면 Chase 전환)
+        private float _maxAttackRange;
+
+        // 애니메이션 블렌딩 보간
+        private float _currentMoveX;
+        private float _currentMoveY;
+        private const float ANIM_SMOOTH_SPEED = 5f;
 
         private const float MIN_IDLE_TIME = 0.5f;
         private const float MAX_IDLE_TIME = 1.5f;
@@ -46,9 +52,20 @@ namespace Boss.AI.States
             _idleTimer = 0f;
             _patternSelected = false;
 
+            // 최대 공격 범위 계산
+            var data = _controller.Data;
+            _maxAttackRange = Mathf.Max(data.MeleeRange * 1.5f, data.ChargeDistance, data.BreathRange);
+
             // 랜덤 대기 시간 (분노 상태면 짧게)
             float speedMult = _controller.EnrageSystem?.SpeedMultiplier ?? 1f;
             _patternSelectDelay = Random.Range(MIN_IDLE_TIME, MAX_IDLE_TIME) / speedMult;
+
+            // 현재 애니메이터 MoveX, MoveY 값 가져오기 (부드러운 전환용)
+            if (_controller.Animator != null)
+            {
+                _currentMoveX = _controller.Animator.GetFloat("MoveX");
+                _currentMoveY = _controller.Animator.GetFloat("MoveY");
+            }
 
             // 전투 대기 애니메이션
             _animatorAbility?.SetSpeed(0f);
@@ -57,6 +74,9 @@ namespace Boss.AI.States
 
         public void Update()
         {
+            // 이동 애니메이션 부드럽게 0으로 수렴
+            UpdateMoveAnimation();
+
             // 플레이어 방향으로 회전
             if (_controller.PlayerTransform != null)
             {
@@ -69,6 +89,14 @@ namespace Boss.AI.States
                 return; // 플레이어가 감지 범위 밖이면 대기
             }
 
+            // 플레이어가 공격 범위 밖이면 Chase로 전환
+            float distanceToPlayer = _playerDetectAbility.DistanceToPlayer;
+            if (distanceToPlayer > _maxAttackRange)
+            {
+                _stateMachine.ChangeState(EBossState.Chase);
+                return;
+            }
+
             _idleTimer += Time.deltaTime;
 
             // 대기 시간 경과 후 패턴 선택
@@ -76,6 +104,21 @@ namespace Boss.AI.States
             {
                 SelectAndExecutePattern();
             }
+        }
+
+        private void UpdateMoveAnimation()
+        {
+            // 이미 0에 가까우면 스킵
+            if (Mathf.Abs(_currentMoveX) < 0.01f && Mathf.Abs(_currentMoveY) < 0.01f)
+            {
+                return;
+            }
+
+            // 부드럽게 0으로 수렴
+            _currentMoveX = Mathf.Lerp(_currentMoveX, 0f, Time.deltaTime * ANIM_SMOOTH_SPEED);
+            _currentMoveY = Mathf.Lerp(_currentMoveY, 0f, Time.deltaTime * ANIM_SMOOTH_SPEED);
+
+            _animatorAbility?.SetMoveDirection(_currentMoveX, _currentMoveY);
         }
 
         public void Exit()
