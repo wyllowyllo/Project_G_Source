@@ -410,6 +410,40 @@ namespace Player
 
         public void AfterCharacterUpdate(float deltaTime)
         {
+            ResolveEnemyPenetration();
+        }
+
+        private void ResolveEnemyPenetration()
+        {
+            if (_motor == null || _motor.Capsule == null) return;
+
+            var capsule = _motor.Capsule;
+            Vector3 point1 = transform.position + _motor.CharacterTransformToCapsuleBottomHemi;
+            Vector3 point2 = transform.position + _motor.CharacterTransformToCapsuleTopHemi;
+
+            // Enemy 레이어(9)와 겹치는 콜라이더 찾기
+            Collider[] overlaps = Physics.OverlapCapsule(point1, point2, capsule.radius, 1 << 9);
+
+            foreach (var otherCollider in overlaps)
+            {
+                if (Physics.ComputePenetration(
+                    capsule, transform.position, transform.rotation,
+                    otherCollider, otherCollider.transform.position, otherCollider.transform.rotation,
+                    out Vector3 direction, out float distance))
+                {
+                    // 수평 방향으로만 밀어내기 (바닥 뚫림 방지)
+                    direction.y = 0f;
+                    if (direction.sqrMagnitude < 0.001f)
+                    {
+                        // 수평 방향이 없으면 Enemy 중심에서 바깥으로
+                        direction = transform.position - otherCollider.bounds.center;
+                        direction.y = 0f;
+                    }
+                    direction.Normalize();
+
+                    _motor.SetPosition(transform.position + direction * (distance + 0.05f));
+                }
+            }
         }
 
         public bool IsColliderValidForCollisions(Collider coll)
