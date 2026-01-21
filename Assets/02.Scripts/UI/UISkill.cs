@@ -12,7 +12,18 @@ public class UISkill : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _textSkillData;
     [SerializeField] private TextMeshProUGUI _textCooldownTime;
     [SerializeField] private Image _imageCooldownTime;
-    [SerializeField] private Image _imageCooldownComplete;
+    
+    
+    // 레벨별 스킬 아이콘 스프라이트
+    [Header("Skill Icon Sprites by Level")]
+    [SerializeField] private Sprite _iconLevel1;    // 기본 아이콘
+    [SerializeField] private Sprite _iconLevel10;   // Lv10 강화 아이콘
+    [SerializeField] private Sprite _iconLevel20;   // Lv20 강화 아이콘
+    [SerializeField] private Sprite _iconLevel30;   // Lv30 강화 아이콘
+    
+    [SerializeField] private PlayerProgression _playerProgression;
+    private Image _skillIconImage; // 스킬 아이콘 이미지
+[SerializeField] private Image _imageCooldownComplete;
 
     private Transform _skillButtonScale;
     private Vector3 _skillDefaultScale;
@@ -25,13 +36,25 @@ public class UISkill : MonoBehaviour
     private SkillCaster _caster;
     private SkillSlot _boundSlot;
 
-    private void Awake()
+private void Awake()
     {
         SetCooldownIs(false);
         SetUseSkillText();
 
         _skillButtonScale = transform;
         _skillDefaultScale = _skillButtonScale.localScale;
+        
+        // 스킬 아이콘 이미지 컴포넌트 가져오기
+        _skillIconImage = GetComponent<Image>();
+        
+        // PlayerProgression 찾기
+        if (_playerProgression == null)
+        {
+            _playerProgression = FindObjectOfType<PlayerProgression>();
+        }
+        
+        // 초기 아이콘 설정
+        UpdateSkillIcon();
     }
 
     public void UseSkill()
@@ -194,4 +217,51 @@ public class UISkill : MonoBehaviour
         StartCoroutine(nameof(OnCooldownTime), cooldownTime);
     }
 
+
+
+private void OnEnable()
+    {
+        if (_playerProgression != null)
+        {
+            _playerProgression.OnLevelUp += HandleLevelUp;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_playerProgression != null)
+        {
+            _playerProgression.OnLevelUp -= HandleLevelUp;
+        }
+    }
+
+    private void HandleLevelUp(int prevLevel, int newLevel)
+    {
+        UpdateSkillIcon();
+    }
+
+    private void UpdateSkillIcon()
+    {
+        if (_playerProgression == null || _skillIconImage == null) return;
+
+        int level = _playerProgression.Level;
+        
+        // 레벨에 따라 아이콘 변경
+        if (level >= 30 && _iconLevel30 != null)
+        {
+            _skillIconImage.sprite = _iconLevel30;
+        }
+        else if (level >= 20 && _iconLevel20 != null)
+        {
+            _skillIconImage.sprite = _iconLevel20;
+        }
+        else if (level >= 10 && _iconLevel10 != null)
+        {
+            _skillIconImage.sprite = _iconLevel10;
+        }
+        else if (_iconLevel1 != null)
+        {
+            _skillIconImage.sprite = _iconLevel1;
+        }
+    }
 }
