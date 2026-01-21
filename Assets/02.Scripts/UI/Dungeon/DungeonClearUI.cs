@@ -9,11 +9,16 @@ public class DungeonClearUI : MonoBehaviour
     [SerializeField] private GameObject _completePanel;
     [SerializeField] private Image _completeImage;
     [SerializeField] private TextMeshProUGUI _dungeonNameText;
+    [SerializeField] private TextMeshProUGUI _comebackMessageText;
 
     [Header("애니메이션 설정")]
     [SerializeField] private float _slideSpeed = 1000f;
     [SerializeField] private float _displayDuration = 2f;
     [SerializeField] private float _fadeSpeed = 1f;
+
+    [Header("도시 복귀 메세지")]
+    [SerializeField] private float _comebackMessageFadeSpeed = 0.7f;
+    [SerializeField] private float _comebackMessageDisplayDuration = 2f;
 
     [Header("위치 설정")]
     [SerializeField] private float _startOffsetX = 1518f;
@@ -28,11 +33,16 @@ public class DungeonClearUI : MonoBehaviour
     private RectTransform _backgroundRectTransform;
     private RectTransform _dungeonNameRectTransform;
     private CanvasGroup _canvasGroup;
+    private CanvasGroup _comebackMessageCanvasGroup;
     private CanvasGroup _completeCanvasGroup; // Complete 이미지용 CanvasGroup
     private CanvasGroup _backgroundCanvasGroup;
     private CanvasGroup _dungeonNameCanvasGroup;
     private Vector2 _startPosition;
     private Vector2 _targetPosition;
+
+    [SerializeField] private string _returnMessage = "3초 후 도시로 복귀합니다.";
+    [SerializeField] private string _countdownMessageFormat = "{0}초 후 도시로 복귀합니다.";
+    [SerializeField] private float _countdownInterval = 1f; // 카운트다운 간격 (초)
 
     private void Awake()
     {
@@ -81,6 +91,8 @@ public class DungeonClearUI : MonoBehaviour
 
         yield return StartCoroutine(AnimateOutro());
 
+        yield return StartCoroutine(AnimateComebackMessage());
+
         if (_completePanel != null)
         {
             _completePanel.SetActive(false);
@@ -118,6 +130,12 @@ public class DungeonClearUI : MonoBehaviour
         {
             _dungeonNameRectTransform = _dungeonNameText.GetComponent<RectTransform>();
             InitializeCanvasGroup(_dungeonNameText.gameObject, ref _dungeonNameCanvasGroup);
+        }
+
+        // 도시 복귀 메시지 초기화
+        if (_comebackMessageText != null)
+        {
+            InitializeCanvasGroup(_comebackMessageText.gameObject, ref _comebackMessageCanvasGroup);
         }
     }
 
@@ -216,6 +234,49 @@ public class DungeonClearUI : MonoBehaviour
         SetAlpha(_completeCanvasGroup, 0f);
         SetAlpha(_backgroundCanvasGroup, 0f);
         SetAlpha(_dungeonNameCanvasGroup, 0f);
+    }
+
+    private IEnumerator AnimateComebackMessage()
+    {
+        if (_comebackMessageCanvasGroup == null || _comebackMessageText == null)
+        {
+            yield break;
+        }
+
+        if (_canvasGroup != null)
+        {
+            _canvasGroup.alpha = 1f;
+        }
+
+
+        // 페이드 인
+        float fadeElapsed = 0f;
+        while (fadeElapsed < _comebackMessageFadeSpeed)
+        {
+            fadeElapsed += Time.deltaTime;
+            float alpha = fadeElapsed / _comebackMessageFadeSpeed;
+            _comebackMessageCanvasGroup.alpha = alpha;
+            yield return null;
+        }
+        _comebackMessageCanvasGroup.alpha = 1f;
+
+        // 카운트다운 (3 -> 2 -> 1)
+        for (int countdown = 3; countdown > 0; countdown--)
+        {
+            _comebackMessageText.text = string.Format(_countdownMessageFormat, countdown);
+            yield return new WaitForSeconds(_countdownInterval);
+        }
+
+        // 페이드 아웃
+        fadeElapsed = 0f;
+        while (fadeElapsed < _comebackMessageFadeSpeed)
+        {
+            fadeElapsed += Time.deltaTime;
+            float alpha = 1f - (fadeElapsed / _comebackMessageFadeSpeed);
+            _comebackMessageCanvasGroup.alpha = alpha;
+            yield return null;
+        }
+        _comebackMessageCanvasGroup.alpha = 0f;
     }
 
     // CanvasGroup의 알파값을 안전하게 설정

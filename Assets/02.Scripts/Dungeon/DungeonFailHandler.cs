@@ -75,17 +75,10 @@ namespace Dungeon
             StartCoroutine(FailSequence());
         }
 
-private IEnumerator FailSequence()
+        private IEnumerator FailSequence()
         {
             _canAcceptInput = false;
             OnFailSequenceStarted?.Invoke();
-
-            // 던전 실패 UI 표시
-            if (_dungeonFailUI != null)
-            {
-                string dungeonName = _dungeonManager?.CurrentDungeon?.DisplayName ?? "";
-                _dungeonFailUI.ShowDungeonFail(dungeonName);
-            }
 
             yield return new WaitForSeconds(_inputAcceptDelay);
             _canAcceptInput = true;

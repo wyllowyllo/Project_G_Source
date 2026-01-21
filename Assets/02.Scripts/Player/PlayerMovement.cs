@@ -58,6 +58,7 @@ namespace Player
         private float _rootMotionTimeDelta;
         private readonly Dictionary<IRootMotionRequester, float> _rootMotionRequesters = new();
         private float _rootMotionMultiplier = 1f;
+        private bool _forceRootMotionOnUnstableGround;
 
         private Func<Vector3, float, Vector3> _velocityOverride;
 
@@ -320,6 +321,19 @@ namespace Player
             if (_velocityOverride != null)
             {
                 currentVelocity = _velocityOverride(currentVelocity, deltaTime);
+
+                if (_forceRootMotionOnUnstableGround &&
+                    _motor.GroundingStatus.FoundAnyGround &&
+                    _rootMotionRequesters.Count > 0 &&
+                    _rootMotionPositionDelta.sqrMagnitude > MinRootMotionThreshold &&
+                    _rootMotionTimeDelta > 0)
+                {
+                    Vector3 rootMotionVelocity = _rootMotionPositionDelta / _rootMotionTimeDelta;
+                    currentVelocity = ProjectVelocityOnSlope(rootMotionVelocity);
+                    _rootMotionPositionDelta = Vector3.zero;
+                    _rootMotionTimeDelta = 0f;
+                }
+
                 _currentVelocity = currentVelocity;
                 return;
             }
@@ -457,6 +471,11 @@ namespace Player
         {
             _rootMotionRequesters[requester] = multiplier;
             RecalculateMultiplier();
+        }
+
+        public void SetForceRootMotionOnUnstableGround(bool value)
+        {
+            _forceRootMotionOnUnstableGround = value;
         }
 
         private void RecalculateMultiplier()
