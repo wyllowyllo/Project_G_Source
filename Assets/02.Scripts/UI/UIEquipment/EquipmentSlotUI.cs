@@ -7,6 +7,8 @@ public class EquipmentSlotUI : MonoBehaviour
 {
     [Header("UI 참조")]
     [SerializeField] private Image _iconImage;
+    [SerializeField] private Image _borderImage;  // 등급 색상 표시용 (선택적)
+
     [SerializeField] private TextMeshProUGUI _itemNameText;
     [SerializeField] private TextMeshProUGUI _gradeText;
     [SerializeField] private GameObject _emptySlotIndicator;
@@ -29,18 +31,33 @@ public class EquipmentSlotUI : MonoBehaviour
         SetEmpty();
     }
 
-    public void SetEquipment(EquipmentData equipment)
+public void SetEquipment(EquipmentData equipment)
     {
         _currentEquipment = equipment;
 
         if (equipment != null)
         {
-            // 아이콘 설정 (실제로는 EquipmentData에 Sprite 필드 추가 필요)
+            // 아이콘 설정
             if (_iconImage != null)
             {
-                // TODO: EquipmentData에 icon sprite 추가되면 여기서 설정
-                // _iconImage.sprite = equipment.Icon;
-                _iconImage.color = GetGradeColor(equipment.Grade);
+                // 장비 아이콘이 있으면 사용, 없으띠 기본 스프라이트
+                if (equipment.Icon != null)
+                {
+                    _iconImage.sprite = equipment.Icon;
+                    _iconImage.color = Color.white;  // 원본 색상 유지
+                }
+                else
+                {
+                    // 아이콘이 없는 경우 기본 스프라이트 + 등급 색상
+                    _iconImage.sprite = _defaultEmptySprite;
+                    _iconImage.color = GetGradeColor(equipment.Grade);
+                }
+            }
+
+            // 테두리/배경에 등급 색상 적용 (선택적)
+            if (_borderImage != null)
+            {
+                _borderImage.color = GetGradeColor(equipment.Grade);
             }
 
             // 아이템 이름 표시
@@ -70,7 +87,7 @@ public class EquipmentSlotUI : MonoBehaviour
         }
     }
 
-    public void SetEmpty()
+public void SetEmpty()
     {
         _currentEquipment = null;
 
@@ -78,6 +95,12 @@ public class EquipmentSlotUI : MonoBehaviour
         {
             _iconImage.sprite = _defaultEmptySprite;
             _iconImage.color = _emptySlotColor;
+        }
+
+        // 테두리 색상도 초기화
+        if (_borderImage != null)
+        {
+            _borderImage.color = _emptySlotColor;
         }
 
         if (_itemNameText != null)

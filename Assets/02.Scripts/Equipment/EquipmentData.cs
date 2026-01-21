@@ -27,6 +27,8 @@ namespace Equipment
         [SerializeField] private string _equipmentName;
         [SerializeField] private EquipmentSlot _slot;
         [SerializeField] private EquipmentGrade _grade;
+        [SerializeField] private Sprite _icon;
+
 
         [Header("Stats")]
         [SerializeField, Min(0)] private float _attackBonus;
@@ -36,6 +38,8 @@ namespace Equipment
         public string EquipmentName => _equipmentName;
         public EquipmentSlot Slot => _slot;
         public EquipmentGrade Grade => _grade;
+        public Sprite Icon => _icon;
+
         public float AttackBonus => _attackBonus;
         public float DefenseBonus => _defenseBonus;
         public float CriticalChanceBonus => _criticalChanceBonus;
