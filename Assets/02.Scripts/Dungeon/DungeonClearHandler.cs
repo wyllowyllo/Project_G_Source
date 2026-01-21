@@ -60,7 +60,6 @@ namespace Dungeon
 
         private void Start()
         {
-            // OnEnable 시점에 Instance가 없었을 경우 재시도
             if (_monsterTracker == null)
             {
                 _monsterTracker = MonsterTracker.Instance;
@@ -108,8 +107,7 @@ namespace Dungeon
         {
             _canAcceptInput = false;
             OnClearSequenceStarted?.Invoke();
-
-            // 클리어 대화를 마을 도착 시 표시하도록 예약
+            
             var clearDialogue = _dungeonManager?.GetCurrentDungeonClearDialogue();
             if (clearDialogue != null && DialogueManager.Instance != null)
             {
