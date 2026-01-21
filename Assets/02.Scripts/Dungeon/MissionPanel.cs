@@ -9,6 +9,10 @@ public class MissionPanel : MonoBehaviour
     [SerializeField] private GameObject _missionPanel;
     [SerializeField] private TextMeshProUGUI _missionSubText;
 
+    [Header("UI Inputs")]
+    [SerializeField] private CharacterViewerInput _characterViewerInput;
+    [SerializeField] private SkillViewerInput _skillViewerInput;
+
     [Header("표시 설정")]
     [SerializeField] private string _missionTextFormat = "남은 몬스터: {0}마리";
     [SerializeField] private string _clearedText = "[ 클리어! ]";
@@ -105,16 +109,14 @@ public class MissionPanel : MonoBehaviour
 
     private void SubscribeToUIInputs()
     {
-        CharacterViewerInput characterViewerInput = FindObjectOfType<CharacterViewerInput>();
-        if (characterViewerInput != null)
+        if (_characterViewerInput != null)
         {
-            characterViewerInput.OnToggleRequested += OnCharacterViewerToggled;
+            _characterViewerInput.OnToggleRequested += OnCharacterViewerToggled;
         }
 
-        SkillViewerInput skillViewerInput = FindObjectOfType<SkillViewerInput>();
-        if (skillViewerInput != null)
+        if (_skillViewerInput != null)
         {
-            skillViewerInput.OnToggleRequested += OnSkillViewerToggled;
+            _skillViewerInput.OnToggleRequested += OnSkillViewerToggled;
         }
     }
 
@@ -249,7 +251,7 @@ public class MissionPanel : MonoBehaviour
         }
         else if (_useAnimation && _canvasGroup != null)
         {
-            StartCoroutine(FadeOut());
+            FadeOut();
         }
         else
         {
@@ -282,12 +284,8 @@ public class MissionPanel : MonoBehaviour
         _canvasGroup.alpha = 1f;
     }
 
-    private System.Collections.IEnumerator FadeOut()
+    private void FadeOut()
     {
-        if (_canvasGroup == null) yield break;
-
-        _canvasGroup.alpha = 0f;
-
         _canvasGroup.alpha = 0f;
         _missionPanel.SetActive(false);
     }
