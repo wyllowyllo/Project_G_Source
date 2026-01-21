@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
-using Core;
 using Dialogue;
 using Monster.Manager;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Dungeon
 {
@@ -24,26 +24,50 @@ namespace Dungeon
 
         private void OnEnable()
         {
-            _dungeonManager = DungeonManager.Instance;
-            if (_dungeonManager != null)
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            TrySubscribe();
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            Unsubscribe();
+            StopReturnCoroutine();
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            TrySubscribe();
+        }
+
+        private void TrySubscribe()
+        {
+            var newDungeonManager = DungeonManager.Instance;
+            if (newDungeonManager != null && newDungeonManager != _dungeonManager)
             {
+                if (_dungeonManager != null)
+                {
+                    _dungeonManager.DungeonCleared -= HandleDungeonCleared;
+                }
+                _dungeonManager = newDungeonManager;
                 _dungeonManager.DungeonCleared += HandleDungeonCleared;
                 Debug.Log("[DungeonClearHandler] DungeonManager 이벤트 구독 완료");
             }
-            else
+            
+            var newMonsterTracker = MonsterTracker.Instance;
+            if (newMonsterTracker != null && newMonsterTracker != _monsterTracker)
             {
-                Debug.LogWarning("[DungeonClearHandler] OnEnable: DungeonManager.Instance가 null입니다");
-            }
-
-            _monsterTracker = MonsterTracker.Instance;
-            if (_monsterTracker != null)
-            {
+                if (_monsterTracker != null)
+                {
+                    _monsterTracker.OnAllMonstersDefeated.RemoveListener(HandleAllMonstersDefeated);
+                }
+                _monsterTracker = newMonsterTracker;
                 _monsterTracker.OnAllMonstersDefeated.AddListener(HandleAllMonstersDefeated);
                 Debug.Log("[DungeonClearHandler] MonsterTracker 이벤트 구독 완료");
             }
         }
 
-        private void OnDisable()
+        private void Unsubscribe()
         {
             if (_dungeonManager != null)
             {
@@ -53,38 +77,6 @@ namespace Dungeon
             if (_monsterTracker != null)
             {
                 _monsterTracker.OnAllMonstersDefeated.RemoveListener(HandleAllMonstersDefeated);
-            }
-
-            StopReturnCoroutine();
-        }
-
-private void Start()
-        {
-            if (_monsterTracker == null)
-            {
-                _monsterTracker = MonsterTracker.Instance;
-            }
-            
-            if (_dungeonManager == null)
-            {
-                _dungeonManager = DungeonManager.Instance;
-            }
-            
-            // MonsterTracker UnityEvent를 코드로 자동 연결
-            if (_monsterTracker != null)
-            {
-                // 기존 리스너가 없는 경우에만 추가
-                _monsterTracker.OnAllMonstersDefeated.RemoveListener(HandleAllMonstersDefeated);
-                _monsterTracker.OnAllMonstersDefeated.AddListener(HandleAllMonstersDefeated);
-                Debug.Log("[DungeonClearHandler] MonsterTracker UnityEvent 자동 연결 완료");
-            }
-            
-            // DungeonManager 이벤트도 추가 확인
-            if (_dungeonManager != null)
-            {
-                _dungeonManager.DungeonCleared -= HandleDungeonCleared;
-                _dungeonManager.DungeonCleared += HandleDungeonCleared;
-                Debug.Log("[DungeonClearHandler] DungeonManager 이벤트 구독 완료");
             }
         }
 
@@ -104,14 +96,6 @@ public void HandleAllMonstersDefeated()
 
 private void Update()
         {
-            // 키보드 8: 모든 몬스터 죽이기 (디버그)
-            if (Input.GetKeyDown(KeyCode.Alpha8))
-            {
-                Debug.Log("[DungeonClearHandler] 키보드 8 누름 - 모든 몬스터 제거");
-                KillAllMonsters();
-                return;
-            }
-            
             if (!_canAcceptInput) return;
 
             if (Input.GetMouseButtonDown(0) ||
@@ -179,7 +163,6 @@ private void Update()
                 }
             }
             
-            // MonsterTracker 정리
             _monsterTracker.CleanupDestroyedMonsters();
             
             Debug.Log("[DungeonClearHandler] 모든 몬스터 제거 완료");
