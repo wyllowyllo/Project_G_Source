@@ -72,43 +72,32 @@ namespace Skill
 
         public void HandleVFXRequest(SkillVFXRequest request)
         {
-            if (request.EffectPrefabs == null || request.EffectPrefabs.Length == 0) return;
+            if (request.VFXDataList == null || request.VFXDataList.Length == 0) return;
 
             int rank = request.Rank;
-            GameObject prefabToSpawn = GetPrefabForRank(request.EffectPrefabs, rank);
-            if (prefabToSpawn == null) return;
+            Debug.Log($"[SkillVFXHandler] VFXDataList.Length: {request.VFXDataList.Length}");
 
-            Vector3 finalPosition = request.Origin + request.Rotation * request.VFXPositionOffset;
-            Quaternion finalRotation = request.Rotation * Quaternion.Euler(request.VFXRotationOffset);
-            GameObject vfx = PoolSpawner.Spawn(prefabToSpawn, finalPosition, finalRotation);
-
-            if (vfx == null) return;
-
-            if (_scaleToRange)
+            foreach (var vfxData in request.VFXDataList)
             {
-                ApplyScale(vfx, request);
+                Debug.Log($"[SkillVFXHandler] vfxData: {vfxData}, Prefab: {vfxData?.Prefab}");
+                if (vfxData == null || vfxData.Prefab == null) continue;
+
+                Vector3 finalPosition = request.Origin + request.Rotation * vfxData.PositionOffset;
+                Quaternion finalRotation = request.Rotation * Quaternion.Euler(vfxData.RotationOffset);
+                GameObject vfx = PoolSpawner.Spawn(vfxData.Prefab, finalPosition, finalRotation);
+
+                if (vfx == null) continue;
+
+                if (_scaleToRange)
+                {
+                    ApplyScale(vfx, request);
+                }
+
+                if (_enableRankEnhancement && rank > 1)
+                {
+                    ApplyRankEnhancement(vfx, rank, request.AreaType, finalPosition, finalRotation);
+                }
             }
-
-            if (_enableRankEnhancement && rank > 1)
-            {
-                ApplyRankEnhancement(vfx, rank, request.AreaType, finalPosition, finalRotation);
-            }
-        }
-
-        private GameObject GetPrefabForRank(GameObject[] prefabs, int rank)
-        {
-            int index = rank - 1;
-            if (index < prefabs.Length && prefabs[index] != null)
-                return prefabs[index];
-
-            // 해당 랭크 프리팹이 없으면 가장 높은 유효 랭크 프리팹 사용
-            for (int i = prefabs.Length - 1; i >= 0; i--)
-            {
-                if (prefabs[i] != null)
-                    return prefabs[i];
-            }
-
-            return null;
         }
 
         private void ApplyScale(GameObject vfx, SkillVFXRequest request)

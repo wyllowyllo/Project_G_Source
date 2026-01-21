@@ -9,6 +9,10 @@ public class MissionPanel : MonoBehaviour
     [SerializeField] private GameObject _missionPanel;
     [SerializeField] private TextMeshProUGUI _missionSubText;
 
+    [Header("UI Inputs")]
+    [SerializeField] private CharacterViewerInput _characterViewerInput;
+    [SerializeField] private SkillViewerInput _skillViewerInput;
+
     [Header("표시 설정")]
     [SerializeField] private string _missionTextFormat = "남은 몬스터: {0}마리";
     [SerializeField] private string _clearedText = "[ 클리어! ]";
@@ -22,6 +26,11 @@ public class MissionPanel : MonoBehaviour
     private DungeonManager _dungeonManager;
     private MonsterTracker _monsterTracker;
     private bool _isCleared = false;
+
+    private bool _isCharacterViewerOpen = false;
+    private bool _isSkillViewerOpen = false;
+    private bool _isPauseMenuOpen = false;
+    private bool _wasHiddenByUI = false;
 
     private void Awake()
     {
@@ -74,6 +83,10 @@ public class MissionPanel : MonoBehaviour
         {
             _monsterTracker.OnAllMonstersDefeated.AddListener(OnAllMonstersDefeated);
         }
+
+        PauseManager.OnPauseStateChanged += OnPauseStateChanged;
+
+        SubscribeToUIInputs();
     }
 
     private void OnDisable()
@@ -87,6 +100,82 @@ public class MissionPanel : MonoBehaviour
         if (_monsterTracker != null)
         {
             _monsterTracker.OnAllMonstersDefeated.RemoveListener(OnAllMonstersDefeated);
+        }
+
+        PauseManager.OnPauseStateChanged -= OnPauseStateChanged;
+
+        UnsubscribeFromUIInputs();
+    }
+
+    private void SubscribeToUIInputs()
+    {
+        if (_characterViewerInput != null)
+        {
+            _characterViewerInput.OnToggleRequested += OnCharacterViewerToggled;
+        }
+
+        if (_skillViewerInput != null)
+        {
+            _skillViewerInput.OnToggleRequested += OnSkillViewerToggled;
+        }
+    }
+
+    private void UnsubscribeFromUIInputs()
+    {
+        // CharacterViewerInput 구독 해제
+        CharacterViewerInput characterViewerInput = FindObjectOfType<CharacterViewerInput>();
+        if (characterViewerInput != null)
+        {
+            characterViewerInput.OnToggleRequested -= OnCharacterViewerToggled;
+        }
+
+        // SkillViewerInput 구독 해제
+        SkillViewerInput skillViewerInput = FindObjectOfType<SkillViewerInput>();
+        if (skillViewerInput != null)
+        {
+            skillViewerInput.OnToggleRequested -= OnSkillViewerToggled;
+        }
+    }
+
+    private void OnCharacterViewerToggled()
+    {
+        _isCharacterViewerOpen = !_isCharacterViewerOpen;
+        UpdateMissionPanelVisibility();
+    }
+
+    private void OnSkillViewerToggled(bool isOpen)
+    {
+        _isSkillViewerOpen = isOpen;
+        UpdateMissionPanelVisibility();
+    }
+
+    private void OnPauseStateChanged(bool isPaused)
+    {
+        _isPauseMenuOpen = isPaused;
+        UpdateMissionPanelVisibility();
+    }
+
+    private void UpdateMissionPanelVisibility()
+    {
+        bool anyUIOpen = _isCharacterViewerOpen || _isSkillViewerOpen || _isPauseMenuOpen;
+
+        if (anyUIOpen)
+        {
+            // UI가 열려있으면 미션 패널 숨기기
+            if (_missionPanel != null && _missionPanel.activeSelf)
+            {
+                _wasHiddenByUI = true;
+                HideMissionPanel();
+            }
+        }
+        else
+        {
+            // 모든 UI가 닫혔고, UI에 의해 숨겨졌던 경우 다시 표시
+            if (_wasHiddenByUI && _dungeonManager != null && _dungeonManager.IsInDungeon)
+            {
+                _wasHiddenByUI = false;
+                ShowMissionPanel();
+            }
         }
     }
 
@@ -130,6 +219,10 @@ public class MissionPanel : MonoBehaviour
     {
         if (_missionPanel == null) return;
 
+        // UI가 열려있으면 표시하지 않음
+        bool anyUIOpen = _isCharacterViewerOpen || _isSkillViewerOpen || _isPauseMenuOpen;
+        if (anyUIOpen) return;
+
         _missionPanel.SetActive(true);
 
         if (_useAnimation && _canvasGroup != null)
@@ -144,13 +237,21 @@ public class MissionPanel : MonoBehaviour
         UpdateMissionText();
     }
 
-    private void HideMissionPanel()
+    private void HideMissionPanel(bool immediate = false)
     {
         if (_missionPanel == null) return;
 
-        if (_useAnimation && _canvasGroup != null)
+        if (immediate)
         {
-            StartCoroutine(FadeOut());
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+            }
+            _missionPanel.SetActive(false);
+        }
+        else if (_useAnimation && _canvasGroup != null)
+        {
+            FadeOut();
         }
         else
         {
@@ -183,20 +284,8 @@ public class MissionPanel : MonoBehaviour
         _canvasGroup.alpha = 1f;
     }
 
-    private System.Collections.IEnumerator FadeOut()
+    private void FadeOut()
     {
-        if (_canvasGroup == null) yield break;
-
-        float elapsed = 0f;
-        float startAlpha = _canvasGroup.alpha;
-
-        while (elapsed < _fadeDuration)
-        {
-            elapsed += Time.deltaTime;
-            _canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / _fadeDuration);
-            yield return null;
-        }
-
         _canvasGroup.alpha = 0f;
         _missionPanel.SetActive(false);
     }

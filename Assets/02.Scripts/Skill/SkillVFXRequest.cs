@@ -13,9 +13,7 @@ namespace Skill
         public float BoxWidth { get; }
         public float BoxHeight { get; }
         public int Rank { get; }
-        public GameObject[] EffectPrefabs { get; }
-        public Vector3 VFXPositionOffset { get; }
-        public Vector3 VFXRotationOffset { get; }
+        public SkillVFXData[] VFXDataList { get; }
 
         public SkillVFXRequest(
             SkillAreaType areaType,
@@ -23,9 +21,7 @@ namespace Skill
             Quaternion rotation,
             float range,
             int rank,
-            GameObject[] effectPrefabs,
-            Vector3 vfxPositionOffset,
-            Vector3 vfxRotationOffset,
+            SkillVFXData[] vfxDataList,
             float angle = 0f,
             float coneHeight = 0f,
             float boxWidth = 0f,
@@ -36,9 +32,7 @@ namespace Skill
             Rotation = rotation;
             Range = range;
             Rank = rank;
-            EffectPrefabs = effectPrefabs;
-            VFXPositionOffset = vfxPositionOffset;
-            VFXRotationOffset = vfxRotationOffset;
+            VFXDataList = vfxDataList;
             Angle = angle;
             ConeHeight = coneHeight;
             BoxWidth = boxWidth;
@@ -58,9 +52,7 @@ namespace Skill
                 rotation,
                 tierData.Range,
                 rank,
-                tierData.EffectPrefabs,
-                tierData.VFXPositionOffset,
-                tierData.VFXRotationOffset,
+                tierData.VFXDataList,
                 tierData.Angle,
                 tierData.ConeHeight,
                 tierData.BoxWidth,
