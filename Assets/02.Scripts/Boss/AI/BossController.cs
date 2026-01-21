@@ -8,6 +8,7 @@ using Combat.Core;
 using Combat.Damage;
 using Common;
 using Monster.Ability;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -72,6 +73,9 @@ namespace Boss.AI
         // Phase 5 시스템 프로퍼티
         public BossPatternSelector PatternSelector => _patternSelector;
         public BossEnrageSystem EnrageSystem => _enrageSystem;
+
+        // 보스 처치 이벤트 (던전 클리어 시스템 연동)
+        public static event Action OnBossDefeated;
 
         private void Awake()
         {
@@ -289,6 +293,12 @@ namespace Boss.AI
         private void HandleDeath()
         {
             _stateMachine?.ChangeState(EBossState.Dead);
+        }
+
+        // 보스 처치 완료 알림 (BossDeadState에서 애니메이션 완료 후 호출)
+        public void NotifyBossDefeated()
+        {
+            OnBossDefeated?.Invoke();
         }
 
         private void HandleDamaged(DamageInfo damageInfo)

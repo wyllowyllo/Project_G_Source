@@ -52,10 +52,10 @@ namespace Boss.AI.States
 
         private void OnDeathAnimationComplete()
         {
-            // 보스는 즉시 파괴하지 않고 이벤트로 처리
-            // TODO: 보스 사망 이벤트 발행 (던전 클리어, 씬 전환 등)
+            // 보스 처치 이벤트 발행 (던전 클리어 시스템 연동)
+            _controller.NotifyBossDefeated();
 
-            // 임시: 일정 시간 후 파괴
+            // 일정 시간 후 파괴
             Object.Destroy(_controller.gameObject, 3f);
         }
     }

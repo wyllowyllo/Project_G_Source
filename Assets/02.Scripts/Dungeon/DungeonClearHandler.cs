@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Boss.AI;
 using Dialogue;
 using Monster.Manager;
 using UnityEngine;
@@ -26,11 +27,13 @@ namespace Dungeon
         private void OnEnable()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
+            BossController.OnBossDefeated += HandleBossDefeated;
         }
 
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            BossController.OnBossDefeated -= HandleBossDefeated;
             StopReturnCoroutine();
             Unsubscribe();
         }
@@ -83,6 +86,17 @@ namespace Dungeon
             if (_dungeonManager == null)
             {
                 Debug.LogError("[DungeonClearHandler] _dungeonManager가 null입니다!");
+                return;
+            }
+
+            _dungeonManager.CompleteDungeon();
+        }
+
+        private void HandleBossDefeated()
+        {
+            if (_dungeonManager == null)
+            {
+                Debug.LogError("[DungeonClearHandler] _dungeonManager가 null입니다! (보스 처치)");
                 return;
             }
 
