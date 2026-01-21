@@ -20,10 +20,12 @@ public class BtnType : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         switch (_currentType)
         {
             case ButtonType.Start:
+                SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.MainButtonClick);
                 SceneLoader.LoadScene("TownScene");
                 break;
 
             case ButtonType.End:
+                SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.MainButtonClick);
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -36,11 +38,13 @@ public class BtnType : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.MainHover);
         _buttonScale.localScale = _defaultScale * _rateScale;
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.MainHover);
         _buttonScale.localScale = _defaultScale;
     }
 }

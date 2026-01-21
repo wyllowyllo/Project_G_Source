@@ -34,6 +34,8 @@ public class SoundManager : MonoBehaviour
     public enum EUISfx
     {
         // 예시: ButtonClick, WindowOpen, ItemGet
+        MainButtonClick,
+        MainHover,
     }
 
     public enum EPlayerSkillSfx
@@ -44,6 +46,7 @@ public class SoundManager : MonoBehaviour
     public enum ESfx
     {
         // 기타 효과음
+        SkillUIClick,
     }
     #endregion
 
