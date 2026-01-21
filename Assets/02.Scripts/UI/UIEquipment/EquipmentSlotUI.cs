@@ -28,7 +28,6 @@ public class EquipmentSlotUI : MonoBehaviour
 
     private void Start()
     {
-        SetEmpty();
     }
 
 public void SetEquipment(EquipmentData equipment)
@@ -40,9 +39,11 @@ public void SetEquipment(EquipmentData equipment)
             // 아이콘 설정
             if (_iconImage != null)
             {
+              
                 // 장비 아이콘이 있으면 사용, 없으띠 기본 스프라이트
                 if (equipment.Icon != null)
                 {
+                    Debug.Log("bb");
                     _iconImage.sprite = equipment.Icon;
                     _iconImage.color = Color.white;  // 원본 색상 유지
                 }

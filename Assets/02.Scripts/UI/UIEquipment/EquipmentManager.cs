@@ -76,6 +76,7 @@ public class EquipmentManager : MonoBehaviour
 
         if(equipment != null)
         {
+            Debug.Log("aa");
             slotUI.SetEquipment(equipment);
 
             // 3D 모델 생성 (옵션)
