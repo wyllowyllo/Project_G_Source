@@ -5,6 +5,7 @@ public class SkillViewerUI : MonoBehaviour
 {
     [SerializeField] private GameObject _skillUIPanel;
     [SerializeField] private SkillViewerInput _skillViewerInput;
+    [SerializeField] private SkillTooltip _skillTooltip;
 
     private Common.CursorManager _cursorManager;
 
@@ -33,6 +34,11 @@ public class SkillViewerUI : MonoBehaviour
 private void HandleToggle(bool isOpen)
     {
         _skillUIPanel.SetActive(isOpen);
+
+        if (!isOpen && _skillTooltip != null)
+        {
+            _skillTooltip.HideTooltip();
+        }
 
         // Skill UI가 열리면 커서 활성화, 닫히면 커서 비활성화
         if (_cursorManager != null)
