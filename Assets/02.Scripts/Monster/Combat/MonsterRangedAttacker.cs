@@ -68,7 +68,7 @@ namespace Monster.Combat
         private void FireProjectile(bool isHeavy)
         {
             Transform firePoint = isHeavy ? _heavyAttackFirePoint : _lightAttackFirePoint;
-            Vector3 spawnPosition = firePoint.position + firePoint.TransformDirection(_projectileSpawnOffset);
+            Vector3 spawnPosition = firePoint.position;//+ firePoint.TransformDirection(_projectileSpawnOffset);
             Vector3 direction = GetFireDirection();
 
             var prefab = isHeavy ? _heavyProjectilePrefab : _lightProjectilePrefab;
