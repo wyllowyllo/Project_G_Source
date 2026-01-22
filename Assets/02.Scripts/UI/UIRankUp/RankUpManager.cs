@@ -171,7 +171,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
         {
             new SkillRewardData
             {
-                SkillName = "직선공격 스킬",
+                SkillName = "내려찍기",
                 SkillIcon = _attackSkillIcon,
                 PreviousLevel = previousSkillLevel,
                 NewLevel = newSkillLevel,
@@ -180,7 +180,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
             },
             new SkillRewardData
             {
-                SkillName = "활공 스킬",
+                SkillName = "활공",
                 SkillIcon = _defenseSkillIcon,
                 PreviousLevel = previousSkillLevel,
                 NewLevel = newSkillLevel,
