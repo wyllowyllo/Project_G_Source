@@ -20,6 +20,12 @@ namespace Dialogue
         [SerializeField] private float _fadeDuration = 0.3f;
         [SerializeField] private float _typeSpeed = 0.03f;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip[] _typingSounds;
+        [Tooltip("몇 글자마다 사운드를 재생할지 (1 = 매 글자)")]
+        [Min(1)]
+        [SerializeField] private int _typingSoundInterval = 2;
+
         private DialogueData _currentDialogue;
         private int _currentLineIndex;
         private Coroutine _typewriterCoroutine;
@@ -132,15 +138,40 @@ namespace Dialogue
             var builder = new StringBuilder(text.Length);
             _dialogueText.text = "";
 
+            int charCount = 0;
             foreach (char c in text)
             {
                 builder.Append(c);
                 _dialogueText.text = builder.ToString();
+
+                if (!char.IsWhiteSpace(c))
+                {
+                    charCount++;
+                    int interval = Mathf.Max(1, _typingSoundInterval);
+                    if (charCount % interval == 0)
+                    {
+                        PlayTypingSound();
+                    }
+                }
+
                 yield return new WaitForSeconds(_typeSpeed);
             }
 
             _isTyping = false;
             _typewriterCoroutine = null;
+        }
+
+        private void PlayTypingSound()
+        {
+            if (_typingSounds == null || _typingSounds.Length == 0) return;
+
+            int index = UnityEngine.Random.Range(0, _typingSounds.Length);
+            var clip = _typingSounds[index];
+
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
         }
 
         private void CompleteTyping()
