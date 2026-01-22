@@ -54,6 +54,7 @@ namespace Boss.AI
         public void EnableMeleeHitbox()
         {
             _controller?.EnableMeleeHitbox();
+            _soundPlayer?.PlayMeleeAttackSound();
         }
 
         /// <summary>
@@ -82,6 +83,7 @@ namespace Boss.AI
         public void EnableChargeHitbox()
         {
             _controller?.EnableChargeHitbox();
+            _soundPlayer?.PlayChargeSound();
         }
 
         /// <summary>
@@ -110,6 +112,7 @@ namespace Boss.AI
         public void StartBreath()
         {
             _controller?.StartBreathAttack();
+            _soundPlayer?.PlayBreathSound();
         }
 
         /// <summary>
@@ -138,6 +141,7 @@ namespace Boss.AI
         public void FireProjectile()
         {
             _controller?.FireProjectile();
+            _soundPlayer?.PlayProjectileSound();
         }
 
         /// <summary>
@@ -166,6 +170,7 @@ namespace Boss.AI
         public void SpawnMinions()
         {
             _controller?.SpawnMinions();
+            _soundPlayer?.PlaySummonSound();
         }
 
         /// <summary>
