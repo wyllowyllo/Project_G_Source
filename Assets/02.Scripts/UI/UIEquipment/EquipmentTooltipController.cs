@@ -265,7 +265,7 @@ namespace Equipment
 
             if (_defenseText != null)
             {
-                _defenseText.text = $"체력: {equipmentData.DefenseBonus:F0}";
+                _defenseText.text = $"체력: {equipmentData.HealthBonus:F0}";
                 _defenseText.textWrappingMode = TMPro.TextWrappingModes.Normal; 
             }
 

@@ -26,6 +26,16 @@ namespace Player
         [Header("Trail Effect")]
         [SerializeField] private DrakkarTrail _weaponTrail;
 
+        [Header("Attack SFX")]
+        [SerializeField] private AudioClip[] _attackSFX;
+        [SerializeField] private AudioClip[] _hitSFX;
+
+        [Header("Damaged SFX")]
+        [SerializeField] private AudioClip[] _damagedSFX;
+
+        [Header("Dodge SFX")]
+        [SerializeField] private AudioClip[] _dodgeSFX;
+
         private MeleeAttacker _attacker;
         private Combatant _combatant;
         private AttackSession _currentTrailSession;
@@ -80,11 +90,13 @@ namespace Player
         {
             int comboStep = _attacker != null ? _attacker.CurrentComboStep : 0;
             SpawnHitVFX(info.HitPoint, comboStep);
+            PlayHitSFX(comboStep);
         }
 
         private void HandleDamaged(DamageInfo info)
         {
             SpawnDamagedVFX(info.HitPoint);
+            PlayDamagedSFX();
         }
 
         public void SpawnDamagedVFX(Vector3 position)
@@ -223,6 +235,57 @@ namespace Player
             }
         }
 
+        public void PlayAttackSFX(int comboStep)
+        {
+            if (_attackSFX == null || _attackSFX.Length == 0) return;
+
+            int index = Mathf.Clamp(comboStep - 1, 0, _attackSFX.Length - 1);
+            AudioClip clip = _attackSFX[index];
+
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
+        }
+
+        private void PlayHitSFX(int comboStep)
+        {
+            if (_hitSFX == null || _hitSFX.Length == 0) return;
+
+            int index = Mathf.Clamp(comboStep - 1, 0, _hitSFX.Length - 1);
+            AudioClip clip = _hitSFX[index];
+
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
+        }
+
+        private void PlayDamagedSFX()
+        {
+            if (_damagedSFX == null || _damagedSFX.Length == 0) return;
+
+            int index = Random.Range(0, _damagedSFX.Length);
+            AudioClip clip = _damagedSFX[index];
+
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
+        }
+
+        public void PlayDodgeSFX()
+        {
+            if (_dodgeSFX == null || _dodgeSFX.Length == 0) return;
+
+            int index = Random.Range(0, _dodgeSFX.Length);
+            AudioClip clip = _dodgeSFX[index];
+
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
+        }
     }
 }
 

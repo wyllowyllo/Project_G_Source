@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,6 +6,7 @@ using TMPro;
 
 public class DungeonClearUI : MonoBehaviour
 {
+    public event Action OnAnimationComplete;
     [Header("UI 요소")]
     [SerializeField] private GameObject _completePanel;
     [SerializeField] private Image _completeImage;
@@ -97,6 +99,8 @@ public class DungeonClearUI : MonoBehaviour
         {
             _completePanel.SetActive(false);
         }
+
+        OnAnimationComplete?.Invoke();
     }
 
     // UI 요소 초기화 및 초기 상태 설정

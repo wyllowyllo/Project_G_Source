@@ -21,6 +21,10 @@ namespace Player
         [Range(0f, 1f)]
         [SerializeField] private float _animEndTime = 1f;
 
+        [Header("Sound Timing (Normalized)")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _soundTime = 0.1f;
+
         private MeleeAttacker _attacker;
         private PlayerVFXController _vfxController;
         private PlayerAnimationEventReceiver _eventReceiver;
@@ -31,6 +35,7 @@ namespace Player
         private bool _trailStarted;
         private bool _trailEnded;
         private bool _animEnded;
+        private bool _soundPlayed;
 
         public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
@@ -80,6 +85,14 @@ namespace Player
                 _animEnded = true;
                 _eventReceiver?.OnAttackAnimationEnd(_session);
             }
+
+            // Sound
+            if (!_soundPlayed && time >= _soundTime)
+            {
+                _soundPlayed = true;
+                int comboStep = _attacker?.CurrentComboStep ?? 0;
+                _vfxController?.PlayAttackSFX(comboStep);
+            }
         }
 
         // OnStateExit에서는 아무것도 하지 않음
@@ -110,6 +123,7 @@ namespace Player
             _trailStarted = false;
             _trailEnded = false;
             _animEnded = false;
+            _soundPlayed = false;
         }
     }
 }

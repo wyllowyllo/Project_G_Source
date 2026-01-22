@@ -1,3 +1,4 @@
+using System.Collections;
 using Dungeon;
 using TMPro;
 using UnityEngine;
@@ -17,9 +18,13 @@ namespace UI.Dungeon
         [Header("UI Animations")]
         [SerializeField] private DungeonClearUI _dungeonClearUI;
         [SerializeField] private DungeonFailUI _dungeonFailUI;
-        
+
+        [Header("Input Settings")]
+        [SerializeField] private float _inputAcceptDelay = 1f;
 
         private DungeonManager _dungeonManager;
+        private bool _canAcceptInput;
+        private Coroutine _inputDelayCoroutine;
 
 private void Awake()
         {
@@ -53,10 +58,19 @@ private void Awake()
             _dungeonManager = DungeonManager.Instance;
             if (_dungeonManager != null)
             {
-              
                 _dungeonManager.DungeonCleared += ShowClearPanel;
                 _dungeonManager.DungeonFailed += ShowFailPanel;
                 _dungeonManager.GameCompleted += ShowGameCompletePanel;
+            }
+
+            if (_dungeonFailUI != null)
+            {
+                _dungeonFailUI.OnAnimationComplete += HandleAnimationComplete;
+            }
+
+            if (_dungeonClearUI != null)
+            {
+                _dungeonClearUI.OnAnimationComplete += HandleAnimationComplete;
             }
         }
 
@@ -68,6 +82,51 @@ private void Awake()
                 _dungeonManager.DungeonFailed -= ShowFailPanel;
                 _dungeonManager.GameCompleted -= ShowGameCompletePanel;
             }
+
+            if (_dungeonFailUI != null)
+            {
+                _dungeonFailUI.OnAnimationComplete -= HandleAnimationComplete;
+            }
+
+            if (_dungeonClearUI != null)
+            {
+                _dungeonClearUI.OnAnimationComplete -= HandleAnimationComplete;
+            }
+        }
+
+        private void Update()
+        {
+            if (!_canAcceptInput) return;
+
+            if (Input.GetMouseButtonDown(0) ||
+                Input.GetKeyDown(KeyCode.Return) ||
+                Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                ReturnToTown();
+            }
+        }
+
+        private void HandleAnimationComplete()
+        {
+            ReturnToTown();
+        }
+
+        private void ReturnToTown()
+        {
+            _canAcceptInput = false;
+            if (_inputDelayCoroutine != null)
+            {
+                StopCoroutine(_inputDelayCoroutine);
+                _inputDelayCoroutine = null;
+            }
+            _dungeonManager?.ReturnToTown();
+        }
+
+        private IEnumerator EnableInputAfterDelay()
+        {
+            _canAcceptInput = false;
+            yield return new WaitForSeconds(_inputAcceptDelay);
+            _canAcceptInput = true;
         }
 
 private void ShowClearPanel(int xpReward, bool isFirstClear)
@@ -91,12 +150,13 @@ private void ShowClearPanel(int xpReward, bool isFirstClear)
             {
                 Debug.Log($"[DungeonResultUI] DungeonClearUI.ShowDungeonClear 호출");
                 _dungeonClearUI.ShowDungeonClear(dungeonName);
+                _inputDelayCoroutine = StartCoroutine(EnableInputAfterDelay());
             }
             else
             {
                 Debug.LogError("[DungeonResultUI] _dungeonClearUI가 null입니다!");
             }
-            
+
             // 기존 패널도 표시
             _clearPanel?.SetActive(true);
             if (_xpRewardText != null)
@@ -128,6 +188,7 @@ private void ShowFailPanel()
             {
                 Debug.Log($"[DungeonResultUI] DungeonFailUI.ShowDungeonFail 호출");
                 _dungeonFailUI.ShowDungeonFail(dungeonName);
+                _inputDelayCoroutine = StartCoroutine(EnableInputAfterDelay());
             }
             else
             {

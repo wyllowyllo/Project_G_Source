@@ -43,6 +43,7 @@ namespace Skill
         [SerializeField] private ParticleSystem _windParticle;
 
         private List<AudioSource> _glidingAudioSources = new List<AudioSource>();
+        private List<AudioSource> _continuousAudioSources = new List<AudioSource>();
 
         private PlayerMovement _playerMovement;
         private PlayerAnimationController _animationController;
@@ -85,6 +86,24 @@ namespace Skill
             _mainCamera = Camera.main;
 
             InitializeGlidingAudioSources();
+            InitializeContinuousAudioSources();
+        }
+
+        private void InitializeContinuousAudioSources()
+        {
+            if (_settings == null || _settings.ContinuousLoopSounds == null) return;
+
+            foreach (var clip in _settings.ContinuousLoopSounds)
+            {
+                if (clip == null) continue;
+
+                var source = gameObject.AddComponent<AudioSource>();
+                source.clip = clip;
+                source.loop = true;
+                source.playOnAwake = false;
+                source.volume = _settings.ContinuousLoopVolume;
+                _continuousAudioSources.Add(source);
+            }
         }
 
         private void InitializeGlidingAudioSources()
@@ -170,8 +189,6 @@ namespace Skill
 
             _playerMovement.SetVelocityOverride(CalculateVelocity);
             _playerMovement.ForceUnground();
-
-            PlaySound(_settings.SuperJumpSound);
         }
 
         public void OnGlideTransition()
@@ -302,7 +319,7 @@ namespace Skill
             _animationController?.PlayGlide(GlideState.Landing);
 
             StopGlideEffects();
-            PlaySound(_settings.LandingSound);
+            StopContinuousSound();
         }
 
         private void TransitionToDiveBombLanding()
@@ -314,6 +331,7 @@ namespace Skill
             _animationController?.PlayGlide(GlideState.DiveBombLanding);
 
             StopGlideEffects();
+            StopContinuousSound();
             CameraShakeController.Instance?.TriggerShake(_diveBombImpactShake);
             PlaySound(_settings.DiveBombLandingSound);
         }
@@ -533,8 +551,6 @@ namespace Skill
 
             _playerMovement.SetVelocityOverride((_, _) => Vector3.zero);
             _animationController?.PlayGlide(GlideState.DiveBomb);
-
-            PlaySound(_settings.DiveBombSound);
         }
 
         private void StartDiveBomb()
@@ -549,8 +565,6 @@ namespace Skill
             _isParabolicDive = false;
 
             _animationController?.PlayGlide(GlideState.DiveBomb);
-
-            PlaySound(_settings.DiveBombSound);
         }
 
         private Vector3 CalculateVelocity(Vector3 currentVelocity, float deltaTime)
@@ -650,6 +664,7 @@ namespace Skill
             _canDiveBomb = false;
 
             StopGlideEffects();
+            StopContinuousSound();
             CameraShakeController.Instance?.SetAmbientShakeIntensityMultiplier(1f);
 
             OnGlideEnded?.Invoke();
@@ -664,6 +679,42 @@ namespace Skill
         {
             if (clip == null) return;
             SoundManager.Instance?.PlaySfx(clip);
+        }
+
+        public void PlayDiveBombSound()
+        {
+            PlaySound(_settings.DiveBombSound);
+        }
+
+        public void PlaySuperJumpSound()
+        {
+            if (_settings.SuperJumpSounds == null) return;
+
+            foreach (var clip in _settings.SuperJumpSounds)
+            {
+                PlaySound(clip);
+            }
+        }
+
+        public void PlayLandingSound()
+        {
+            PlaySound(_settings.LandingSound);
+        }
+
+        public void StartContinuousSound()
+        {
+            foreach (var source in _continuousAudioSources)
+            {
+                source.Play();
+            }
+        }
+
+        public void StopContinuousSound()
+        {
+            foreach (var source in _continuousAudioSources)
+            {
+                source.Stop();
+            }
         }
 
 #if UNITY_EDITOR
