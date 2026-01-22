@@ -26,26 +26,33 @@ public class SkillUIManager : MonoBehaviour
 
     private List<SkillSlotUI> skillSlots = new List<SkillSlotUI>();
     
-    private void Start()
+private void Start()
     {
-        if(_playerProgression == null)
-        {
-            _playerProgression = FindObjectOfType<PlayerProgression>();
-        }
         SetupUI();
         CreateSkillSlots();
     }
 
-    private void OnEnable()
+private void OnEnable()
     {
+        if (_playerProgression == null)
+        {
+            _playerProgression = FindObjectOfType<PlayerProgression>();
+        }
+        
         if (_playerProgression != null)
             _playerProgression.OnLevelUp += HandleLevelUp;
     }
 
-    private void OnDisable()
+private void OnDisable()
     {
         if (_playerProgression != null)
             _playerProgression.OnLevelUp -= HandleLevelUp;
+        
+        // 스킬 UI가 비활성화될 때 tooltip도 숨김
+        if (tooltip != null)
+        {
+            tooltip.HideTooltip();
+        }
     }
 
     private void HandleLevelUp(int prev, int next)
@@ -151,6 +158,15 @@ private void CreateSkillSlots()
             int need = GetUnlockLevelForIndex(i);
             bool unlocked = playerLevel >= need;
             skillSlots[i].SetUnlocked(unlocked, need);
+        }
+    }
+
+
+private void Awake()
+    {
+        if(_playerProgression == null)
+        {
+            _playerProgression = FindObjectOfType<PlayerProgression>();
         }
     }
 }

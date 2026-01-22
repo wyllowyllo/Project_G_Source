@@ -246,21 +246,27 @@ namespace Equipment
                 string gradeKorean = GetGradeKorean(equipmentData.Grade);
                 _gradeText.text = $"등급: {gradeKorean}";
                 _gradeText.color = GetGradeColor(equipmentData.Grade);
+                _gradeText.textWrappingMode = TMPro.TextWrappingModes.Normal; 
             }
 
             if (_itemNameText != null)
             {
                 _itemNameText.text = $"장비이름: {equipmentData.EquipmentName}";
+                _gradeText.textWrappingMode = TMPro.TextWrappingModes.Normal;
+                _itemNameText.alignment = TMPro.TextAlignmentOptions.Left;  // 왼쪽 정렬
+                AdjustTextPosition(_itemNameText, -10f);  // 왼쪽으로 10픽셀 이동
             }
 
             if (_attackText != null)
             {
                 _attackText.text = $"공격력: {equipmentData.AttackBonus:F0}";
+                _attackText.textWrappingMode = TMPro.TextWrappingModes.Normal; 
             }
 
             if (_defenseText != null)
             {
-                _defenseText.text = $"방어력: {equipmentData.DefenseBonus:F0}";
+                _defenseText.text = $"체력: {equipmentData.DefenseBonus:F0}";
+                _defenseText.textWrappingMode = TMPro.TextWrappingModes.Normal; 
             }
 
             if (_backgroundImage != null)
@@ -274,12 +280,21 @@ namespace Equipment
             }
         }
 
+        private void AdjustTextPosition(TextMeshProUGUI text, float xOffset)
+        {
+            if (text == null) return;
+
+            RectTransform rectTransform = text.rectTransform;
+            Vector2 currentPos = rectTransform.anchoredPosition;
+            rectTransform.anchoredPosition = new Vector2(currentPos.x + xOffset, currentPos.y);
+        }
+
         private string GetGradeKorean(EquipmentGrade grade)
         {
             return grade switch
             {
                 EquipmentGrade.Normal => "노말",
-                EquipmentGrade.Rare => "에픽",
+                EquipmentGrade.Rare => "레어",
                 EquipmentGrade.Unique => "유니크",
                 EquipmentGrade.Legendary => "레전더리",
                 _ => "알 수 없음"
