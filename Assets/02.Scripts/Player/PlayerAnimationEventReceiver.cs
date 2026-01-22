@@ -7,11 +7,13 @@ namespace Player
     {
         private MeleeAttacker _attacker;
         private PlayerCombat _playerCombat;
+        private FootstepSystem _footstepSystem;
 
         private void Awake()
         {
             _attacker = GetComponent<MeleeAttacker>();
             _playerCombat = GetComponent<PlayerCombat>();
+            _footstepSystem = GetComponent<FootstepSystem>();
 
             if (_attacker == null)
             {

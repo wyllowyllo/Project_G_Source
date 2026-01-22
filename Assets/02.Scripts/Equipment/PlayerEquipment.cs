@@ -9,11 +9,15 @@ namespace Equipment
         public string Id => "PlayerEquipment";
 
         private Combatant _combatant;
+        private Health _health;
         private EquipmentDataManager _dataManager;
+        private float _baseMaxHealth;
 
         private void Awake()
         {
             _combatant = GetComponent<Combatant>();
+            _health = GetComponent<Health>();
+            _baseMaxHealth = _health.MaxHealth;
         }
 
         private void Start()
@@ -58,10 +62,20 @@ namespace Equipment
             var stats = _combatant.Stats;
             stats.RemoveAllModifiersFromSource(this);
 
+            float totalHealthBonus = 0f;
             foreach (var equipment in _dataManager.GetAllEquipment())
             {
                 ApplyModifiers(stats, equipment);
+                totalHealthBonus += equipment.HealthBonus;
             }
+
+            ApplyHealthBonus(totalHealthBonus);
+        }
+
+        private void ApplyHealthBonus(float bonus)
+        {
+            if (_health == null) return;
+            _health.SetMaxHealth(_baseMaxHealth + bonus);
         }
 
         private void ApplyModifiers(CombatStats stats, EquipmentData equipment)

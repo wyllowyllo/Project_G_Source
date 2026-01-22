@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Dialogue;
 using KinematicCharacterController;
 using UnityEngine;
 
@@ -82,8 +83,6 @@ namespace Player
             }
             
             _lookDirection = transform.forward;
-
-            _movementEnabled = true;
         }
 
         private void Update()
@@ -119,7 +118,7 @@ namespace Player
 
         private void HandleInput()
         {
-            if (!_movementEnabled)
+            if (!_movementEnabled || (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive))
             {
                 _moveInputVector = Vector3.zero;
                 return;
