@@ -44,7 +44,7 @@ namespace Skill
         [SerializeField] private AudioClip[] _continuousLoopSounds;
         [SerializeField] private AudioClip _diveBombSound;
         [SerializeField] private AudioClip _landingSound;
-        [SerializeField] private AudioClip _diveBombLandingSound;
+        [SerializeField] private AudioClip[] _diveBombLandingSounds;
         [SerializeField, Range(0f, 1f)] private float _glidingLoopVolume = 0.6f;
         [SerializeField, Range(0f, 1f)] private float _continuousLoopVolume = 0.6f;
 
@@ -73,7 +73,7 @@ namespace Skill
         public AudioClip[] ContinuousLoopSounds => _continuousLoopSounds;
         public AudioClip DiveBombSound => _diveBombSound;
         public AudioClip LandingSound => _landingSound;
-        public AudioClip DiveBombLandingSound => _diveBombLandingSound;
+        public AudioClip[] DiveBombLandingSounds => _diveBombLandingSounds;
         public float GlidingLoopVolume => _glidingLoopVolume;
         public float ContinuousLoopVolume => _continuousLoopVolume;
     }

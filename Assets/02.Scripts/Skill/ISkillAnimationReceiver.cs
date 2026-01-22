@@ -6,5 +6,7 @@ namespace Skill
         void OnSkillComplete();
         void StartSkillTrail();
         void StopSkillTrail();
+        SkillSoundData[] GetCurrentSkillSounds();
+        void PlaySkillSound(int index);
     }
 }

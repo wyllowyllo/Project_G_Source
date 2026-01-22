@@ -26,10 +26,14 @@ namespace Player
         private bool _trailEnded;
         private bool _animEnded;
 
+        private SkillSoundData[] _skillSounds;
+        private bool[] _soundPlayed;
+
         public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
         {
             CacheReceiver(animator);
             ResetFlags();
+            CacheSkillSounds();
         }
 
         public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
@@ -54,6 +58,8 @@ namespace Player
                 _receiver?.StopSkillTrail();
             }
 
+            UpdateSounds(time);
+
             if (!_animEnded && time >= _animEndTime)
             {
                 _animEnded = true;
@@ -66,12 +72,47 @@ namespace Player
             _receiver ??= animator.GetComponent<ISkillAnimationReceiver>();
         }
 
+        private void CacheSkillSounds()
+        {
+            _skillSounds = _receiver?.GetCurrentSkillSounds();
+
+            if (_skillSounds != null && _skillSounds.Length > 0)
+            {
+                if (_soundPlayed == null || _soundPlayed.Length != _skillSounds.Length)
+                {
+                    _soundPlayed = new bool[_skillSounds.Length];
+                }
+            }
+        }
+
+        private void UpdateSounds(float time)
+        {
+            if (_skillSounds == null || _soundPlayed == null) return;
+
+            for (int i = 0; i < _skillSounds.Length; i++)
+            {
+                if (!_soundPlayed[i] && time >= _skillSounds[i].NormalizedTime)
+                {
+                    _soundPlayed[i] = true;
+                    _receiver?.PlaySkillSound(i);
+                }
+            }
+        }
+
         private void ResetFlags()
         {
             _damageApplied = false;
             _trailStarted = false;
             _trailEnded = false;
             _animEnded = false;
+
+            if (_soundPlayed != null)
+            {
+                for (int i = 0; i < _soundPlayed.Length; i++)
+                {
+                    _soundPlayed[i] = false;
+                }
+            }
         }
     }
 }

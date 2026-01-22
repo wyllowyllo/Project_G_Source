@@ -49,6 +49,7 @@ namespace Skill
         private PlayerAnimationController _animationController;
         private PlayerInputHandler _inputHandler;
         private Combatant _combatant;
+        private SkillCaster _skillCaster;
         private Camera _mainCamera;
 
         private GlideState _currentState = GlideState.Inactive;
@@ -82,6 +83,7 @@ namespace Skill
             _animationController = GetComponent<PlayerAnimationController>();
             _inputHandler = GetComponent<PlayerInputHandler>();
             _combatant = GetComponent<Combatant>();
+            _skillCaster = GetComponent<SkillCaster>();
             _aimVisualizer = GetComponentInChildren<DiveBombAimVisualizer>();
             _mainCamera = Camera.main;
 
@@ -333,7 +335,7 @@ namespace Skill
             StopGlideEffects();
             StopContinuousSound();
             CameraShakeController.Instance?.TriggerShake(_diveBombImpactShake);
-            PlaySound(_settings.DiveBombLandingSound);
+            PlayDiveBombLandingSound();
         }
 
         private void UpdateDiveBomb()
@@ -699,6 +701,26 @@ namespace Skill
         public void PlayLandingSound()
         {
             PlaySound(_settings.LandingSound);
+        }
+
+        public void PlayDiveBombLandingSound()
+        {
+            if (_settings.DiveBombLandingSounds != null)
+            {
+                foreach (var clip in _settings.DiveBombLandingSounds)
+                {
+                    PlaySound(clip);
+                }
+            }
+
+            var skillSounds = _skillCaster?.GetCurrentSkillSounds();
+            if (skillSounds != null)
+            {
+                foreach (var sound in skillSounds)
+                {
+                    PlaySound(sound.Clip);
+                }
+            }
         }
 
         public void StartContinuousSound()

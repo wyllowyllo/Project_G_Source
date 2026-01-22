@@ -23,6 +23,17 @@ namespace Skill
     }
 
     [System.Serializable]
+    public class SkillSoundData
+    {
+        [SerializeField] private AudioClip _clip;
+        [Range(0f, 1f)]
+        [SerializeField] private float _normalizedTime;
+
+        public AudioClip Clip => _clip;
+        public float NormalizedTime => _normalizedTime;
+    }
+
+    [System.Serializable]
     public class SkillTierData
     {
         [Header("Combat")]
@@ -48,7 +59,8 @@ namespace Skill
         [Header("Presentation")]
         [Tooltip("스킬 사용 시 동시에 스폰할 VFX 목록 (각각 개별 offset 적용)")]
         [SerializeField] private SkillVFXData[] _vfxDataList;
-        [SerializeField] private AudioClip _skillSound;
+        [Tooltip("애니메이션 타이밍에 맞춰 재생할 사운드 목록")]
+        [SerializeField] private SkillSoundData[] _skillSounds;
 
         [Header("Camera")]
         [Tooltip("스킬 카메라 연출 설정 (없으면 연출 없음)")]
@@ -67,7 +79,7 @@ namespace Skill
         public float BoxHeight => _boxHeight;
         public bool AllowMovement => _allowMovement;
         public SkillVFXData[] VFXDataList => _vfxDataList;
-        public AudioClip SkillSound => _skillSound;
+        public SkillSoundData[] SkillSounds => _skillSounds;
         public SkillCameraConfig CameraConfig => _cameraConfig;
         public float AnimationDuration => _animationDuration;
     }
