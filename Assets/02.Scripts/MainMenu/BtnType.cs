@@ -1,4 +1,8 @@
 using Core;
+using Dialogue;
+using Dungeon;
+using Equipment;
+using Progression;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -21,6 +25,12 @@ public class BtnType : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         {
             case ButtonType.Start:
                 SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.MainButtonClick);
+
+                DungeonManager.Instance?.ResetProgress();
+                ProgressionManager.Instance?.ResetProgress();
+                EquipmentDataManager.Instance?.ResetProgress();
+                DialogueManager.Instance?.ResetProgress();
+
                 SceneLoader.LoadScene("TownScene");
                 break;
 

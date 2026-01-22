@@ -26,8 +26,9 @@ namespace Interaction
 
         public bool TryEquip(EquipmentData equipment)
         {
-            if (_equipment == null) return false;
-            return _equipment.TryEquip(equipment);
+            var dataManager = EquipmentDataManager.Instance;
+            if (dataManager == null) return false;
+            return dataManager.TryEquip(equipment);
         }
 
         private void Awake()

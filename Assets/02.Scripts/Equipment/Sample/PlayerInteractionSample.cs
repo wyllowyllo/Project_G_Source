@@ -14,19 +14,12 @@ namespace Equipment.Sample
     // 사용법:
     // 1. 플레이어에 이 스크립트 추가
     // 2. 자식 오브젝트 생성 후 InteractionTrigger 추가
-    [RequireComponent(typeof(PlayerEquipment))]
     public class PlayerInteractionSample : MonoBehaviour
     {
         [Header("Settings")]
         [SerializeField] private KeyCode _interactKey = KeyCode.F;
 
-        private PlayerEquipment _playerEquipment;
         private DroppedEquipment _currentTarget;
-
-        private void Awake()
-        {
-            _playerEquipment = GetComponent<PlayerEquipment>();
-        }
 
         private void Update()
         {
@@ -53,7 +46,8 @@ namespace Equipment.Sample
             if (equipmentData == null)
                 return;
 
-            if (!_playerEquipment.TryEquip(equipmentData))
+            var dataManager = EquipmentDataManager.Instance;
+            if (dataManager == null || !dataManager.TryEquip(equipmentData))
                 return;
 
             Debug.Log($"[Equipment] Picked up {equipmentData.EquipmentName} ({equipmentData.Grade})");

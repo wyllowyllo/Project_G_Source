@@ -130,6 +130,12 @@ namespace Dungeon
             SceneLoader.LoadScene(_townSceneName);
         }
 
+        public void ResetProgress()
+        {
+            _clearedDungeons.Clear();
+            _currentDungeon = null;
+        }
+
 #if UNITY_EDITOR
         public void Editor_SetDungeonCleared(string dungeonId, bool cleared)
         {

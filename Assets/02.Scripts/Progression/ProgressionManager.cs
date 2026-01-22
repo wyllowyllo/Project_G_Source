@@ -66,6 +66,12 @@ namespace Progression
                 CurrentXp = 0;
         }
 
+        public void ResetProgress()
+        {
+            Level = 1;
+            CurrentXp = 0;
+        }
+
 #if UNITY_EDITOR
         public void SetLevel(int level)
         {
