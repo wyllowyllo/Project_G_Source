@@ -43,11 +43,13 @@ namespace Player
         private float _lastRightStepTime;
 
         private Animator _animator;
+        private PlayerMovement _playerMovement;
 
         private void Awake()
         {
             InitializeAudioSource();
             _animator = GetComponent<Animator>();
+            _playerMovement = GetComponent<PlayerMovement>();
 
             if (_soundData != null)
             {
@@ -92,6 +94,13 @@ namespace Player
         private void Update()
         {
             if (_soundData == null) return;
+
+            if (_playerMovement != null && !_playerMovement.IsGrounded())
+            {
+                _leftFootWasGrounded = false;
+                _rightFootWasGrounded = false;
+                return;
+            }
 
             TrackFoot(_leftFoot, ref _leftFootWasGrounded, ref _lastLeftStepTime, "왼발");
             TrackFoot(_rightFoot, ref _rightFootWasGrounded, ref _lastRightStepTime, "오른발");

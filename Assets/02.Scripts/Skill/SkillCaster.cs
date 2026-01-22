@@ -348,6 +348,23 @@ namespace Skill
             _vfxController?.StopTrail();
         }
 
+        public SkillSoundData[] GetCurrentSkillSounds()
+        {
+            return _currentTier?.SkillSounds;
+        }
+
+        public void PlaySkillSound(int index)
+        {
+            var sounds = _currentTier?.SkillSounds;
+            if (sounds == null || index < 0 || index >= sounds.Length) return;
+
+            var clip = sounds[index].Clip;
+            if (clip != null)
+            {
+                SoundManager.Instance?.PlaySfx(clip);
+            }
+        }
+
 #if UNITY_EDITOR
         private void ValidateSkills()
         {
