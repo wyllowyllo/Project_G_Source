@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Combat.Core;
 using UnityEngine;
 
@@ -8,59 +6,59 @@ namespace Equipment
     [RequireComponent(typeof(Combatant))]
     public class PlayerEquipment : MonoBehaviour, IModifierSource
     {
-        public event Action<EquipmentData> OnEquipmentChanged;
-
         public string Id => "PlayerEquipment";
 
         private Combatant _combatant;
-        private readonly Dictionary<EquipmentSlot, EquipmentData> _equippedItems = new();
-
-        public EquipmentData GetEquipment(EquipmentSlot slot)
-        {
-            return _equippedItems.GetValueOrDefault(slot);
-        }
+        private EquipmentDataManager _dataManager;
 
         private void Awake()
         {
             _combatant = GetComponent<Combatant>();
         }
 
-        public bool TryEquip(EquipmentData newEquipment)
+        private void Start()
         {
-            if (newEquipment == null)
-                return false;
+            _dataManager = EquipmentDataManager.Instance;
+            if (_dataManager == null)
+            {
+                Debug.LogWarning("[PlayerEquipment] EquipmentDataManager not found");
+                return;
+            }
 
-            var slot = newEquipment.Slot;
-            if (_equippedItems.TryGetValue(slot, out var current) && newEquipment.Grade <= current.Grade)
-                return false;
-
-            _equippedItems[slot] = newEquipment;
-            ReapplyAllModifiers();
-
-            OnEquipmentChanged?.Invoke(newEquipment);
-            return true;
-        }
-
-        public bool Unequip(EquipmentSlot slot)
-        {
-            if (!_equippedItems.Remove(slot))
-                return false;
+            _dataManager.OnEquipmentChanged += HandleEquipmentChanged;
+            _dataManager.OnEquipmentRemoved += HandleEquipmentRemoved;
 
             ReapplyAllModifiers();
-            return true;
         }
 
-        public IEnumerable<EquipmentData> GetAllEquipment()
+        private void OnDestroy()
         {
-            return _equippedItems.Values;
+            if (_dataManager != null)
+            {
+                _dataManager.OnEquipmentChanged -= HandleEquipmentChanged;
+                _dataManager.OnEquipmentRemoved -= HandleEquipmentRemoved;
+            }
+        }
+
+        private void HandleEquipmentChanged(EquipmentData equipment)
+        {
+            ReapplyAllModifiers();
+        }
+
+        private void HandleEquipmentRemoved(EquipmentSlot slot)
+        {
+            ReapplyAllModifiers();
         }
 
         private void ReapplyAllModifiers()
         {
+            if (_combatant == null || _dataManager == null)
+                return;
+
             var stats = _combatant.Stats;
             stats.RemoveAllModifiersFromSource(this);
 
-            foreach (var equipment in _equippedItems.Values)
+            foreach (var equipment in _dataManager.GetAllEquipment())
             {
                 ApplyModifiers(stats, equipment);
             }

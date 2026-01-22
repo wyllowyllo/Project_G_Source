@@ -120,5 +120,11 @@ namespace Dialogue
             _onComplete = null;
             callback?.Invoke();
         }
+
+        public void ResetProgress()
+        {
+            _introChecked = false;
+            _pendingDialogue = null;
+        }
     }
 }

@@ -15,7 +15,6 @@ namespace Debugging
     {
         [Header("References")]
         [SerializeField] private PlayerProgression _progression;
-        [SerializeField] private PlayerEquipment _equipment;
         [SerializeField] private Combatant _combatant;
 
         [Header("Debug Settings")]
@@ -81,9 +80,10 @@ namespace Debugging
 
             CreateSpacer(_content, 10);
             CreateButton(_content, "Unequip All", () => {
-                if (_equipment == null) return;
+                var dataManager = EquipmentDataManager.Instance;
+                if (dataManager == null) return;
                 foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
-                    _equipment.Unequip(slot);
+                    dataManager.Unequip(slot);
             });
         }
 
@@ -108,11 +108,12 @@ namespace Debugging
                 sb.AppendLine($"Crit: {stats.CriticalChance.Value:P0} / {stats.CriticalMultiplier.Value:P0}");
             }
 
-            if (_equipment != null)
+            var equipmentDataManager = EquipmentDataManager.Instance;
+            if (equipmentDataManager != null)
             {
                 foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
                 {
-                    var item = _equipment.GetEquipment(slot);
+                    var item = equipmentDataManager.GetEquipment(slot);
                     if (item != null)
                         sb.AppendLine($"{slot}: {item.EquipmentName} ({item.Grade})");
                 }
