@@ -49,6 +49,7 @@ namespace Interaction
 
             if (Input.GetKeyDown(_interactKey))
             {
+                SoundManager.Instance.PlaySfx(SoundManager.ESfx.EquipmentGet);
                 _currentTarget.Interact(this);
             }
         }
