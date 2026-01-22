@@ -4,6 +4,7 @@ using Monster.AI.States;
 using Monster.Ability;
 using Monster.Combat;
 using Monster.Data;
+using Monster.Feedback;
 using Monster.Group;
 using Monster.Manager;
 using System.Collections.Generic;
@@ -36,6 +37,7 @@ namespace Monster.AI
         private MonsterStateMachine _stateMachine;
         private GroupCommandProvider _groupCommandProvider;
         private Animator _animator;
+        private MonsterFeedback _monsterFeedback;
 
         // Ability 시스템
         private Dictionary<System.Type, EntityAbility> _abilities;
@@ -58,6 +60,7 @@ namespace Monster.AI
         public Vector3 HomePosition => _homePosition;
 
         public Animator Animator => _animator;
+        public MonsterFeedback Feedback => _monsterFeedback;
         
        
 
@@ -71,6 +74,7 @@ namespace Monster.AI
 
 
             _animator = GetComponentInChildren<Animator>();
+            _monsterFeedback = GetComponent<MonsterFeedback>();
 
             InitializeMonster();
             InitializeAttackers();

@@ -42,11 +42,14 @@ namespace Monster.AI.States
             _isWaiting = false;
             _waitTimer = 0f;
 
-            
+
             _navAgentAbility?.SetSpeed(_controller.Data.PatrolSpeed);
 
-           
+
             _animatorAbility?.SetInCombat(false);
+
+            // Idle 사운드 시작
+            _controller.Feedback?.StartIdleSound();
 
             SetNewPatrolTarget();
         }
@@ -87,10 +90,13 @@ namespace Monster.AI.States
         public void Exit()
         {
             _navAgentAbility?.SetSpeed(_controller.Data.MoveSpeed);
-            
+
             _navAgentAbility?.Stop();
             _animatorAbility?.SetSpeed(0f);
             _animatorAbility?.SetMoveDirection(0f, 0f);
+
+            // Idle 사운드 중지
+            _controller.Feedback?.StopIdleSound();
         }
 
         private void SetNewPatrolTarget()

@@ -127,6 +127,9 @@ namespace Monster.AI.States
             // 공격 애니메이션 트리거
             _animatorAbility?.TriggerAttack(_isHeavyAttack, OnAnimationComplete);
 
+            // 공격 사운드
+            _controller.Feedback?.PlayAttackSound(_isHeavyAttack);
+
             Debug.Log($"{_controller.gameObject.name}: 공격 실행 (Perform) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 

@@ -26,12 +26,25 @@ namespace Monster.Feedback
         [SerializeField] private GameObject _deathVFXPrefab;
         [SerializeField] private float _vfxLifetime = 0.3f;
 
-        [Header("SFX")]
+        [Header("SFX - Hit/Death")]
         [SerializeField] private AudioSource _audioSource;
         [SerializeField] private AudioClip _hitSound;
         [SerializeField] private AudioClip _criticalHitSound;
         [SerializeField] private AudioClip _deathSound;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 1f;
+
+        [Header("SFX - Idle")]
+        [SerializeField] private AudioClip[] _idleSounds;
+        [SerializeField] private float _idleSoundMinInterval = 3f;
+        [SerializeField] private float _idleSoundMaxInterval = 8f;
+        private Coroutine _idleSoundCoroutine;
+
+        [Header("SFX - Alert")]
+        [SerializeField] private AudioClip _alertSound;
+
+        [Header("SFX - Attack")]
+        [SerializeField] private AudioClip _normalAttackSound;
+        [SerializeField] private AudioClip _heavyAttackSound;
 
         [Header("Damage Number")]
         [SerializeField] private GameObject _damageNumberPrefab;
@@ -243,6 +256,62 @@ namespace Monster.Feedback
 
             var damageNumberUI = go?.GetComponent<UI.DamageNumberUI>();
             damageNumberUI?.Initialize(info.Amount, info.IsCritical);
+        }
+
+        // Idle 사운드 시작 (주기적으로 랜덤 재생)
+        public void StartIdleSound()
+        {
+            if (_idleSounds == null || _idleSounds.Length == 0) return;
+            if (_idleSoundCoroutine != null) return;
+
+            _idleSoundCoroutine = StartCoroutine(IdleSoundCoroutine());
+        }
+
+        // Idle 사운드 중지
+        public void StopIdleSound()
+        {
+            if (_idleSoundCoroutine != null)
+            {
+                StopCoroutine(_idleSoundCoroutine);
+                _idleSoundCoroutine = null;
+            }
+        }
+
+        private IEnumerator IdleSoundCoroutine()
+        {
+            while (true)
+            {
+                float interval = Random.Range(_idleSoundMinInterval, _idleSoundMaxInterval);
+                yield return new WaitForSeconds(interval);
+
+                if (_audioSource != null && _idleSounds.Length > 0)
+                {
+                    var clip = _idleSounds[Random.Range(0, _idleSounds.Length)];
+                    if (clip != null)
+                    {
+                        _audioSource.PlayOneShot(clip, _sfxVolume);
+                    }
+                }
+            }
+        }
+
+        // 플레이어 발견 사운드
+        public void PlayAlertSound()
+        {
+            if (_audioSource == null || _alertSound == null) return;
+            _audioSource.PlayOneShot(_alertSound, _sfxVolume);
+        }
+
+        // 공격 사운드
+        public void PlayAttackSound(bool isHeavy)
+        {
+            if (_audioSource == null) return;
+
+            var clip = isHeavy ? _heavyAttackSound : _normalAttackSound;
+            if (clip != null)
+            {
+                _audioSource.PlayOneShot(clip, _sfxVolume);
+            }
         }
     }
 }

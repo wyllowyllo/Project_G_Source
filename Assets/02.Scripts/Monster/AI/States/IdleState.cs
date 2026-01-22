@@ -32,6 +32,9 @@ namespace Monster.AI.States
             // 애니메이션: 비전투 대기
             _animatorAbility?.SetSpeed(0f);
             _animatorAbility?.SetInCombat(false);
+
+            // Idle 사운드 시작
+            _controller.Feedback?.StartIdleSound();
         }
 
         public void Update()
@@ -46,6 +49,9 @@ namespace Monster.AI.States
         public void Exit()
         {
             _navAgentAbility?.Resume();
+
+            // Idle 사운드 중지
+            _controller.Feedback?.StopIdleSound();
         }
     }
 }

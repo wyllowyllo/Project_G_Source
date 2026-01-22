@@ -42,6 +42,9 @@ namespace Monster.AI.States
             // 경계 애니메이션 트리거
             _animatorAbility?.TriggerAlert(OnAlertComplete);
 
+            // 플레이어 발견 사운드
+            _controller.Feedback?.PlayAlertSound();
+
             Debug.Log($"{_controller.gameObject.name}: 플레이어 감지! 경계 상태 진입");
         }
 

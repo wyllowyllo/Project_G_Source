@@ -138,6 +138,9 @@ namespace Monster.AI.States
             // 공격 애니메이션 트리거 + 투사체 발사는 애니메이션 이벤트로 처리
             _animatorAbility?.TriggerAttack(_isHeavyAttack, OnAnimationComplete);
 
+            // 공격 사운드
+            _controller.Feedback?.PlayAttackSound(_isHeavyAttack);
+
             Debug.Log($"{_controller.gameObject.name}: 원거리 발사 (Fire) - {(_isHeavyAttack ? "강공" : "약공")}");
         }
 
