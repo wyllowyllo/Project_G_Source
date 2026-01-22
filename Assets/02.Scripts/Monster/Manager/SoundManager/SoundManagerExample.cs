@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 
 /// <summary>
 /// SoundManager 사용 예시 스크립트
@@ -87,3 +87,4 @@ public class SoundManagerExample : MonoBehaviour
         SoundManager.Instance.PlayBgmWithFade(SoundManager.EDungeonBgm.DungeonBoss, 2f);
     }
 }
+*/

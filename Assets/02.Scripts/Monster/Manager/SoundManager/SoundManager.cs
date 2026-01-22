@@ -9,11 +9,7 @@ public class SoundManager : MonoBehaviour
     #region Audio Enums
     public enum EDungeonBgm
     {
-        MainCity,
-        DungeonForest,
-        DungeonFire,
-        DungeonIce,
-        DungeonBoss,
+        
     }
 
     public enum EPlayerSfx
@@ -39,6 +35,9 @@ public class SoundManager : MonoBehaviour
         PauseMenuOpen,
         PauseMenuButtonClick,
         PauseMenuGameEndClick,
+        EquipmentUIOpen,
+        DungeonClear,
+        DungeonFail,
     }
 
     public enum EPlayerSkillSfx

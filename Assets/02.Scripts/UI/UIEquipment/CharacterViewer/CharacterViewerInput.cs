@@ -22,6 +22,10 @@ public class CharacterViewerInput : MonoBehaviour
         // Toggle 입력 감지
         if (Input.GetKeyDown(_toggleKey))
         {
+            if (!_isActive)
+            {
+                SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.EquipmentUIOpen);
+            }
             OnToggleRequested?.Invoke();
         }
 
