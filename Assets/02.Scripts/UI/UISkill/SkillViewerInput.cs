@@ -15,10 +15,10 @@ public class SkillViewerInput : MonoBehaviour
         {
             _isOpen = !_isOpen;
 
-            if (_isOpen)
+/*            if (_isOpen)
             {
                 SoundManager.Instance.PlaySfx(SoundManager.ESfx.SkillUIClick);
-            }
+            }*/
 
             OnToggleRequested?.Invoke(_isOpen);
         }
