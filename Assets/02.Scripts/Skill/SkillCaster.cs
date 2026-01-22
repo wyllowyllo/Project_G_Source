@@ -83,7 +83,10 @@ namespace Skill
             _cameraDirector = GetComponentInChildren<SkillCameraDirector>();
 
             if (_progression != null)
+            {
                 _progression.OnSkillEnhanced += HandleSkillEnhanced;
+                SyncSkillLevels();
+            }
 
             if (_inputHandler != null)
                 _inputHandler.OnSkillInputPressed += HandleSkillInput;
@@ -298,6 +301,17 @@ namespace Skill
             {
                 _skillLevels[slot]++;
             }
+        }
+
+        private void SyncSkillLevels()
+        {
+            var manager = ProgressionManager.Instance;
+            if (manager == null) return;
+
+            int skillLevel = (int)manager.Rank;
+            _skillLevels[SkillSlot.Q] = skillLevel;
+            _skillLevels[SkillSlot.E] = skillLevel;
+            _skillLevels[SkillSlot.R] = skillLevel;
         }
         
         public void OnSkillComplete()
