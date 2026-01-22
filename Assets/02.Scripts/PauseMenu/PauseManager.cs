@@ -63,10 +63,10 @@ public class PauseManager : MonoBehaviour
 
         IsPaused = paused;
 
-        if (paused)
+/*        if (paused)
         {
             SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.PauseMenuOpen);
-        }
+        }*/
 
         OnPauseStateChanged?.Invoke(paused);
 

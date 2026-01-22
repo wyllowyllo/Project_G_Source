@@ -184,7 +184,7 @@ private SkillRewardData[] GetSkillRewardsForCurrentRank()
                 SkillIcon = _defenseSkillIcon,
                 PreviousLevel = previousSkillLevel,
                 NewLevel = newSkillLevel,
-                GlowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색
+                GlowColor = new Color(0f, 0.8f, 1f, 1f), // 청록색D
                 RarityColor = new Color(0.2f, 0.4f, 0.8f, 0.5f) // 파란색 배경
             },
             new SkillRewardData

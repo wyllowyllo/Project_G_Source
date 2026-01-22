@@ -103,6 +103,8 @@ private void ShowClearPanel(int xpReward, bool isFirstClear)
             {
                 _xpRewardText.text = $"+{xpReward} XP";
             }
+
+            SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.DungeonClear);
         }
 
 private void ShowFailPanel()
@@ -132,6 +134,8 @@ private void ShowFailPanel()
                 Debug.LogError("[DungeonResultUI] _dungeonFailUI가 null입니다!");
                 _failPanel?.SetActive(true);
             }
+
+            SoundManager.Instance.PlayUISfx(SoundManager.EUISfx.DungeonFail);
         }
 
         private void ShowGameCompletePanel() => _gameCompletePanel?.SetActive(true);
