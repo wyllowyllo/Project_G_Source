@@ -13,8 +13,13 @@ public class SkillViewerInput : MonoBehaviour
     {
         if(Input.GetKeyDown(_toggleKey))
         {
-            SoundManager.Instance.PlaySfx(SoundManager.ESfx.SkillUIClick);
             _isOpen = !_isOpen;
+
+            if (_isOpen)
+            {
+                SoundManager.Instance.PlaySfx(SoundManager.ESfx.SkillUIClick);
+            }
+
             OnToggleRequested?.Invoke(_isOpen);
         }
     }
