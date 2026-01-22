@@ -219,6 +219,18 @@ public class SoundManager : MonoBehaviour
         PlaySfxFromArray(_sfxs, (int)sfx, sfx.ToString());
     }
 
+    // AudioClip 직접 재생
+    public void PlaySfx(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        AudioSource availableSource = GetAvailableSfxSource();
+        if (availableSource != null)
+        {
+            availableSource.PlayOneShot(clip);
+        }
+    }
+
     // 3D 공간상에서 효과음 재생
     public void PlaySfx3D(AudioClip clip, Vector3 position, float volume = 1f)
     {

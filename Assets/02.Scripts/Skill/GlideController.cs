@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Combat.Core;
 using Monster.Feedback;
 using Monster.Feedback.Data;
@@ -41,6 +42,8 @@ namespace Skill
         [Tooltip("루트 파티클 시스템 (자식 파티클도 함께 제어됨)")]
         [SerializeField] private ParticleSystem _windParticle;
 
+        private List<AudioSource> _glidingAudioSources = new List<AudioSource>();
+
         private PlayerMovement _playerMovement;
         private PlayerAnimationController _animationController;
         private PlayerInputHandler _inputHandler;
@@ -80,6 +83,25 @@ namespace Skill
             _combatant = GetComponent<Combatant>();
             _aimVisualizer = GetComponentInChildren<DiveBombAimVisualizer>();
             _mainCamera = Camera.main;
+
+            InitializeGlidingAudioSources();
+        }
+
+        private void InitializeGlidingAudioSources()
+        {
+            if (_settings == null || _settings.GlidingLoopSounds == null) return;
+
+            foreach (var clip in _settings.GlidingLoopSounds)
+            {
+                if (clip == null) continue;
+
+                var source = gameObject.AddComponent<AudioSource>();
+                source.clip = clip;
+                source.loop = true;
+                source.playOnAwake = false;
+                source.volume = _settings.GlidingLoopVolume;
+                _glidingAudioSources.Add(source);
+            }
         }
 
         private void Start()
@@ -132,6 +154,7 @@ namespace Skill
             _animationController?.PlayGlide(GlideState.SuperJump);
             _cameraController?.SetGlideMode(true);
 
+            PlaySound(_settings.PrepareSound);
             OnGlideStarted?.Invoke();
         }
 
@@ -147,6 +170,8 @@ namespace Skill
 
             _playerMovement.SetVelocityOverride(CalculateVelocity);
             _playerMovement.ForceUnground();
+
+            PlaySound(_settings.SuperJumpSound);
         }
 
         public void OnGlideTransition()
@@ -226,12 +251,22 @@ namespace Skill
             {
                 _windParticle.Play(withChildren: true);
             }
+
+            foreach (var source in _glidingAudioSources)
+            {
+                source.Play();
+            }
         }
 
         private void StopGlideEffects()
         {
             CameraShakeController.Instance?.StopAmbientShake();
             _windParticle?.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
+
+            foreach (var source in _glidingAudioSources)
+            {
+                source.Stop();
+            }
         }
 
         private void UpdateGliding()
@@ -267,6 +302,7 @@ namespace Skill
             _animationController?.PlayGlide(GlideState.Landing);
 
             StopGlideEffects();
+            PlaySound(_settings.LandingSound);
         }
 
         private void TransitionToDiveBombLanding()
@@ -279,6 +315,7 @@ namespace Skill
 
             StopGlideEffects();
             CameraShakeController.Instance?.TriggerShake(_diveBombImpactShake);
+            PlaySound(_settings.DiveBombLandingSound);
         }
 
         private void UpdateDiveBomb()
@@ -493,9 +530,11 @@ namespace Skill
 
             float distance = Vector3.Distance(_diveStartPosition, _aimTargetPosition);
             _diveDuration = distance / _settings.ParabolicDiveSpeedFactor;
-            
+
             _playerMovement.SetVelocityOverride((_, _) => Vector3.zero);
             _animationController?.PlayGlide(GlideState.DiveBomb);
+
+            PlaySound(_settings.DiveBombSound);
         }
 
         private void StartDiveBomb()
@@ -510,6 +549,8 @@ namespace Skill
             _isParabolicDive = false;
 
             _animationController?.PlayGlide(GlideState.DiveBomb);
+
+            PlaySound(_settings.DiveBombSound);
         }
 
         private Vector3 CalculateVelocity(Vector3 currentVelocity, float deltaTime)
@@ -617,6 +658,12 @@ namespace Skill
         public void Cancel()
         {
             EndGlide();
+        }
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (clip == null) return;
+            SoundManager.Instance?.PlaySfx(clip);
         }
 
 #if UNITY_EDITOR

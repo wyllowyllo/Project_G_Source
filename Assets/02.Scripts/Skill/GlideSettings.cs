@@ -37,6 +37,15 @@ namespace Skill
         [Header("Landing")]
         [SerializeField] private float _landingTimeout = 1.5f;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _prepareSound;
+        [SerializeField] private AudioClip _superJumpSound;
+        [SerializeField] private AudioClip[] _glidingLoopSounds;
+        [SerializeField] private AudioClip _diveBombSound;
+        [SerializeField] private AudioClip _landingSound;
+        [SerializeField] private AudioClip _diveBombLandingSound;
+        [SerializeField, Range(0f, 1f)] private float _glidingLoopVolume = 0.6f;
+
         public float JumpForce => _jumpForce;
         public float JumpDuration => _jumpDuration;
         public float GlideGravity => _glideGravity;
@@ -55,5 +64,13 @@ namespace Skill
         public float ParabolicArcHeight => _parabolicArcHeight;
         public float Cooldown => _cooldown;
         public float LandingTimeout => _landingTimeout;
+
+        public AudioClip PrepareSound => _prepareSound;
+        public AudioClip SuperJumpSound => _superJumpSound;
+        public AudioClip[] GlidingLoopSounds => _glidingLoopSounds;
+        public AudioClip DiveBombSound => _diveBombSound;
+        public AudioClip LandingSound => _landingSound;
+        public AudioClip DiveBombLandingSound => _diveBombLandingSound;
+        public float GlidingLoopVolume => _glidingLoopVolume;
     }
 }

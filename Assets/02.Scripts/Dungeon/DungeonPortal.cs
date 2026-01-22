@@ -11,6 +11,13 @@ namespace Dungeon
         [Header("Visuals")]
         [SerializeField] private GameObject _clearedIndicator;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip _portalEnterSound;
+        [SerializeField] private AudioClip _portalAmbientSound;
+        [SerializeField, Range(0f, 1f)] private float _ambientVolume = 0.5f;
+
+        private AudioSource _ambientSource;
+
         private DungeonManager _dungeonManager;
 
         public override string InteractionPrompt =>
@@ -43,8 +50,22 @@ namespace Dungeon
 
         private void Start()
         {
+            InitializeAmbientSound();
             UpdateVisibility();
             UpdateClearedIndicator();
+        }
+
+        private void InitializeAmbientSound()
+        {
+            if (_portalAmbientSound == null) return;
+
+            _ambientSource = gameObject.AddComponent<AudioSource>();
+            _ambientSource.clip = _portalAmbientSound;
+            _ambientSource.loop = true;
+            _ambientSource.playOnAwake = false;
+            _ambientSource.spatialBlend = 1f;
+            _ambientSource.volume = _ambientVolume;
+            _ambientSource.Play();
         }
 
         public override bool CanInteract()
@@ -58,6 +79,10 @@ namespace Dungeon
         public override void Interact(IInteractor interactor)
         {
             if (!CanInteract()) return;
+
+            if (_portalEnterSound != null)
+                SoundManager.Instance.PlaySfx(_portalEnterSound);
+
             DungeonManager.Instance.EnterDungeon(_dungeonData);
         }
 

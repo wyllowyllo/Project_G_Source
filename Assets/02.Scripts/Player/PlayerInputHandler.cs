@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Dialogue;
 using Progression;
 using Skill;
 
@@ -40,9 +41,11 @@ namespace Player
         [SerializeField] private bool _useMouseForAim = true;
         [SerializeField] private KeyCode _aimKey = KeyCode.F;
 
+        private bool IsDialogueActive => DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive;
+
         private void Update()
         {
-            if(!_isEnabled)
+            if(!_isEnabled || IsDialogueActive)
             {
                 return;
             }

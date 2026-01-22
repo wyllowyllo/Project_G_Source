@@ -33,6 +33,7 @@ namespace Equipment
         [Header("Stats")]
         [SerializeField, Min(0)] private float _attackBonus;
         [SerializeField, Min(0)] private float _defenseBonus;
+        [SerializeField, Min(0)] private float _healthBonus;
         [SerializeField, Range(0f, 1f)] private float _criticalChanceBonus;
 
         public string EquipmentName => _equipmentName;
@@ -42,6 +43,7 @@ namespace Equipment
 
         public float AttackBonus => _attackBonus;
         public float DefenseBonus => _defenseBonus;
+        public float HealthBonus => _healthBonus;
         public float CriticalChanceBonus => _criticalChanceBonus;
 
 #if UNITY_INCLUDE_TESTS
@@ -50,6 +52,7 @@ namespace Equipment
             EquipmentGrade grade,
             float attackBonus = 0f,
             float defenseBonus = 0f,
+            float healthBonus = 0f,
             float criticalChanceBonus = 0f,
             string equipmentName = "TestEquipment")
         {
@@ -59,6 +62,7 @@ namespace Equipment
             data._grade = grade;
             data._attackBonus = attackBonus;
             data._defenseBonus = defenseBonus;
+            data._healthBonus = healthBonus;
             data._criticalChanceBonus = criticalChanceBonus;
             return data;
         }
