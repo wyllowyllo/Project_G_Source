@@ -1,5 +1,6 @@
 using Boss.AI.States;
 using Boss.Combat;
+using Boss.Core;
 using UnityEngine;
 
 namespace Boss.AI
@@ -14,6 +15,7 @@ namespace Boss.AI
         [SerializeField] private BossController _controller;
         [SerializeField] private BossBreathAttacker _breathAttacker;
         [SerializeField] private BossProjectileLauncher _projectileLauncher;
+        [SerializeField] private BossSoundPlayer _soundPlayer;
 
         private void Awake()
         {
@@ -31,6 +33,11 @@ namespace Boss.AI
             if (_projectileLauncher == null)
             {
                 _projectileLauncher = GetComponentInParent<BossProjectileLauncher>();
+            }
+
+            if (_soundPlayer == null)
+            {
+                _soundPlayer = GetComponentInParent<BossSoundPlayer>();
             }
 
             if (_controller == null)
@@ -204,12 +211,12 @@ namespace Boss.AI
         #region 범용 이벤트
 
         /// <summary>
-        /// Animation Event: 사운드 재생 (선택적)
+        /// Animation Event: 사운드 재생
+        /// soundName: melee, charge, breath, projectile, summon, roar, hit, stagger, death
         /// </summary>
         public void PlaySound(string soundName)
         {
-            // AudioManager 연동 시 구현
-            Debug.Log($"[BossAnimationEvent] PlaySound: {soundName}");
+            _soundPlayer?.PlaySound(soundName);
         }
 
         /// <summary>

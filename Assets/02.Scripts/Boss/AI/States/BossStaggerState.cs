@@ -41,6 +41,9 @@ namespace Boss.AI.States
 
             // 그로기 상태 진입
             _animatorAbility?.SetStagger(true);
+
+            // 그로기 사운드
+            _controller.SoundPlayer?.PlayStaggerSound();
         }
 
         public void Update()

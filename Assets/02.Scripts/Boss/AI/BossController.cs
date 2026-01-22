@@ -44,6 +44,7 @@ namespace Boss.AI
         private BossSuperArmor _superArmor;
         private BossPhaseManager _phaseManager;
         private BossMinionManager _minionManager;
+        private BossSoundPlayer _soundPlayer;
 
         // Phase 5 시스템
         private BossPatternSelector _patternSelector;
@@ -69,6 +70,7 @@ namespace Boss.AI
         public BossPhaseManager PhaseManager => _phaseManager;
         public BossTelegraph Telegraph => _telegraph;
         public BossMinionManager MinionManager => _minionManager;
+        public BossSoundPlayer SoundPlayer => _soundPlayer;
 
         // Phase 5 시스템 프로퍼티
         public BossPatternSelector PatternSelector => _patternSelector;
@@ -161,6 +163,13 @@ namespace Boss.AI
             if (_telegraph == null)
             {
                 _telegraph = GetComponentInChildren<BossTelegraph>();
+            }
+
+            // SoundPlayer (자동 검색)
+            _soundPlayer = GetComponent<BossSoundPlayer>();
+            if (_soundPlayer == null)
+            {
+                _soundPlayer = GetComponentInChildren<BossSoundPlayer>();
             }
 
             // Combat 컴포넌트 자동 검색
@@ -305,6 +314,9 @@ namespace Boss.AI
         {
             // 포이즈 데미지 적용 (Stagger 진입 조건)
             _superArmor?.TakePoiseDamage(damageInfo.Amount);
+
+            // 피격 사운드
+            _soundPlayer?.PlayHitSound();
 
             // Stagger 상태에서만 Hit 애니메이션 재생 (FSM 상태는 유지)
             if (_stateMachine?.CurrentStateType == EBossState.Stagger)

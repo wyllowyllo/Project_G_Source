@@ -31,6 +31,9 @@ namespace Boss.AI.States
             // 네비게이션 비활성화
             _navAgentAbility?.Disable();
 
+            // 사망 사운드
+            _controller.SoundPlayer?.PlayDeathSound();
+
             // 사망 애니메이션 재생
             _animatorAbility?.TriggerDeath(OnDeathAnimationComplete);
 

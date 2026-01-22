@@ -39,8 +39,8 @@ namespace Boss.AI.States
             // 페이즈 전환 애니메이션 (Taunting/Victory)
             _animatorAbility?.TriggerPhaseTransition(OnTransitionAnimationComplete);
 
-            // TODO: 전환 이펙트, 사운드 재생
-            // _controller.Telegraph?.ShowPhaseTransitionEffect();
+            // 포효 사운드
+            _controller.SoundPlayer?.PlayRoarSound();
         }
 
         public void Update()
