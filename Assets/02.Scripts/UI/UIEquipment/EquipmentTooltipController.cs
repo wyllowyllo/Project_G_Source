@@ -260,7 +260,7 @@ namespace Equipment
 
             if (_defenseText != null)
             {
-                _defenseText.text = $"방어력: {equipmentData.DefenseBonus:F0}";
+                _defenseText.text = $"체력: {equipmentData.DefenseBonus:F0}";
             }
 
             if (_backgroundImage != null)
@@ -279,7 +279,7 @@ namespace Equipment
             return grade switch
             {
                 EquipmentGrade.Normal => "노말",
-                EquipmentGrade.Rare => "에픽",
+                EquipmentGrade.Rare => "레어",
                 EquipmentGrade.Unique => "유니크",
                 EquipmentGrade.Legendary => "레전더리",
                 _ => "알 수 없음"
