@@ -106,6 +106,7 @@ namespace Progression
             _combatant.Heal(_combatant.MaxHealth);
         }
 
+#if UNITY_EDITOR
         [Conditional("UNITY_EDITOR")]
         public void SetLevel(int level)
         {
@@ -113,6 +114,7 @@ namespace Progression
             Manager?.SetLevel(level);
             ApplyLevelStats();
         }
+#endif
 
 #if UNITY_INCLUDE_TESTS
         public void SetConfigForTest(ProgressionConfig config)

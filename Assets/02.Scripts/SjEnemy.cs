@@ -457,6 +457,7 @@ public class SjEnemy : MonoBehaviour
             Gizmos.DrawWireSphere(healthBarPosition.position, 0.1f);
         }
 
+#if UNITY_EDITOR
         // 체력 정보 표시
         if (Application.isPlaying)
         {
@@ -465,6 +466,7 @@ public class SjEnemy : MonoBehaviour
                 $"HP: {currentHealth:F0}/{maxHealth:F0}"
             );
         }
+#endif
     }
 
     #endregion

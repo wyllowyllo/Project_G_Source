@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using Monster.Data;
 using UnityEditor;
 using UnityEngine;
@@ -133,3 +134,4 @@ namespace Monster.Editor
         }
     }
 }
+#endif
