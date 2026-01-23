@@ -18,6 +18,9 @@ namespace Boss.Core
         [SerializeField] private AudioClip _projectileSound;
         [SerializeField] private AudioClip _summonSound;
 
+        [Header("Movement Sounds")]
+        [SerializeField] private AudioClip _footstepSound;
+
         [Header("State Sounds")]
         [SerializeField] private AudioClip _roarSound;
         [SerializeField] private AudioClip _hitSound;
@@ -72,6 +75,10 @@ namespace Boss.Core
                 case "death":
                     PlayDeathSound();
                     break;
+                case "footstep":
+                case "foot":
+                    PlayFootstepSound();
+                    break;
                 default:
                     Debug.LogWarning($"[BossSoundPlayer] Unknown sound: {soundName}");
                     break;
@@ -103,6 +110,15 @@ namespace Boss.Core
         public void PlaySummonSound()
         {
             PlayClip(_summonSound);
+        }
+
+        #endregion
+
+        #region Movement Sounds
+
+        public void PlayFootstepSound()
+        {
+            PlayClip(_footstepSound);
         }
 
         #endregion

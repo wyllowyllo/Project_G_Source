@@ -16,6 +16,10 @@ namespace Boss.AI
         [SerializeField] private BossBreathAttacker _breathAttacker;
         [SerializeField] private BossProjectileLauncher _projectileLauncher;
         [SerializeField] private BossSoundPlayer _soundPlayer;
+        [SerializeField] private Animator _animator;
+
+        [Header("Footstep 설정")]
+        [SerializeField] private float _footstepSpeedThreshold = 0.1f;
 
         private void Awake()
         {
@@ -38,6 +42,11 @@ namespace Boss.AI
             if (_soundPlayer == null)
             {
                 _soundPlayer = GetComponentInParent<BossSoundPlayer>();
+            }
+
+            if (_animator == null)
+            {
+                _animator = GetComponent<Animator>();
             }
 
             if (_controller == null)
@@ -209,6 +218,22 @@ namespace Boss.AI
         {
             Debug.Log("[BossAnimationEventReceiver] PhaseTransitionComplete");
             _controller?.OnPhaseTransitionAnimationComplete();
+        }
+
+        #endregion
+
+        #region 이동 이벤트
+
+        // Animation Event: 발소리 재생 (Speed가 threshold 이상일 때만)
+        public void OnFootstep()
+        {
+            if (_animator == null) return;
+
+            float speed = _animator.GetFloat("Speed");
+            if (speed >= _footstepSpeedThreshold)
+            {
+                _soundPlayer?.PlayFootstepSound();
+            }
         }
 
         #endregion
