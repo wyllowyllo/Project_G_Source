@@ -3,6 +3,7 @@ using Equipment;
 using Progression;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Player
@@ -45,6 +46,8 @@ namespace Player
 
         private void OnEnable()
         {
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+
             if (_playerProgression != null)
             {
                 _playerProgression.OnLevelUp += HandleLevelUp;
@@ -54,6 +57,7 @@ namespace Player
                 _playerCombatant.OnDamaged += HandleDamaged;
                 _playerCombatant.OnHealed += HandleHealed;
                 _playerCombatant.OnDeath += HandleDeath;
+                _playerCombatant.OnMaxHealthChanged += HandleMaxHealthChanged;
             }
             if (_playerEquipment != null)
             {
@@ -63,6 +67,8 @@ namespace Player
 
         private void OnDisable()
         {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+
             if (_playerProgression != null)
             {
                 _playerProgression.OnLevelUp -= HandleLevelUp;
@@ -73,6 +79,7 @@ namespace Player
                 _playerCombatant.OnDamaged -= HandleDamaged;
                 _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
+                _playerCombatant.OnMaxHealthChanged -= HandleMaxHealthChanged;
             }
 
             if (_playerEquipment != null)
@@ -90,6 +97,18 @@ namespace Player
             }
 
             _level = _playerProgression != null ? _playerProgression.Level : _firstLevel;
+            InitializeHpBar();
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (!ValidateDependencies()) return;
+
+            _level = _playerProgression != null ? _playerProgression.Level : _firstLevel;
+        }
+
+        private void HandleMaxHealthChanged()
+        {
             InitializeHpBar();
         }
 
@@ -119,6 +138,7 @@ namespace Player
                 _playerCombatant.OnDamaged -= HandleDamaged;
                 _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
+                _playerCombatant.OnMaxHealthChanged -= HandleMaxHealthChanged;
             }
             if (_playerEquipment != null)
             {

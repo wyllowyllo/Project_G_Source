@@ -46,6 +46,7 @@ namespace Combat.Core
         public event Action<DamageInfo> OnDamaged;
         public event Action<float> OnHealed;
         public event Action OnDeath;
+        public event Action OnMaxHealthChanged;
         public event Action OnInvincibilityStart;
         public event Action OnInvincibilityEnd;
         public event Action OnHitStunStart;
@@ -70,6 +71,7 @@ namespace Combat.Core
             {
                 _health.OnDeath += HandleDeath;
                 _health.OnHealed += HandleHealed;
+                _health.OnMaxHealthChanged += HandleMaxHealthChanged;
             }
         }
 
@@ -96,6 +98,7 @@ namespace Combat.Core
             {
                 _health.OnDeath -= HandleDeath;
                 _health.OnHealed -= HandleHealed;
+                _health.OnMaxHealthChanged -= HandleMaxHealthChanged;
             }
         }
 
@@ -211,6 +214,11 @@ namespace Combat.Core
         private void HandleHealed(float amount)
         {
             OnHealed?.Invoke(amount);
+        }
+
+        private void HandleMaxHealthChanged()
+        {
+            OnMaxHealthChanged?.Invoke();
         }
 
 #if UNITY_INCLUDE_TESTS

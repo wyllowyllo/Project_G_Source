@@ -1,5 +1,6 @@
 using Combat.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Equipment
 {
@@ -23,6 +24,11 @@ namespace Equipment
             _baseMaxHealth = _health.MaxHealth;
         }
 
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+        }
+
         private void Start()
         {
             _dataManager = EquipmentDataManager.Instance;
@@ -35,7 +41,12 @@ namespace Equipment
             _dataManager.OnEquipmentChanged += HandleEquipmentChanged;
             _dataManager.OnEquipmentRemoved += HandleEquipmentRemoved;
 
-            ReapplyAllModifiers();
+            ReapplyAllModifiers(healToFull: true);
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
         }
 
         private void OnDestroy()
@@ -47,19 +58,25 @@ namespace Equipment
             }
         }
 
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            ReapplyAllModifiers(healToFull: true);
+            OnEquipmentChanged?.Invoke();
+        }
+
         private void HandleEquipmentChanged(EquipmentData equipment)
         {
-            ReapplyAllModifiers();
+            ReapplyAllModifiers(healToFull: false);
             OnEquipmentChanged?.Invoke();
         }
 
         private void HandleEquipmentRemoved(EquipmentSlot slot)
         {
-            ReapplyAllModifiers();
+            ReapplyAllModifiers(healToFull: false);
             OnEquipmentChanged?.Invoke();
         }
 
-        private void ReapplyAllModifiers()
+        private void ReapplyAllModifiers(bool healToFull = false)
         {
             if (_combatant == null || _dataManager == null)
                 return;
@@ -74,13 +91,13 @@ namespace Equipment
                 totalHealthBonus += equipment.HealthBonus;
             }
 
-            ApplyHealthBonus(totalHealthBonus);
+            ApplyHealthBonus(totalHealthBonus, healToFull);
         }
 
-        private void ApplyHealthBonus(float bonus)
+        private void ApplyHealthBonus(float bonus, bool healToFull)
         {
             if (_health == null) return;
-            _health.SetMaxHealth(_baseMaxHealth + bonus);
+            _health.SetMaxHealth(_baseMaxHealth + bonus, healToFull);
         }
 
         private void ApplyModifiers(CombatStats stats, EquipmentData equipment)
