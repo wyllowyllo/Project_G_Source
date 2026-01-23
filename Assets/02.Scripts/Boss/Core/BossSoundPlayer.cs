@@ -79,6 +79,13 @@ namespace Boss.Core
                 case "foot":
                     PlayFootstepSound();
                     break;
+                case "idle":
+                case "startidle":
+                    StartIdleSound();
+                    break;
+                case "stopidle":
+                    StopIdleSound();
+                    break;
                 default:
                     Debug.LogWarning($"[BossSoundPlayer] Unknown sound: {soundName}");
                     break;

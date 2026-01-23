@@ -28,6 +28,7 @@ namespace Boss.AI.States
 
         public void Enter()
         {
+            _controller.SoundPlayer?.StopIdleSound();
             _navAgentAbility?.Stop();
 
             // 전환 중 슈퍼아머 활성화 (포이즈 무한)

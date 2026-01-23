@@ -45,6 +45,7 @@ namespace Boss.AI.States
 
         public void Enter()
         {
+            _controller.SoundPlayer?.StopIdleSound();
             _navAgentAbility?.Stop();
             _currentPhase = EChargePhase.Windup;
             _windupTimer = 0f;

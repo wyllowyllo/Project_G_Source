@@ -28,6 +28,8 @@ namespace Boss.AI.States
 
         public void Enter()
         {
+            _controller.SoundPlayer?.StopIdleSound();
+
             // 네비게이션 비활성화
             _navAgentAbility?.Disable();
 

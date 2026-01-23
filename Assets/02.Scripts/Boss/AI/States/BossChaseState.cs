@@ -56,6 +56,9 @@ namespace Boss.AI.States
             // 이동 애니메이션 설정
             _animatorAbility?.SetInCombat(true);
             _animatorAbility?.SetSpeed(1f);
+
+            // Idle 사운드 시작 (이미 재생 중이면 무시됨)
+            _controller.SoundPlayer?.StartIdleSound();
         }
 
         public void Update()

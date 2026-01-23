@@ -70,6 +70,9 @@ namespace Boss.AI.States
             // 전투 대기 애니메이션
             _animatorAbility?.SetSpeed(0f);
             _animatorAbility?.SetInCombat(true);
+
+            // Idle 사운드 시작
+            _controller.SoundPlayer?.StartIdleSound();
         }
 
         public void Update()

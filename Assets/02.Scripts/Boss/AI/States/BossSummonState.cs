@@ -32,6 +32,7 @@ namespace Boss.AI.States
 
         public void Enter()
         {
+            _controller.SoundPlayer?.StopIdleSound();
             _navAgentAbility?.Stop();
             _isAnimationComplete = false;
 

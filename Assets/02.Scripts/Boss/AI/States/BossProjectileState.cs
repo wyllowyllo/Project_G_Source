@@ -40,6 +40,7 @@ namespace Boss.AI.States
 
         public void Enter()
         {
+            _controller.SoundPlayer?.StopIdleSound();
             _navAgentAbility?.Stop();
             _currentPhase = EProjectilePhase.Aiming;
             _aimTimer = 0f;
