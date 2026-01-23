@@ -19,6 +19,10 @@ namespace Boss.Core
         [SerializeField] private GameObject _lineDecalPrefab;
         [SerializeField] private GameObject _markerPrefab;
 
+        [Header("런타임 생성용 셰이더 (빌드 시 필수)")]
+        [SerializeField] private Shader _unlitColorShader;
+        [SerializeField] private Shader _spritesDefaultShader;
+
         private GameObject _activeDecal;
         private GameObject _activeEffect;
         private List<GameObject> _activeMarkers = new();
@@ -34,12 +38,13 @@ namespace Boss.Core
 
         private void CreateRuntimeMaterial()
         {
-            // Unlit 투명 머티리얼 생성
-            _runtimeMaterial = new Material(Shader.Find("Unlit/Color"));
-            if (_runtimeMaterial == null)
+            // Unlit 투명 머티리얼 생성 (SerializeField 우선, 없으면 Shader.Find 시도)
+            Shader shader = _unlitColorShader != null ? _unlitColorShader : Shader.Find("Unlit/Color");
+            if (shader == null)
             {
-                _runtimeMaterial = new Material(Shader.Find("Sprites/Default"));
+                shader = _spritesDefaultShader != null ? _spritesDefaultShader : Shader.Find("Sprites/Default");
             }
+            _runtimeMaterial = new Material(shader);
             _runtimeMaterial.color = _warningColor;
 
             // 투명도 지원 설정
@@ -199,7 +204,7 @@ namespace Boss.Core
             line.endWidth = 0.1f;
 
             // 기본 머티리얼
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            line.material = new Material(GetSpritesDefaultShader());
             line.startColor = _dangerColor;
             line.endColor = _dangerColor;
 
@@ -293,7 +298,7 @@ namespace Boss.Core
             line.loop = true;
             line.startWidth = 0.1f;
             line.endWidth = 0.1f;
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            line.material = new Material(GetSpritesDefaultShader());
             line.startColor = _dangerColor;
             line.endColor = _dangerColor;
 
@@ -364,7 +369,7 @@ namespace Boss.Core
             line.loop = true;
             line.startWidth = 0.08f;
             line.endWidth = 0.08f;
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            line.material = new Material(GetSpritesDefaultShader());
             line.startColor = _dangerColor;
             line.endColor = _dangerColor;
 
@@ -402,7 +407,7 @@ namespace Boss.Core
             circle.loop = true;
             circle.startWidth = 0.08f;
             circle.endWidth = 0.08f;
-            circle.material = new Material(Shader.Find("Sprites/Default"));
+            circle.material = new Material(GetSpritesDefaultShader());
             circle.startColor = _dangerColor;
             circle.endColor = _dangerColor;
 
@@ -428,7 +433,7 @@ namespace Boss.Core
             line.positionCount = 2;
             line.startWidth = 0.1f;
             line.endWidth = 0.1f;
-            line.material = new Material(Shader.Find("Sprites/Default"));
+            line.material = new Material(GetSpritesDefaultShader());
             line.startColor = _dangerColor;
             line.endColor = _dangerColor;
 
@@ -577,6 +582,12 @@ namespace Boss.Core
             {
                 Destroy(_runtimeMaterial);
             }
+        }
+
+        // 빌드에서도 안전하게 셰이더를 가져오는 헬퍼
+        private Shader GetSpritesDefaultShader()
+        {
+            return _spritesDefaultShader != null ? _spritesDefaultShader : Shader.Find("Sprites/Default");
         }
     }
 }
