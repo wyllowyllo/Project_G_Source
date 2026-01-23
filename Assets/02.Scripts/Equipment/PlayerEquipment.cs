@@ -8,6 +8,9 @@ namespace Equipment
     {
         public string Id => "PlayerEquipment";
 
+        // PlayerHpBar가 구독할 이벤트
+        public event System.Action OnEquipmentChanged;
+
         private Combatant _combatant;
         private Health _health;
         private EquipmentDataManager _dataManager;
@@ -47,11 +50,13 @@ namespace Equipment
         private void HandleEquipmentChanged(EquipmentData equipment)
         {
             ReapplyAllModifiers();
+            OnEquipmentChanged?.Invoke();
         }
 
         private void HandleEquipmentRemoved(EquipmentSlot slot)
         {
             ReapplyAllModifiers();
+            OnEquipmentChanged?.Invoke();
         }
 
         private void ReapplyAllModifiers()
@@ -91,6 +96,23 @@ namespace Equipment
             if (equipment.CriticalChanceBonus > 0)
                 stats.CriticalChance.AddModifier(
                     new StatModifier(equipment.CriticalChanceBonus, StatModifierType.Additive, this));
+        }
+
+        /// <summary>
+        /// 현재 장착된 모든 장비의 체력 보너스 총합을 반환합니다.
+        /// </summary>
+        public float GetTotalHealthBonus()
+        {
+            if (_dataManager == null)
+                return 0f;
+
+            float totalBonus = 0f;
+            foreach (var equipment in _dataManager.GetAllEquipment())
+            {
+                totalBonus += equipment.HealthBonus;
+            }
+
+            return totalBonus;
         }
     }
 }
