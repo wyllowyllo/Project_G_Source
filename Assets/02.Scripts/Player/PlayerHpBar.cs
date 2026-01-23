@@ -222,12 +222,6 @@ namespace Player
 
             float totalMaxHealth = _playerCombatant.MaxHealth;
 
-            // 장비 보너스를 추가
-            if (_playerEquipment != null)
-            {
-                totalMaxHealth += _playerEquipment.GetTotalHealthBonus();
-            }
-
             _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(totalMaxHealth)}";
         }
 
