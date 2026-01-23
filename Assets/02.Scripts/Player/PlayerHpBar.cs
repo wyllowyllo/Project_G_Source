@@ -1,4 +1,5 @@
 using Combat.Core;
+using Equipment;
 using Progression;
 using TMPro;
 using UnityEngine;
@@ -9,7 +10,8 @@ namespace Player
     public class PlayerHpBar : MonoBehaviour, ICloneDisableable
     {
 
-        [SerializeField] private Combatant _playerCombatant; 
+        [SerializeField] private Combatant _playerCombatant;
+        [SerializeField] private PlayerEquipment _playerEquipment;
 
         public Slider HpSlider;
         public Slider BackSlider;
@@ -20,7 +22,7 @@ namespace Player
 
         [SerializeField] private int _level = 1;
         [SerializeField] private float _smoothSpeed = 5f;
-        [SerializeField] private float _smoothBackSpeed = 2f; 
+        [SerializeField] private float _smoothBackSpeed = 2f;
         [SerializeField] private float _backHpDelay = 0.3f;
         [SerializeField] private int _firstLevel = 1;
 
@@ -33,6 +35,8 @@ namespace Player
 
         [SerializeField] private PlayerProgression _playerProgression;
 
+        public event System.Action OnEquipmentChanged;
+
         private bool _backHpHit = false;
         private float _targetHp;
         private float _backHpDelayTimer;
@@ -41,7 +45,7 @@ namespace Player
 
         private void OnEnable()
         {
-            if(_playerProgression != null)
+            if (_playerProgression != null)
             {
                 _playerProgression.OnLevelUp += HandleLevelUp;
             }
@@ -50,6 +54,10 @@ namespace Player
                 _playerCombatant.OnDamaged += HandleDamaged;
                 _playerCombatant.OnHealed += HandleHealed;
                 _playerCombatant.OnDeath += HandleDeath;
+            }
+            if (_playerEquipment != null)
+            {
+                _playerEquipment.OnEquipmentChanged += HandleEquipmentChanged;
             }
         }
 
@@ -65,6 +73,11 @@ namespace Player
                 _playerCombatant.OnDamaged -= HandleDamaged;
                 _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
+            }
+
+            if (_playerEquipment != null)
+            {
+                _playerEquipment.OnEquipmentChanged -= HandleEquipmentChanged;
             }
         }
 
@@ -107,6 +120,10 @@ namespace Player
                 _playerCombatant.OnHealed -= HandleHealed;
                 _playerCombatant.OnDeath -= HandleDeath;
             }
+            if (_playerEquipment != null)
+            {
+                _playerEquipment.OnEquipmentChanged -= HandleEquipmentChanged;
+            }
         }
 
         private void HandleLevelUp(int previousLevel, int newLevel)
@@ -119,6 +136,8 @@ namespace Player
             }
 
             _levelText.text = $"Lv.{_level}";
+
+            UpdateHealthUI();
         }
 
         private void InitializeHpBar()
@@ -163,6 +182,11 @@ namespace Player
             GameOver();
         }
 
+        private void HandleEquipmentChanged()
+        {
+            UpdateHealthUI();
+        }
+
         private void UpdateHpBarSmooth()
         {
             HpSlider.value = Mathf.Lerp(HpSlider.value, _targetHp, Time.deltaTime * _smoothSpeed);
@@ -195,7 +219,16 @@ namespace Player
         private void UpdateHpText()
         {
             _levelText.text = $"Lv.{_level}";
-            _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(_playerCombatant.MaxHealth)}";
+
+            float totalMaxHealth = _playerCombatant.MaxHealth;
+
+            // 장비 보너스를 추가
+            if (_playerEquipment != null)
+            {
+                totalMaxHealth += _playerEquipment.GetTotalHealthBonus();
+            }
+
+            _hpText.text = $"{Mathf.CeilToInt(_playerCombatant.CurrentHealth)} / {Mathf.CeilToInt(totalMaxHealth)}";
         }
 
         private void UpdateHpColor()
