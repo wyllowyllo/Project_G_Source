@@ -1,5 +1,6 @@
 using Combat.Damage;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Combat.Core
 {
@@ -27,7 +28,7 @@ namespace Combat.Core
             };
         }
         
-        // 피격 시 넉백 적용.
+        // 피격 시 넉백 적용 (Rigidbody).
         public static void ApplyKnockbackOnDamage(this Combatant combatant, Rigidbody rb, float force)
         {
             if (rb == null) return;
@@ -40,6 +41,24 @@ namespace Combat.Core
                 }
             };
         }
+
+        // 피격 시 넉백 적용 (NavMeshAgent).
+        public static void ApplyKnockbackOnDamage(this Combatant combatant, NavMeshAgent agent, float force)
+        {
+            if (agent == null) return;
+
+            combatant.OnDamaged += info =>
+            {
+                if (info.HitDirection == Vector3.zero) return;
+
+                Vector3 knockbackTarget = combatant.Transform.position + info.HitDirection * force;
+
+                if (NavMesh.SamplePosition(knockbackTarget, out NavMeshHit hit, force, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
+            };
+        }
         
         // 히트박스 없이 직접 데미지 적용 (DOT, 환경 데미지 등).
         public static void DealDamageTo(this Combatant attacker, Combatant target, float damage, DamageType type = DamageType.True)
@@ -47,11 +66,7 @@ namespace Combat.Core
             if (target == null || !target.CanTakeDamage) return;
 
             var attackContext = AttackContext.Fixed(attacker, damage, type: type);
-            var hitContext = new HitContext(
-                target.Transform.position,
-                (target.Transform.position - attacker.Transform.position).normalized,
-                type
-            );
+            var hitContext = HitContext.FromPositions(attacker.Transform.position, target.Transform.position, type);
 
             target.TakeDamage(attackContext, hitContext);
         }
@@ -61,7 +76,7 @@ namespace Combat.Core
         {
             if (target == null || !target.CanTakeDamage) return;
 
-            var hitContext = new HitContext(target.Transform.position, Vector3.zero, type);
+            var hitContext = HitContext.FromEnvironment(target.Transform.position, type);
             var damageInfo = new DamageInfo(damage, false, hitContext);
 
             target.TakeDamage(damageInfo);

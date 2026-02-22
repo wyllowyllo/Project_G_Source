@@ -1,0 +1,135 @@
+using Combat.Core;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace Equipment
+{
+    [RequireComponent(typeof(Combatant))]
+    public class PlayerEquipment : MonoBehaviour, IModifierSource
+    {
+        public string Id => "PlayerEquipment";
+
+        // PlayerHpBar가 구독할 이벤트
+        public event System.Action OnEquipmentChanged;
+
+        private Combatant _combatant;
+        private Health _health;
+        private EquipmentDataManager _dataManager;
+        private float _baseMaxHealth;
+
+        private void Awake()
+        {
+            _combatant = GetComponent<Combatant>();
+            _health = GetComponent<Health>();
+            _baseMaxHealth = _health.MaxHealth;
+        }
+
+        private void OnEnable()
+        {
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+        }
+
+        private void Start()
+        {
+            _dataManager = EquipmentDataManager.Instance;
+            if (_dataManager == null)
+            {
+                Debug.LogWarning("[PlayerEquipment] EquipmentDataManager not found");
+                return;
+            }
+
+            _dataManager.OnEquipmentChanged += HandleEquipmentChanged;
+            _dataManager.OnEquipmentRemoved += HandleEquipmentRemoved;
+
+            ReapplyAllModifiers(healToFull: true);
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            if (_dataManager != null)
+            {
+                _dataManager.OnEquipmentChanged -= HandleEquipmentChanged;
+                _dataManager.OnEquipmentRemoved -= HandleEquipmentRemoved;
+            }
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            ReapplyAllModifiers(healToFull: true);
+            OnEquipmentChanged?.Invoke();
+        }
+
+        private void HandleEquipmentChanged(EquipmentData equipment)
+        {
+            ReapplyAllModifiers(healToFull: false);
+            OnEquipmentChanged?.Invoke();
+        }
+
+        private void HandleEquipmentRemoved(EquipmentSlot slot)
+        {
+            ReapplyAllModifiers(healToFull: false);
+            OnEquipmentChanged?.Invoke();
+        }
+
+        private void ReapplyAllModifiers(bool healToFull = false)
+        {
+            if (_combatant == null || _dataManager == null)
+                return;
+
+            var stats = _combatant.Stats;
+            stats.RemoveAllModifiersFromSource(this);
+
+            float totalHealthBonus = 0f;
+            foreach (var equipment in _dataManager.GetAllEquipment())
+            {
+                ApplyModifiers(stats, equipment);
+                totalHealthBonus += equipment.HealthBonus;
+            }
+
+            ApplyHealthBonus(totalHealthBonus, healToFull);
+        }
+
+        private void ApplyHealthBonus(float bonus, bool healToFull)
+        {
+            if (_health == null) return;
+            _health.SetMaxHealth(_baseMaxHealth + bonus, healToFull);
+        }
+
+        private void ApplyModifiers(CombatStats stats, EquipmentData equipment)
+        {
+            if (equipment.AttackBonus > 0)
+                stats.AttackDamage.AddModifier(
+                    new StatModifier(equipment.AttackBonus, StatModifierType.Additive, this));
+
+            if (equipment.DefenseBonus > 0)
+                stats.Defense.AddModifier(
+                    new StatModifier(equipment.DefenseBonus, StatModifierType.Additive, this));
+
+            if (equipment.CriticalChanceBonus > 0)
+                stats.CriticalChance.AddModifier(
+                    new StatModifier(equipment.CriticalChanceBonus, StatModifierType.Additive, this));
+        }
+
+        /// <summary>
+        /// 현재 장착된 모든 장비의 체력 보너스 총합을 반환합니다.
+        /// </summary>
+        public float GetTotalHealthBonus()
+        {
+            if (_dataManager == null)
+                return 0f;
+
+            float totalBonus = 0f;
+            foreach (var equipment in _dataManager.GetAllEquipment())
+            {
+                totalBonus += equipment.HealthBonus;
+            }
+
+            return totalBonus;
+        }
+    }
+}

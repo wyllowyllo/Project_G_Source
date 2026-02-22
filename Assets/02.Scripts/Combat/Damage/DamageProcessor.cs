@@ -11,10 +11,10 @@ namespace Combat.Damage
             var defenderInfo = new DefenderInfo(hitInfo.TargetCombatant, hitInfo.TargetHealth);
             var damageResult = DamageCalculator.Calculate(attack, defenderInfo);
 
-            Vector3 hitPoint = hitInfo.GetClosestHitPoint(currentAttackerPosition);
+            Vector3 hitPoint = hitInfo.GetAdjustedHitPoint(currentAttackerPosition);
             Vector3 hitDirection = hitInfo.GetHitDirectionFrom(attack.AttackerPosition);
 
-            var hitContext = new HitContext(hitPoint, hitDirection, attack.DamageType);
+            var hitContext = HitContext.FromCollision(hitPoint, hitDirection, attack.DamageType);
             return new DamageInfo(damageResult.FinalDamage, damageResult.IsCritical, hitContext);
         }
     }

@@ -16,6 +16,7 @@ namespace Combat.Core
         public event Action<float> OnDamaged;
         public event Action<float> OnHealed;
         public event Action OnDeath;
+        public event Action OnMaxHealthChanged;
 
         private void Awake()
         {
@@ -60,6 +61,16 @@ namespace Combat.Core
             {
                 _currentHealth = _maxHealth;
             }
+
+            OnMaxHealthChanged?.Invoke();
         }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetMaxHealthForTest(float maxHealth)
+        {
+            _maxHealth = maxHealth;
+            _currentHealth = maxHealth;
+        }
+#endif
     }
 }

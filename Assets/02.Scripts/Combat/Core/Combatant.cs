@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Combat.Core
 {
     [RequireComponent(typeof(Health))]
-    public class Combatant : MonoBehaviour, ICombatant, IDamageable, IHealthProvider
+    public class Combatant : MonoBehaviour, ICombatant, IDamageable, IHealthProvider, ICloneDisableable
     {
         [SerializeField] private CombatTeam _team;
         [SerializeField] private CombatStatsData _statsData;
@@ -18,6 +18,7 @@ namespace Combat.Core
         private float _hitStunEndTime;
         private bool _wasInvincible;
         private bool _wasStunned;
+        private bool _hasSuperArmor;
 
         public Transform Transform => transform;
         public CombatStats Stats => _stats;
@@ -39,10 +40,13 @@ namespace Combat.Core
         public bool IsAlive => _health.IsAlive;
         public bool IsInvincible => Time.time < _invincibilityEndTime;
         public bool IsStunned => Time.time < _hitStunEndTime;
+        public bool HasSuperArmor => _hasSuperArmor;
         public bool CanTakeDamage => IsAlive && !IsInvincible;
 
         public event Action<DamageInfo> OnDamaged;
+        public event Action<float> OnHealed;
         public event Action OnDeath;
+        public event Action OnMaxHealthChanged;
         public event Action OnInvincibilityStart;
         public event Action OnInvincibilityEnd;
         public event Action OnHitStunStart;
@@ -64,7 +68,11 @@ namespace Combat.Core
         private void OnEnable()
         {
             if (_health != null)
+            {
                 _health.OnDeath += HandleDeath;
+                _health.OnHealed += HandleHealed;
+                _health.OnMaxHealthChanged += HandleMaxHealthChanged;
+            }
         }
 
         private void Update()
@@ -87,7 +95,16 @@ namespace Combat.Core
         private void OnDisable()
         {
             if (_health != null)
+            {
                 _health.OnDeath -= HandleDeath;
+                _health.OnHealed -= HandleHealed;
+                _health.OnMaxHealthChanged -= HandleMaxHealthChanged;
+            }
+        }
+
+        public void TakeDamage(float damage)
+        {
+            TakeDamage(new DamageInfo(damage, false, HitContext.Empty));
         }
 
         public void TakeDamage(DamageInfo damageInfo)
@@ -102,7 +119,8 @@ namespace Combat.Core
                 if (_hitReactionSettings.AutoInvincibilityOnHit)
                     SetInvincible(_hitReactionSettings.InvincibilityDuration);
 
-                if (_hitReactionSettings.AutoHitStunOnHit)
+                // 슈퍼아머 중에는 데미지는 받되 경직(HitStun) 없음
+                if (_hitReactionSettings.AutoHitStunOnHit && !_hasSuperArmor)
                     SetStunned(_hitReactionSettings.HitStunDuration);
             }
         }
@@ -137,6 +155,11 @@ namespace Combat.Core
             {
                 OnInvincibilityStart?.Invoke();
             }
+        }
+
+        public void OnCloneDisable()
+        {
+            // 전투 상태 초기화, 이벤트 구독 해제
         }
 
         public void SetStunned(float duration)
@@ -175,6 +198,11 @@ namespace Combat.Core
             }
         }
 
+        public void SetSuperArmor(bool enabled)
+        {
+            _hasSuperArmor = enabled;
+        }
+
         private void HandleDeath()
         {
             _stats.ClearAllModifiers();
@@ -182,5 +210,31 @@ namespace Combat.Core
             ClearHitStun();
             OnDeath?.Invoke();
         }
+
+        private void HandleHealed(float amount)
+        {
+            OnHealed?.Invoke(amount);
+        }
+
+        private void HandleMaxHealthChanged()
+        {
+            OnMaxHealthChanged?.Invoke();
+        }
+
+#if UNITY_INCLUDE_TESTS
+        public void SetTeamForTest(CombatTeam team) => _team = team;
+        public void SetStatsDataForTest(CombatStatsData data)
+        {
+            _statsData = data;
+            _stats = data != null
+                ? CombatStats.FromData(data)
+                : new CombatStats(
+                    CombatConstants.DefaultAttackDamage,
+                    CombatConstants.DefaultCriticalChance,
+                    CombatConstants.DefaultCriticalMultiplier,
+                    CombatConstants.DefaultDefense);
+        }
+        public void SetHitReactionSettingsForTest(HitReactionSettings settings) => _hitReactionSettings = settings;
+#endif
     }
 }

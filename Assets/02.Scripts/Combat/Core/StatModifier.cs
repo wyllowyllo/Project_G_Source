@@ -9,11 +9,16 @@ namespace Combat.Core
         Multiplicative
     }
 
+    [Serializable]
     public class StatModifier
     {
-        public float Value { get; }
-        public StatModifierType Type { get; }
-        public IModifierSource Source { get; }
+        [SerializeField] private float _value;
+        [SerializeField] private StatModifierType _type;
+        [SerializeField] private string _sourceId;
+
+        public float Value => _value;
+        public StatModifierType Type => _type;
+        public string SourceId => _sourceId;
 
         public StatModifier(float value, StatModifierType type, IModifierSource source)
         {
@@ -26,9 +31,9 @@ namespace Combat.Core
                 value = 0f;
             }
 
-            Value = value;
-            Type = type;
-            Source = source;
+            _value = value;
+            _type = type;
+            _sourceId = source.Id;
         }
     }
 }

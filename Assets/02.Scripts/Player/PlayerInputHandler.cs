@@ -1,95 +1,155 @@
-using UnityEngine;
 using System;
+using UnityEngine;
+using Dialogue;
+using Progression;
+using Skill;
 
-public class PlayerInputHandler : MonoBehaviour
+namespace Player
 {
-    private bool _useMouseButton = true;
-
-    [Header("Input Buffer")]
-    [SerializeField] private float _bufferDuration = 0.3f;
-    [SerializeField] private bool _enableBuffer = true;
-
-    private bool _hasBufferedInput; // 콤보 다음 공격 예약확인 시
-    public bool HasBufferedInput => _hasBufferedInput;
-
-    private float _bufferInputTime; // 다음 콤보 공격 클릭 저장 유효시간
-
-    private bool _isEnabled = true;
-    public bool IsEnabled => _isEnabled;
-
-    public event Action OnAttackInputPressed;
-
-    private void Update()
+    public class PlayerInputHandler : MonoBehaviour, ICloneDisableable
     {
-        if(!_isEnabled)
+        private bool _useMouseButton = true;
+
+        [Header("Input Buffer")]
+        [SerializeField] private float _bufferDuration = 1f;
+        [SerializeField] private bool _enableBuffer = true;
+
+        private bool _hasBufferedInput;
+        public bool HasBufferedInput => _hasBufferedInput;
+
+        private float _bufferInputTime;
+
+        private bool _isEnabled = true;
+        public bool IsEnabled => _isEnabled;
+
+        public event Action OnAttackInputPressed;
+        public event Action OnAimInputPressed;
+        public event Action OnAimInputReleased;
+        public bool IsAiming { get; private set; }
+
+        [Header("Dodge Input")]
+        [SerializeField] private KeyCode _dodgeKey = KeyCode.LeftShift;
+        public event Action OnDodgeInputPressed;
+
+        [Header("Skill Input")]
+        [SerializeField] private KeyCode _qSkillKey = KeyCode.Q;
+        [SerializeField] private KeyCode _eSkillKey = KeyCode.E;
+        [SerializeField] private KeyCode _rSkillKey = KeyCode.R;
+        public event Action<SkillSlot> OnSkillInputPressed;
+
+        [Header("Aim Input")]
+        [SerializeField] private bool _useMouseForAim = true;
+        [SerializeField] private KeyCode _aimKey = KeyCode.F;
+
+        private bool IsDialogueActive => DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive;
+
+        private void Update()
         {
-            return;
+            if(!_isEnabled || IsDialogueActive)
+            {
+                return;
+            }
+
+            ProcessInput();
+            UpdateBuffer();
         }
 
-        ProcessInput();
-        UpdateBuffer();
-    }
-
-    private void ProcessInput()
-    {
-        bool attackPressed = _useMouseButton ? Input.GetMouseButtonDown(0) : Input.GetKeyDown(KeyCode.Mouse0);
-
-        if (attackPressed)
+        private void ProcessInput()
         {
-            OnAttackInputPressed?.Invoke();
-        }
-    }
+            bool attackPressed = _useMouseButton ? Input.GetMouseButtonDown(0) : Input.GetKeyDown(KeyCode.Mouse0);
 
-    private void UpdateBuffer()
-    {
-        if (!_hasBufferedInput || !_enableBuffer)
+            if (attackPressed)
+            {
+                OnAttackInputPressed?.Invoke();
+            }
+
+            bool aimDown = _useMouseForAim ? Input.GetMouseButtonDown(1) : Input.GetKeyDown(_aimKey);
+            bool aimUp = _useMouseForAim ? Input.GetMouseButtonUp(1) : Input.GetKeyUp(_aimKey);
+
+            if (aimDown)
+            {
+                IsAiming = true;
+                OnAimInputPressed?.Invoke();
+            }
+            if (aimUp)
+            {
+                IsAiming = false;
+                OnAimInputReleased?.Invoke();
+            }
+
+            if (Input.GetKeyDown(_dodgeKey))
+            {
+                OnDodgeInputPressed?.Invoke();
+            }
+
+            if (Input.GetKeyDown(_qSkillKey))
+                OnSkillInputPressed?.Invoke(SkillSlot.Q);
+            if (Input.GetKeyDown(_eSkillKey))
+                OnSkillInputPressed?.Invoke(SkillSlot.E);
+            if (Input.GetKeyDown(_rSkillKey))
+                OnSkillInputPressed?.Invoke(SkillSlot.R);
+        }
+
+        private void UpdateBuffer()
         {
-            return;
+            if (!_hasBufferedInput || !_enableBuffer)
+            {
+                return;
+            }
+
+            _bufferInputTime -= Time.deltaTime;
+
+            if(_bufferInputTime <= 0f)
+            {
+                ClearBuffer();
+            }
         }
 
-        _bufferInputTime -= Time.deltaTime;
-
-        if(_bufferInputTime <= 0f)
+        public void BufferInput()
         {
-            ClearBuffer();
-        }
-    }
+            if(!_enableBuffer)
+            {
+                return;
+            }
 
-    public void BufferInput()
-    {
-        if(!_enableBuffer)
+            _hasBufferedInput = true;
+            _bufferInputTime = _bufferDuration;
+        }
+
+        public bool TryConsumeBuffer()
         {
-            return;
-        }
-
-        _hasBufferedInput = true;
-        _bufferInputTime = _bufferDuration;
-    }
-
-    public bool TryConsumeBuffer()
-    {
-        if(!_hasBufferedInput)
-        {
-            return false;
-        }
+            if(!_hasBufferedInput)
+            {
+                return false;
+            }
         
-        ClearBuffer();
+            ClearBuffer();
 
-        return true;
-    }
+            return true;
+        }
 
-    public void ClearBuffer()
-    {
-        _hasBufferedInput = false;
-        _bufferInputTime = 0f;
-    }
-
-    public void SetEnabled(bool enabled)
-    {
-        _isEnabled = enabled;
-
-        if(!enabled)
+        public void ClearBuffer()
         {
+            _hasBufferedInput = false;
+            _bufferInputTime = 0f;
+        }
+
+        public void SetEnabled(bool enabled)
+        {
+            _isEnabled = enabled;
+
+            if(!enabled)
+            {
+                ClearBuffer();
+            }
+        }
+
+        public void OnCloneDisable()
+        {
+            // 입력 비활성화
+            SetEnabled(false);
+
+            // 버퍼 초기화
             ClearBuffer();
         }
     }
